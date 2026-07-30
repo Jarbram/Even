@@ -1,26 +1,162 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — extraídos de "Finanzas Pareja.dc.html" (Claude Design).
+   Toda la capa visual vive aquí. Los componentes solo usan clases de Tailwind
+   que apuntan a estas variables, así reemplazar el sistema visual es cambiar
+   este bloque y nada más.
+   --------------------------------------------------------------------------- */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Superficies glass propias del diseño */
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-shell: var(--shell);
+
+  /* Semáforo de presupuesto */
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-over: var(--over);
+
+  /* Paleta de categorías (misma del diseño) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Tema único: oscuro. `.dark` queda como alias para que los `dark:` de shadcn
+   sigan resolviendo igual. ponytail: sin tema claro, se añade si alguien lo pide. */
+:root,
+.dark {
+  --shell: #0a0a0b;
+  --background: #111214;
+  --foreground: #ffffff;
+
+  --card: rgb(45 46 51 / 0.55);
+  --card-foreground: #ffffff;
+  --popover: #1a1b1e;
+  --popover-foreground: #ffffff;
+
+  --glass: rgb(45 46 51 / 0.55);
+  --glass-strong: rgb(52 53 59 / 0.5);
+
+  --primary: #c7f94e;
+  --primary-foreground: #111214;
+  --secondary: #5b5bf5;
+  --secondary-foreground: #ffffff;
+
+  --muted: rgb(52 53 59 / 0.5);
+  --muted-foreground: #9ca3af;
+  --accent: rgb(91 91 245 / 0.6);
+  --accent-foreground: #ffffff;
+
+  --destructive: #f87171;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --over: #f87171;
+
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.09);
+  --ring: #c7f94e;
+
+  --radius: 1.125rem;
+
+  --chart-1: #5b5bf5;
+  --chart-2: #f87171;
+  --chart-3: #c7f94e;
+  --chart-4: #38bdf8;
+  --chart-5: #fbbf24;
+  --chart-6: #f472b6;
+  --chart-7: #34d399;
+  --chart-8: #a78bfa;
+  --chart-9: #94a3b8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* Halos ambientales del diseño: indigo arriba-izquierda, lima abajo-derecha */
+    background-image:
+      radial-gradient(circle at 15% 8%, rgb(91 91 245 / 0.18), transparent 40%),
+      radial-gradient(circle at 90% 75%, rgb(199 249 78 / 0.1), transparent 45%);
+    background-attachment: fixed;
+  }
+  /* El diseño oculta las barras de scroll (mobile-first, sin chrome de escritorio) */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    scrollbar-width: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Superficie glass del diseño: translúcida + blur + borde de 1px muy tenue */
+@utility glass {
+  background-color: var(--glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+}
+
+@utility glass-nav {
+  background-color: var(--glass-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
