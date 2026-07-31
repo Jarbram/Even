@@ -35,7 +35,7 @@ export function Chips({
 }) {
   if (opciones.length === 0 && vacio) {
     return (
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className="flex flex-col gap-3.5">
         <Label asChild>
           <legend>{label}</legend>
         </Label>
@@ -49,7 +49,7 @@ export function Chips({
     : "flex flex-wrap gap-2.5";
 
   return (
-    <fieldset className="flex flex-col gap-3">
+    <fieldset className="flex flex-col gap-3.5">
       <Label asChild>
         <legend>{label}</legend>
       </Label>

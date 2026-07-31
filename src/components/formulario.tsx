@@ -20,7 +20,7 @@ export function BotonGuardar({ children }: { children: string }) {
       type="submit"
       size="lg"
       disabled={pending}
-      className="mt-1 w-full rounded-xl"
+      className="mt-3 w-full rounded-xl"
     >
       {pending ? "Guardando…" : children}
     </Button>

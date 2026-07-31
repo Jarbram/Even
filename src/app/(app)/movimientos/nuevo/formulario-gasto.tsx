@@ -1,14 +1,16 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { SelectorCuenta } from "@/components/selector-cuenta";
-import { Button } from "@/components/ui/button";
+import {
+  BotonGuardar,
+  ErrorForm,
+} from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { crearGasto, type Resultado } from "../../acciones";
@@ -106,27 +108,15 @@ export function FormularioGasto({
         defaultValue="0.5"
         opciones={[
           { value: "0.5", label: "A medias" },
-          { value: "1", label: `De ${NOMBRES.abraham}` },
-          { value: "0", label: `De ${NOMBRES.isabel}` },
+          { value: "1", label: NOMBRES.abraham },
+          { value: "0", label: NOMBRES.isabel },
         ]}
       />
 
-      {estado.error && (
-        <p role="alert" className="text-sm font-medium text-destructive">
-          {estado.error}
-        </p>
-      )}
+      <ErrorForm estado={estado} />
 
-      <Guardar />
+      <BotonGuardar>Registrar gasto</BotonGuardar>
     </form>
   );
 }
 
-function Guardar() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" size="lg" disabled={pending} className="rounded-xl">
-      {pending ? "Guardando…" : "Registrar gasto"}
-    </Button>
-  );
-}
