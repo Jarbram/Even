@@ -1,18 +1,18 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes, type GastoRow } from "@/lib/datos";
 import {
-  desplazarMes,
   diasDelMes,
   huecoInicial,
   mesActual,
-  nombreMes,
   porDiaDelMes,
   redondear,
   soles,
   type Mes,
 } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
+import { NavegadorMes } from "@/components/navegacion";
 
 const DIA_LARGO = new Intl.DateTimeFormat("es-PE", {
   weekday: "long",
@@ -46,22 +46,22 @@ export default async function MovimientosPage({
   return (
     <>
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">Movimientos</h1>
-          <p className="mt-1 text-sm text-muted-foreground capitalize">
-            {nombreMes(mes)}
-          </p>
-        </div>
+        {/* El mes no se repite aquí: lo dice el navegador del calendario. */}
+        <h1 className="text-2xl font-extrabold">Movimientos</h1>
         <Link
           href="/movimientos/nuevo"
           aria-label="Agregar gasto"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          +
+          <Plus aria-hidden className="size-5" />
         </Link>
       </div>
 
-      <Calendario mes={mes} gastos={gastos} diaActivo={hayDia ? diaActivo : 0} />
+      <Calendario
+        mes={mes}
+        gastos={gastos}
+        diaActivo={hayDia ? diaActivo : 0}
+      />
 
       <div className="glass mb-6 rounded-xl p-5">
         <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
@@ -75,9 +75,7 @@ export default async function MovimientosPage({
 
       {hayDia && (
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold">
-            Solo el día {diaActivo}
-          </p>
+          <p className="text-sm font-semibold">Solo el día {diaActivo}</p>
           <Link
             href={`/movimientos?mes=${mes}`}
             className="text-xs text-primary"
@@ -122,35 +120,14 @@ function Calendario({
 
   return (
     <section className="glass mb-6 rounded-xl p-4">
-      <nav
-        aria-label="Mes"
-        className="mb-3 flex items-center justify-between text-sm"
-      >
-        <Link
-          href={`/movimientos?mes=${desplazarMes(mes, -1)}`}
-          aria-label="Mes anterior"
-          className="px-2 text-muted-foreground"
-        >
-          ‹
-        </Link>
-        <span className="text-xs font-semibold capitalize">
-          {nombreMes(mes)}
-        </span>
-        <Link
-          href={`/movimientos?mes=${desplazarMes(mes, 1)}`}
-          aria-label="Mes siguiente"
-          className="px-2 text-muted-foreground"
-        >
-          ›
-        </Link>
-      </nav>
+      <NavegadorMes mes={mes} href={(m) => `/movimientos?mes=${m}`} />
 
       <div className="grid grid-cols-7 gap-1 text-center">
         {SEMANA.map((letra, i) => (
           <span
             key={i}
             aria-hidden
-            className="pb-1 text-[10px] font-bold text-muted-foreground"
+            className="pb-1.5 text-[11px] font-bold text-muted-foreground"
           >
             {letra}
           </span>
@@ -176,7 +153,7 @@ function Calendario({
               aria-label={`Día ${numero}: ${soles(dia.total)}`}
               aria-current={activo ? "date" : undefined}
               data-activo={activo}
-              className="group flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold data-[activo=true]:bg-primary data-[activo=true]:text-primary-foreground"
+              className="group flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[activo=true]:bg-primary data-[activo=true]:text-primary-foreground"
             >
               {numero}
               <span
@@ -186,7 +163,10 @@ function Calendario({
                 // un vistazo dónde se fue la plata sin leer un solo número.
                 style={
                   gastado
-                    ? { width: 3 + (dia.total / techo) * 4, height: 3 + (dia.total / techo) * 4 }
+                    ? {
+                        width: 3 + (dia.total / techo) * 4,
+                        height: 3 + (dia.total / techo) * 4,
+                      }
                     : undefined
                 }
                 className="rounded-full bg-primary group-data-[activo=true]:bg-primary-foreground data-[gastado=false]:size-[3px] data-[gastado=false]:bg-transparent"

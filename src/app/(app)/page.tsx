@@ -1,29 +1,18 @@
 import Link from "next/link";
+import { ArrowUpRight, Plus, SlidersHorizontal } from "lucide-react";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, redondear, soles } from "@/lib/finanzas";
+import { nombreMes, soles } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ quien?: string }>;
-}) {
+export default async function HomePage() {
   const persona = await requirePersona();
-  const { quien } = await searchParams;
-  const soloYo = quien === "yo";
-
-  const { mes, gastos, restante, ahorros, deuda, baseCero } =
+  const { mes, gastos, restante, ahorros, deuda, baseCero, fondos } =
     await resumenDelMes();
 
-  // "Solo yo" = lo que puse yo de mi bolsillo, que es lo que uno va a mirar
-  // cuando quiere saber cuánto lleva gastado él.
-  const mios = gastos.filter((g) => g.pagado_por === persona);
-  const visibles = soloYo ? mios : gastos;
-  const gastadoVisible = redondear(
-    visibles.reduce((suma, g) => suma + g.monto, 0),
-  );
+  const sinPresupuesto = baseCero.asignado === 0;
+  const excedidos = restante < 0;
 
   return (
     <>
@@ -42,64 +31,84 @@ export default async function HomePage({
         <Link
           href="/ajustes"
           aria-label="Ajustes"
-          className="glass flex size-10 shrink-0 items-center justify-center rounded-full"
+          className="glass flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          <span className="size-2.5 rounded-full bg-primary" />
+          <SlidersHorizontal aria-hidden className="size-[18px]" />
         </Link>
       </header>
 
-      <h1 className="mb-5 text-[30px] leading-[1.15] font-extrabold tracking-[-0.5px]">
+      <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-[-0.5px]">
         ¿Listos para
         <br />
         este mes?
       </h1>
+      <p className="mt-2 mb-6 text-[13px] font-medium text-muted-foreground">
+        {nombreMes(mes)}
+      </p>
 
-      <nav aria-label="Filtro" className="mb-4 flex gap-2 text-[13px]">
-        <span className="rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground capitalize">
-          {nombreMes(mes).replace(/ \d{4}$/, "")}
-        </span>
-        <Filtro href="/" activo={!soloYo}>
-          Ambos
-        </Filtro>
-        <Filtro href="/?quien=yo" activo={soloYo}>
-          Solo yo
-        </Filtro>
-      </nav>
-
-      <div className="mb-7 grid grid-cols-2 gap-3">
+      <div className="mb-8 grid grid-cols-2 gap-3">
         {/* La tarjeta grande del diseño: indigo lleno, no glass. */}
         <Tarjeta
           href="/presupuesto"
-          titulo={soloYo ? "Gastaste tú" : "Presupuesto restante"}
+          titulo="Presupuesto restante"
           className="bg-secondary text-secondary-foreground"
         >
-          <p className="text-[26px] leading-none font-extrabold tracking-[-0.5px]">
-            {soles(soloYo ? gastadoVisible : restante)}
-          </p>
-          {!soloYo && baseCero.asignado === 0 && (
-            <p className="mt-2 text-[11px] opacity-80">Aún sin asignar</p>
+          {sinPresupuesto ? (
+            // Un "S/ 0.00" aquí sería mentira: no es que no quede nada, es que
+            // todavía no se ha repartido nada.
+            <p className="text-[15px] leading-snug font-bold">
+              Reparte el mes
+              <span className="mt-1 block text-[11px] font-medium text-white/75">
+                Aún no hay presupuesto
+              </span>
+            </p>
+          ) : (
+            <p
+              data-excedido={excedidos}
+              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[excedido=true]:text-destructive"
+            >
+              {soles(restante)}
+            </p>
           )}
         </Tarjeta>
 
         <Tarjeta href="/ajustes" titulo="Ahorros" className="glass">
-          <p className="text-[26px] leading-none font-extrabold tracking-[-0.5px] text-primary">
-            {soles(ahorros)}
-          </p>
+          {fondos.length === 0 ? (
+            <p className="text-[15px] leading-snug font-bold">
+              Crea un fondo
+              <span className="mt-1 block text-[11px] font-medium text-muted-foreground">
+                Viaje, emergencia…
+              </span>
+            </p>
+          ) : (
+            <p className="text-[26px] leading-none font-extrabold tracking-[-0.5px] text-primary">
+              {soles(ahorros)}
+            </p>
+          )}
         </Tarjeta>
 
-        <Tarjeta href="/movimientos" titulo="Deuda entre nosotros" className="glass">
-          <p className="text-[15px] leading-tight font-bold">
-            {deuda.deudor
-              ? `${NOMBRES[deuda.deudor]} debe ${soles(deuda.monto)}`
-              : "Están en paz"}
-          </p>
+        <Tarjeta
+          href="/movimientos"
+          titulo="Deuda entre nosotros"
+          className="glass"
+        >
+          {deuda.deudor ? (
+            <p className="text-[15px] leading-snug font-bold">
+              {NOMBRES[deuda.deudor]} debe
+              <span className="mt-1 block text-lg text-primary">
+                {soles(deuda.monto)}
+              </span>
+            </p>
+          ) : (
+            <p className="text-[15px] leading-snug font-bold">Están en paz</p>
+          )}
         </Tarjeta>
 
         <Link
           href="/movimientos/nuevo"
-          className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary"
+          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
         >
-          <span className="text-2xl leading-none font-bold text-primary">+</span>
+          <Plus aria-hidden className="size-6 text-primary" />
           <span className="text-[13px] font-semibold">Agregar gasto</span>
         </Link>
       </div>
@@ -108,22 +117,21 @@ export default async function HomePage({
         <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Actividad reciente
         </h2>
-        {visibles.length > 4 && (
-          <Link href="/movimientos" className="text-xs text-primary">
+        {gastos.length > 6 && (
+          <Link
+            href="/movimientos"
+            className="text-xs font-medium text-primary hover:underline"
+          >
             Ver todo
           </Link>
         )}
       </div>
 
-      {visibles.length === 0 ? (
-        <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
-          {soloYo
-            ? "No has registrado gastos tuyos este mes."
-            : "Todavía no hay gastos este mes. Toca «Agregar gasto»."}
-        </p>
+      {gastos.length === 0 ? (
+        <PrimerosPasos sinPresupuesto={sinPresupuesto} />
       ) : (
         <ul className="flex flex-col gap-2">
-          {visibles.slice(0, 6).map((gasto) => (
+          {gastos.slice(0, 6).map((gasto) => (
             <li key={gasto.id}>
               <FilaGasto gasto={gasto} />
             </li>
@@ -134,24 +142,44 @@ export default async function HomePage({
   );
 }
 
-function Filtro({
-  href,
-  activo,
-  children,
-}: {
-  href: string;
-  activo: boolean;
-  children: React.ReactNode;
-}) {
+/**
+ * El mes sin un solo gasto es la primera pantalla que van a ver, y también la
+ * de cada día 1. En vez de un aviso gris, dice qué falta y lleva a hacerlo.
+ */
+function PrimerosPasos({ sinPresupuesto }: { sinPresupuesto: boolean }) {
+  const pasos = [
+    sinPresupuesto && {
+      href: "/presupuesto",
+      titulo: "Reparte el mes",
+      pie: "Carga los ingresos y dale un monto a cada categoría.",
+    },
+    {
+      href: "/movimientos/nuevo",
+      titulo: "Anota el primer gasto",
+      pie: "Con el monto y en qué fue basta; el resto ya viene puesto.",
+    },
+  ].filter(Boolean) as { href: string; titulo: string; pie: string }[];
+
   return (
-    <Link
-      href={href}
-      aria-current={activo ? "page" : undefined}
-      data-activo={activo}
-      className="rounded-full px-4 py-2 font-medium text-muted-foreground data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground"
-    >
-      {children}
-    </Link>
+    <ul className="flex flex-col gap-2">
+      {pasos.map((paso) => (
+        <li key={paso.href}>
+          <Link
+            href={paso.href}
+            className="glass flex items-center gap-3 rounded-lg p-4 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{paso.titulo}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{paso.pie}</p>
+            </div>
+            <ArrowUpRight
+              aria-hidden
+              className="size-4 shrink-0 text-muted-foreground"
+            />
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -169,16 +197,18 @@ function Tarjeta({
   return (
     <Link
       href={href}
-      className={`relative flex flex-col justify-between gap-4 rounded-xl p-4 ${className}`}
+      // min-h para que las cuatro tarjetas midan igual aunque el título ocupe
+      // una línea o dos: en la rejilla se notaba el desajuste.
+      className={`group relative flex min-h-[124px] flex-col justify-between gap-4 rounded-xl p-4 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${className}`}
     >
-      <p className="pr-4 text-[11px] leading-tight font-bold tracking-[0.06em] uppercase opacity-70">
+      <p className="pr-5 text-[11px] leading-tight font-bold tracking-[0.06em] uppercase opacity-70">
         {titulo}
       </p>
-      <span aria-hidden className="absolute top-4 right-4 text-xs opacity-50">
-        ↗
-      </span>
+      <ArrowUpRight
+        aria-hidden
+        className="absolute top-3.5 right-3.5 size-3.5 opacity-40 transition-opacity group-hover:opacity-80"
+      />
       {children}
     </Link>
   );
 }
-

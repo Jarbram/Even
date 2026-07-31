@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requirePersona } from "@/lib/sesion";
 import { historicoMensual, resumenDelMes } from "@/lib/datos";
 import {
-  desplazarMes,
   diasTranscurridos,
   hoyISO,
   mesActual,
@@ -13,6 +12,7 @@ import {
   soles,
   type Mes,
 } from "@/lib/finanzas";
+import { BotonCerrar, NavegadorMes } from "@/components/navegacion";
 
 const VISTAS = ["diario", "semanal", "mensual"] as const;
 type Vista = (typeof VISTAS)[number];
@@ -52,13 +52,7 @@ export default async function EstadisticasPage({
     <>
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Estadísticas</h1>
-        <Link
-          href="/"
-          aria-label="Cerrar"
-          className="glass flex size-9 items-center justify-center rounded-full text-sm text-muted-foreground"
-        >
-          ✕
-        </Link>
+        <BotonCerrar href="/" />
       </div>
 
       <nav
@@ -71,7 +65,7 @@ export default async function EstadisticasPage({
             href={`/estadisticas?vista=${v}&mes=${mes}`}
             aria-current={v === vista ? "page" : undefined}
             data-activo={v === vista}
-            className="flex-1 rounded-full py-2 text-center font-medium text-muted-foreground capitalize data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground"
+            className="flex-1 rounded-full py-2.5 text-center font-medium text-muted-foreground capitalize transition-colors data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground"
           >
             {v}
           </Link>
@@ -80,26 +74,10 @@ export default async function EstadisticasPage({
 
       {/* En vista mensual el eje ya son los meses: mover el mes no aportaría. */}
       {vista !== "mensual" && (
-        <nav
-          aria-label="Mes"
-          className="mb-4 flex items-center justify-center gap-8 text-sm"
-        >
-          <Link
-            href={`/estadisticas?vista=${vista}&mes=${desplazarMes(mes, -1)}`}
-            aria-label="Mes anterior"
-            className="px-2 text-muted-foreground"
-          >
-            ‹
-          </Link>
-          <span className="font-semibold capitalize">{nombreMes(mes)}</span>
-          <Link
-            href={`/estadisticas?vista=${vista}&mes=${desplazarMes(mes, 1)}`}
-            aria-label="Mes siguiente"
-            className="px-2 text-muted-foreground"
-          >
-            ›
-          </Link>
-        </nav>
+        <NavegadorMes
+          mes={mes}
+          href={(m) => `/estadisticas?vista=${vista}&mes=${m}`}
+        />
       )}
 
       <section className="mb-6 rounded-xl bg-secondary p-5 text-secondary-foreground">

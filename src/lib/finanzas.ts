@@ -102,14 +102,23 @@ export function desplazarMes(mes: Mes, meses: number): Mes {
   return `${año}-${String((total % 12) + 1).padStart(2, "0")}-01`;
 }
 
-/** "2026-07-01" → "julio 2026". */
-export function nombreMes(mes: Mes): string {
-  const etiqueta = new Intl.DateTimeFormat("es-PE", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${mes}T00:00:00Z`));
-  return etiqueta;
+const MES_LARGO = new Intl.DateTimeFormat("es-PE", {
+  month: "long",
+  timeZone: "UTC",
+});
+
+/**
+ * "2026-07-01" → "Julio 2026".
+ *
+ * Se formatea solo el mes y se pega el año a mano, en vez de pedir los dos a
+ * Intl: en español eso devuelve "julio de 2026", y ese "de" es lo que convertía
+ * el `capitalize` de CSS en un "Julio De 2026" — o en "Julio De" al recortar el
+ * año. Aquí la mayúscula se pone una vez, donde se sabe qué es cada parte.
+ */
+export function nombreMes(mes: Mes, conAño = true): string {
+  const largo = MES_LARGO.format(new Date(`${mes}T00:00:00Z`));
+  const nombre = largo.charAt(0).toUpperCase() + largo.slice(1);
+  return conAño ? `${nombre} ${mes.slice(0, 4)}` : nombre;
 }
 
 /** Cuántos días tiene el mes. */
@@ -314,7 +323,7 @@ export type BaseCero = {
   asignado: number;
   /** Positivo: queda plata sin nombre. Negativo: presupuestaron de más. */
   porAsignar: number;
-  estado: "cuadrado" | "sobra" | "falta";
+  estado: "vacio" | "cuadrado" | "sobra" | "falta";
   resumen: string;
 };
 
@@ -330,10 +339,20 @@ export function baseCero(
   const asignado = presupuestos.reduce((suma, p) => suma + p.monto, 0);
   const porAsignar = redondear(total - asignado);
 
-  const estado =
-    Math.abs(porAsignar) < 0.01 ? "cuadrado" : porAsignar > 0 ? "sobra" : "falta";
+  // Un mes en blanco también da cero, y decir "todo está asignado" cuando no se
+  // ha cargado nada es la peor manera de mentir: suena a que está hecho.
+  const enBlanco = total === 0 && asignado === 0;
+
+  const estado = enBlanco
+    ? "vacio"
+    : Math.abs(porAsignar) < 0.01
+      ? "cuadrado"
+      : porAsignar > 0
+        ? "sobra"
+        : "falta";
 
   const resumen = {
+    vacio: "Carga los ingresos del mes para empezar",
     cuadrado: "Todo el mes está asignado",
     sobra: `Te falta asignar ${soles(Math.abs(porAsignar))}`,
     falta: `Asignaste ${soles(Math.abs(porAsignar))} de más`,

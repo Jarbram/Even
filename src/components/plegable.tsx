@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+
 /**
  * Un formulario que solo ocupa sitio cuando lo vas a usar.
  *
@@ -14,10 +16,11 @@ export function Plegable({
 }) {
   return (
     <details className="glass rounded-xl [&[open]_.marca]:rotate-45">
-      <summary className="flex cursor-pointer list-none items-center gap-2 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-        <span className="marca text-lg leading-none font-bold text-primary transition-transform">
-          +
-        </span>
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+        <Plus
+          aria-hidden
+          className="marca size-4 text-primary transition-transform duration-200"
+        />
         {titulo}
       </summary>
       <div className="border-t border-border p-4">{children}</div>

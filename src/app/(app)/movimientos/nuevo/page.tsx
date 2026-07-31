@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BotonCerrar } from "@/components/navegacion";
 import { requirePersona } from "@/lib/sesion";
 import { categoriasUsadas, listarCuentas } from "@/lib/datos";
 import { hoyISO } from "@/lib/finanzas";
@@ -15,13 +15,7 @@ export default async function NuevoGastoPage() {
     <>
       <div className="mb-7 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Nuevo gasto</h1>
-        <Link
-          href="/"
-          aria-label="Cerrar"
-          className="glass flex size-9 items-center justify-center rounded-full text-sm text-muted-foreground"
-        >
-          ✕
-        </Link>
+        <BotonCerrar href="/" />
       </div>
 
       <FormularioGasto

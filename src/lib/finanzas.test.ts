@@ -11,6 +11,7 @@ import {
   lineasPresupuesto,
   mesDe,
   mesesParaMeta,
+  nombreMes,
   normalizarCategoria,
   porDiaDelMes,
   porSemanaDelMes,
@@ -111,6 +112,19 @@ test("las categorías gastadas sin presupuesto aparecen igual", () => {
   assert.equal(mercado?.restante, 300);
 });
 
+test("un mes en blanco no está «cuadrado», está vacío", () => {
+  // Sin ingresos ni presupuesto la resta da cero, pero decir "todo el mes está
+  // asignado" suena a que ya está hecho. Es el peor cero de todos.
+  const blanco = baseCero([], []);
+  assert.equal(blanco.estado, "vacio");
+  assert.doesNotMatch(blanco.resumen, /asignado/);
+
+  // Con ingresos cargados y todo repartido sí está cuadrado de verdad.
+  assert.equal(baseCero([{ monto: 100 }], [{ monto: 100 }]).estado, "cuadrado");
+  // Y asignar 0 de 0 ingresos con gastos ya registrados no es un mes en blanco.
+  assert.equal(baseCero([{ monto: 500 }], []).estado, "sobra");
+});
+
 test("base cero: cuadrado, sobra y falta", () => {
   assert.equal(baseCero([{ monto: 3000 }], [{ monto: 3000 }]).estado, "cuadrado");
   assert.equal(baseCero([{ monto: 3000 }], [{ monto: 2500 }]).estado, "sobra");
@@ -172,6 +186,15 @@ test("el promedio diario usa los días vividos, no el mes entero", () => {
   assert.equal(diasTranscurridos("2026-07-01", "2026-07-10"), 10);
   // Mes pasado: cuenta entero.
   assert.equal(diasTranscurridos("2026-06-01", "2026-07-10"), 30);
+});
+
+test("el nombre del mes no arrastra el «de» del español", () => {
+  // Intl con month+year devuelve "julio de 2026", y ese "de" acababa en
+  // pantalla como "Julio De 2026".
+  assert.equal(nombreMes("2026-07-01"), "Julio 2026");
+  assert.equal(nombreMes("2026-07-01", false), "Julio");
+  assert.equal(nombreMes("2026-12-01"), "Diciembre 2026");
+  assert.doesNotMatch(nombreMes("2026-07-01"), / de /i);
 });
 
 test("las categorías escritas a mano no se duplican por mayúsculas ni espacios", () => {

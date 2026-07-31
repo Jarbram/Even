@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BotonCerrar } from "@/components/navegacion";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
 import { ahorroPorPagarMas, simularDeuda, soles } from "@/lib/finanzas";
@@ -23,13 +24,7 @@ export default async function DeudasPage({
     <>
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Deudas</h1>
-        <Link
-          href="/ajustes"
-          aria-label="Volver"
-          className="glass flex size-9 items-center justify-center rounded-full text-sm text-muted-foreground"
-        >
-          ✕
-        </Link>
+        <BotonCerrar href="/ajustes" label="Volver" />
       </div>
 
       <div className="mb-6 rounded-xl bg-secondary p-5 text-secondary-foreground">

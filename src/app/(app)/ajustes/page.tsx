@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
@@ -157,12 +158,10 @@ function Enlace({ href, children }: { href: string; children: string }) {
   return (
     <Link
       href={href}
-      className="glass flex items-center justify-between rounded-lg p-4 text-sm font-semibold"
+      className="glass flex items-center justify-between rounded-lg p-4 text-sm font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {children}
-      <span aria-hidden className="text-muted-foreground">
-        ›
-      </span>
+      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
     </Link>
   );
 }

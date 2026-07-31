@@ -11,32 +11,53 @@ export default async function PresupuestoPage() {
   return (
     <>
       <h1 className="text-2xl font-extrabold">Presupuesto</h1>
-      <p className="mt-1 mb-[22px] text-sm text-muted-foreground capitalize">
+      <p className="mt-1.5 mb-6 text-sm text-muted-foreground">
         {nombreMes(mes)}
       </p>
 
       {/* Base cero: el titular del mes. */}
-      <div className="glass mb-7 rounded-xl p-5">
-        <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-          Sin asignar
-        </p>
-        <p
-          data-estado={baseCero.estado}
-          className="mt-1 text-[30px] font-extrabold tracking-[-0.5px] data-[estado=cuadrado]:text-primary data-[estado=falta]:text-destructive"
-        >
-          {soles(baseCero.porAsignar)}
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">{baseCero.resumen}</p>
-        <dl className="mt-4 flex gap-6 text-xs">
-          <div>
-            <dt className="text-muted-foreground">Ingresos</dt>
-            <dd className="mt-0.5 font-semibold">{soles(baseCero.ingresos)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Asignado</dt>
-            <dd className="mt-0.5 font-semibold">{soles(baseCero.asignado)}</dd>
-          </div>
-        </dl>
+      <div className="glass mb-8 rounded-xl p-5">
+        {baseCero.estado === "vacio" ? (
+          // Un "S/ 0.00 · todo asignado" en un mes en blanco suena a que ya está
+          // hecho. Mientras no haya ingresos, lo honesto es decir qué falta.
+          <>
+            <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+              El mes está sin cargar
+            </p>
+            <p className="mt-2 text-[17px] leading-snug font-bold">
+              {baseCero.resumen}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+              Sin asignar
+            </p>
+            <p
+              data-estado={baseCero.estado}
+              className="mt-1.5 text-[30px] font-extrabold tracking-[-0.5px] data-[estado=cuadrado]:text-primary data-[estado=falta]:text-destructive"
+            >
+              {soles(baseCero.porAsignar)}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {baseCero.resumen}
+            </p>
+            <dl className="mt-5 flex gap-8 text-xs">
+              <div>
+                <dt className="text-muted-foreground">Ingresos</dt>
+                <dd className="mt-1 font-semibold">
+                  {soles(baseCero.ingresos)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Asignado</dt>
+                <dd className="mt-1 font-semibold">
+                  {soles(baseCero.asignado)}
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
       </div>
 
       <p className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">

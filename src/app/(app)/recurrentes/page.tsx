@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BotonCerrar } from "@/components/navegacion";
 import { requirePersona } from "@/lib/sesion";
 import { categoriasUsadas, listarRecurrentes } from "@/lib/datos";
 import { NOMBRES } from "@/lib/persona";
@@ -19,13 +19,7 @@ export default async function RecurrentesPage() {
     <>
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Recurrentes</h1>
-        <Link
-          href="/ajustes"
-          aria-label="Volver"
-          className="glass flex size-9 items-center justify-center rounded-full text-sm text-muted-foreground"
-        >
-          ✕
-        </Link>
+        <BotonCerrar href="/ajustes" label="Volver" />
       </div>
 
       <div className="glass mb-6 rounded-xl p-5">
