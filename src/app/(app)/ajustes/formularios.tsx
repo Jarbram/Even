@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import { TIPOS_CUENTA } from "@/lib/cuentas";
@@ -26,6 +26,7 @@ import {
 export function NuevaCuenta({ persona }: { persona: Persona }) {
   const [estado, action] = useActionState<Resultado, FormData>(crearCuenta, {});
   const ref = useAlGuardar(estado, "Cuenta añadida");
+  const [tipo, setTipo] = useState<string>(Object.keys(TIPOS_CUENTA)[0]);
 
   return (
     <Plegable titulo="Añadir billetera o tarjeta">
@@ -45,11 +46,33 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
           name="tipo"
           label="Tipo"
           columnas={2}
+          onChange={setTipo}
           opciones={Object.entries(TIPOS_CUENTA).map(([value, label]) => ({
             value,
             label,
           }))}
         />
+
+        {/* Una tarjeta de crédito se mide por su cupo, no por lo que tiene
+            dentro: preguntar las dos cosas confundiría más que ayudar. */}
+        {tipo === "credito" && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="linea-cuenta">Línea de crédito (S/)</Label>
+            <Input
+              id="linea-cuenta"
+              name="linea"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0.01"
+              placeholder="10500"
+            />
+            <p className="text-xs text-muted-foreground">
+              El cupo total. La app lleva cuánto llevas consumido y cuánto te
+              queda disponible.
+            </p>
+          </div>
+        )}
 
         <Chips
           name="persona"
@@ -59,7 +82,9 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
         />
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="saldo-cuenta">¿Cuánto tiene ahora? (S/)</Label>
+          <Label htmlFor="saldo-cuenta">
+            {tipo === "credito" ? "¿Cuánto llevas consumido? (S/)" : "¿Cuánto tiene ahora? (S/)"}
+          </Label>
           <Input
             id="saldo-cuenta"
             name="saldo_base"

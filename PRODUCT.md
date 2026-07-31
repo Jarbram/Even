@@ -85,6 +85,12 @@ Confirmado y construido:
 - Fondos de ahorro con monto inicial, meta opcional y aportes.
 - Cuentas de pago: efectivo, débito, crédito y billeteras (Yape, Plin), con
   saldo calculado a partir de lo que entra y sale.
+- Tarjetas de crédito con línea: se lleva cuánto se consumió y cuánto queda
+  disponible, y pagarlas devuelve la línea. **Pagar la tarjeta no es un gasto**
+  (decidido el 31/07/2026): el gasto ocurrió al comprar, así que registrarlo
+  otra vez lo contaría dos veces contra el presupuesto y movería la deuda entre
+  los dos, con la que no tiene relación. Sin fechas de corte ni ciclos de
+  facturación: lo que importa es cuánto queda hoy.
 
 Constraints técnicas que el diseño no puede saltarse:
 

@@ -21,7 +21,47 @@ export type CuentaRow = {
   saldo_base: number;
   /** Lo que tiene hoy: base + lo que entró - lo que salió. Lo calcula la vista. */
   saldo: number;
+  /** Cupo total, solo en tarjetas de crédito. */
+  linea: number | null;
 };
+
+/**
+ * Cómo se lee el saldo de una cuenta.
+ *
+ * Una tarjeta de crédito se mide al revés: su saldo negativo es lo consumido, y
+ * lo que importa es cuánto queda del cupo. El resto de cuentas dicen
+ * directamente lo que tienen. Una sola fórmula en la base, dos lecturas aquí.
+ */
+export function leerSaldo(cuenta: {
+  tipo: TipoCuenta;
+  saldo: number;
+  linea: number | null;
+}) {
+  if (cuenta.tipo !== "credito" || !cuenta.linea) {
+    return {
+      esCredito: false,
+      principal: cuenta.saldo,
+      etiqueta: "Saldo",
+      consumido: 0,
+      disponible: 0,
+      proporcion: 0,
+    };
+  }
+
+  // El saldo va en negativo mientras haya consumo; en positivo si pagaron de
+  // más, y entonces no hay nada consumido.
+  const consumido = Math.max(-cuenta.saldo, 0);
+  const disponible = cuenta.linea - consumido;
+
+  return {
+    esCredito: true,
+    principal: disponible,
+    etiqueta: "Disponible",
+    consumido,
+    disponible,
+    proporcion: Math.min(consumido / cuenta.linea, 1),
+  };
+}
 
 /**
  * Los puntos de color de la lista de movimientos.

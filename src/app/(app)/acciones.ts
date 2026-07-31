@@ -90,13 +90,28 @@ export async function borrarGasto(id: string) {
 // Cuentas: efectivo, tarjetas, billeteras
 // ---------------------------------------------------------------------------
 
-const cuenta = z.object({
-  nombre: z.string().trim().min(1, "Ponle nombre a la cuenta").max(40),
-  tipo: z.enum(TIPOS),
-  persona,
-  // El punto de partida. El saldo de hoy lo calcula la vista `cuentas_saldo`.
-  saldo_base: z.coerce.number().catch(0),
-});
+const cuenta = z
+  .object({
+    nombre: z.string().trim().min(1, "Ponle nombre a la cuenta").max(40),
+    tipo: z.enum(TIPOS),
+    persona,
+    // El punto de partida. El saldo de hoy lo calcula la vista `cuentas_saldo`.
+    saldo_base: z.coerce.number().catch(0),
+    // Cupo de la tarjeta. Vacío en todo lo demás, y también en una tarjeta a la
+    // que no se le quiera poner límite.
+    linea: z.coerce.number().positive().nullable().catch(null),
+  })
+  .transform((datos) => ({
+    ...datos,
+    // En una tarjeta el formulario pregunta cuánto llevas CONSUMIDO, que es lo
+    // que uno sabe de memoria. El saldo va en el otro sentido: deber 4000 es
+    // un saldo de -4000, y de ahí sale el disponible.
+    saldo_base:
+      datos.tipo === "credito"
+        ? -Math.abs(datos.saldo_base)
+        : datos.saldo_base,
+    linea: datos.tipo === "credito" ? datos.linea : null,
+  }));
 
 export async function crearCuenta(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
@@ -263,5 +278,37 @@ export async function borrarTransferencia(id: string) {
   const supabase = createClient();
   return ejecutar(uuid, id, (id) =>
     supabase.from("transferencias").delete().eq("id", id),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pagos de tarjeta de crédito
+// ---------------------------------------------------------------------------
+
+const pagoTarjeta = z.object({
+  fecha: z.iso.date(),
+  tarjeta_id: uuid,
+  // Vacío si se pagó por fuera de las cuentas registradas.
+  desde_cuenta_id: uuid.nullable().catch(null),
+  monto,
+});
+
+/**
+ * Pagar la tarjeta no es un gasto: el gasto ocurrió al comprar. Registrarlo
+ * como gasto lo contaría dos veces contra el presupuesto y movería la deuda
+ * entre los dos, que con esto no tiene nada que ver. Baja el saldo de la
+ * cuenta de origen y le devuelve línea a la tarjeta.
+ */
+export async function pagarTarjeta(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(pagoTarjeta, campos(formData), (datos) =>
+    supabase.from("pagos_tarjeta").insert(datos),
+  );
+}
+
+export async function borrarPagoTarjeta(id: string) {
+  const supabase = createClient();
+  return ejecutar(uuid, id, (id) =>
+    supabase.from("pagos_tarjeta").delete().eq("id", id),
   );
 }

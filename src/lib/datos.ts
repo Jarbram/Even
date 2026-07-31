@@ -91,7 +91,7 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .overrideTypes<FondoRow[]>(),
       supabase
         .from("cuentas_saldo")
-        .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo")
+        .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo, linea")
         .eq("activa", true)
         .order("created_at")
         .overrideTypes<CuentaRow[]>(),
@@ -268,7 +268,7 @@ export async function listarCuentas() {
   // La vista, no la tabla: trae el saldo de hoy ya calculado.
   const { data } = await supabase
     .from("cuentas_saldo")
-    .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo")
+    .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo, linea")
     .order("created_at")
     .overrideTypes<CuentaRow[]>();
   return data ?? [];
@@ -292,4 +292,59 @@ export async function historicoMensual(meses = 6) {
     .map(([mes, total]) => ({ mes, total }))
     .sort((a, b) => a.mes.localeCompare(b.mes))
     .slice(-meses);
+}
+
+export type PagoTarjetaRow = {
+  id: string;
+  fecha: string;
+  monto: number;
+  desde_cuenta_id: string | null;
+  desde: { nombre: string } | null;
+};
+
+/**
+ * Una cuenta con todo lo suyo: sus gastos, sus pagos y su saldo.
+ *
+ * Los gastos van sin límite de mes a propósito — al abrir una tarjeta lo que se
+ * quiere ver es en qué se fue el cupo, y eso cruza meses.
+ */
+export async function detalleCuenta(id: string) {
+  const supabase = createClient();
+
+  const [cuenta, gastos, pagos] = await Promise.all([
+    supabase
+      .from("cuentas_saldo")
+      .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo, linea")
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<CuentaRow>(),
+    supabase
+      .from("gastos")
+      .select("id, fecha, descripcion, categoria, monto, pagado_por")
+      .eq("cuenta_id", id)
+      .order("fecha", { ascending: false })
+      .limit(60)
+      .overrideTypes<
+        {
+          id: string;
+          fecha: string;
+          descripcion: string;
+          categoria: string;
+          monto: number;
+          pagado_por: Persona;
+        }[]
+      >(),
+    supabase
+      .from("pagos_tarjeta")
+      .select("id, fecha, monto, desde_cuenta_id, desde:cuentas!pagos_tarjeta_desde_cuenta_id_fkey(nombre)")
+      .eq("tarjeta_id", id)
+      .order("fecha", { ascending: false })
+      .overrideTypes<PagoTarjetaRow[]>(),
+  ]);
+
+  return {
+    cuenta: cuenta.data ?? null,
+    gastos: gastos.data ?? [],
+    pagos: pagos.data ?? [],
+  };
 }

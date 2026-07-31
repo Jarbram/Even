@@ -1,12 +1,14 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
 import { listarCuentas, resumenDelMes } from "@/lib/datos";
-import { TIPOS_CUENTA, claseColor } from "@/lib/cuentas";
+import { TIPOS_CUENTA, claseColor, leerSaldo } from "@/lib/cuentas";
 import { progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { BotonBorrar } from "@/components/boton-borrar";
-import { borrarCuenta, borrarFondo } from "../acciones";
+import { borrarFondo } from "../acciones";
 import { MoverEnFondo, NuevaCuenta, NuevoFondo } from "./formularios";
 
 export default async function AjustesPage() {
@@ -71,41 +73,49 @@ export default async function AjustesPage() {
                 <ul className="flex flex-col gap-2">
                   {suyas.map((cuenta) => {
                     const gastado = gastadoPorCuenta.get(cuenta.id) ?? 0;
+                    const saldo = leerSaldo(cuenta);
                     return (
-                      <li
-                        key={cuenta.id}
-                        className="glass flex items-center gap-3 rounded-lg px-4 py-3.5"
-                      >
-                        <span
-                          aria-hidden
-                          className={`size-2 shrink-0 rounded-full ${claseColor(cuenta.color)}`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">
-                            {cuenta.nombre}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {TIPOS_CUENTA[cuenta.tipo]}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-right">
+                      <li key={cuenta.id}>
+                        <Link
+                          href={`/cuentas/${cuenta.id}`}
+                          className="glass flex items-center gap-3 rounded-lg px-4 py-3.5 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
                           <span
-                            data-negativo={cuenta.saldo < 0}
-                            className="block text-sm font-semibold data-[negativo=true]:text-destructive"
-                          >
-                            {soles(cuenta.saldo)}
-                          </span>
-                          {gastado > 0 && (
-                            <span className="block text-[11px] text-muted-foreground">
-                              −{soles(redondear(gastado))} este mes
+                            aria-hidden
+                            className={`size-2 shrink-0 rounded-full ${claseColor(cuenta.color)}`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">
+                              {cuenta.nombre}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {TIPOS_CUENTA[cuenta.tipo]}
+                              {saldo.esCredito &&
+                                ` · ${soles(saldo.consumido)} usados`}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-right">
+                            <span
+                              data-negativo={
+                                !saldo.esCredito && saldo.principal < 0
+                              }
+                              className="block text-sm font-semibold data-[negativo=true]:text-destructive"
+                            >
+                              {soles(saldo.principal)}
                             </span>
-                          )}
-                        </span>
-                        <BotonBorrar
-                          accion={borrarCuenta.bind(null, cuenta.id)}
-                          que="la cuenta"
-                          etiqueta={cuenta.nombre}
-                        />
+                            <span className="block text-[11px] text-muted-foreground">
+                              {saldo.esCredito
+                                ? "disponible"
+                                : gastado > 0
+                                  ? `−${soles(redondear(gastado))} este mes`
+                                  : "saldo"}
+                            </span>
+                          </span>
+                          <ChevronRight
+                            aria-hidden
+                            className="size-4 shrink-0 text-muted-foreground"
+                          />
+                        </Link>
                       </li>
                     );
                   })}

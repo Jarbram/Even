@@ -23,6 +23,7 @@ export function Chips({
   defaultValue,
   columnas,
   vacio,
+  onChange,
 }: {
   name: string;
   label: string;
@@ -32,6 +33,8 @@ export function Chips({
   columnas?: 2 | 3;
   /** Qué decir cuando no hay ninguna opción todavía. */
   vacio?: React.ReactNode;
+  /** Para los pocos casos en que el resto del formulario depende de esto. */
+  onChange?: (valor: string) => void;
 }) {
   if (opciones.length === 0 && vacio) {
     return (
@@ -63,6 +66,7 @@ export function Chips({
               value={opcion.value}
               defaultChecked={defaultValue ? opcion.value === defaultValue : i === 0}
               required
+              onChange={(e) => onChange?.(e.target.value)}
               className="peer sr-only"
             />
             <span
