@@ -3,8 +3,9 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
-import type { Persona } from "@/lib/persona";
+import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
+import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { SelectorCuenta } from "@/components/selector-cuenta";
 import { Button } from "@/components/ui/button";
@@ -88,14 +89,27 @@ export function FormularioGasto({
         />
       </div>
 
-      {/*
-        Lo paga quien registra y se reparte a medias. La deuda cruzada sigue
-        necesitando ambos datos, así que viajan aquí en vez de preguntarse.
-        El día que haga falta un gasto de uno solo, esto vuelve a ser un par de
-        campos visibles.
-      */}
-      <input type="hidden" name="pagado_por" value={persona} />
-      <input type="hidden" name="parte_abraham" value="0.5" />
+      {/* Los dos campos de los que sale la deuda entre ustedes. Vuelven a la
+          vista porque un gasto personal registrado como compartido reparte la
+          mitad al otro sin querer, y eso descuadra la cuenta en silencio. */}
+      <Chips
+        name="pagado_por"
+        label="¿Quién pagó?"
+        defaultValue={persona}
+        opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
+      />
+
+      <Chips
+        name="parte_abraham"
+        label="¿De quién es el gasto?"
+        columnas={3}
+        defaultValue="0.5"
+        opciones={[
+          { value: "0.5", label: "A medias" },
+          { value: "1", label: `De ${NOMBRES.abraham}` },
+          { value: "0", label: `De ${NOMBRES.isabel}` },
+        ]}
+      />
 
       {estado.error && (
         <p role="alert" className="text-sm font-medium text-destructive">

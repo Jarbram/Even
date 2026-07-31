@@ -93,7 +93,7 @@ export default async function HomePage() {
         </Tarjeta>
 
         <Tarjeta
-          href="/movimientos"
+          href="/deuda"
           titulo="Deuda entre nosotros"
           className="glass"
         >

@@ -36,6 +36,15 @@ export type FondoRow = {
   saldo: number;
 };
 
+export type TransferenciaRow = {
+  id: string;
+  fecha: string;
+  de_persona: Persona;
+  monto: number;
+  tipo: "liquidacion" | "prestamo";
+  concepto: string;
+};
+
 export type IngresoRow = {
   id: string;
   persona: Persona;
@@ -58,7 +67,7 @@ const CAMPOS_GASTO =
 export async function resumenDelMes(mes: Mes = mesActual()) {
   const supabase = createClient();
 
-  const [gastos, ingresos, presupuestos, fondos, cuentas] =
+  const [gastos, ingresos, presupuestos, fondos, cuentas, deuda] =
     await Promise.all([
       supabase
         .from("gastos")
@@ -86,6 +95,7 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .eq("activa", true)
         .order("created_at")
         .overrideTypes<CuentaRow[]>(),
+      deudaActual(),
     ]);
 
   const listaGastos = gastos.data ?? [];
@@ -107,7 +117,7 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
     ingresos: listaIngresos,
     fondos: listaFondos,
     cuentas: cuentas.data ?? [],
-    deuda: deudaCruzada(listaGastos),
+    deuda,
     lineas,
     presupuesto,
     /** `true` si los topes vienen de un mes anterior y no de este. */
@@ -149,6 +159,58 @@ async function topesHeredados(mes: Mes) {
  * rellenar. Es lo que decide qué chips salen primero en el formulario: al mes
  * de uso, arriba están las cuatro de siempre y no hay que buscar nada.
  */
+/**
+ * Lo que se deben hoy, contando todo el histórico.
+ *
+ * No es un dato del mes: una deuda de julio sigue existiendo en agosto. Antes
+ * esto se calculaba con los gastos del mes en curso, así que cada día 1 la
+ * cuenta volvía a cero sola y lo que se debían desaparecía sin que nadie lo
+ * hubiera pagado.
+ */
+export async function deudaActual() {
+  const [gastos, movimientos] = await Promise.all([
+    gastosParaDeuda(),
+    transferencias(),
+  ]);
+  return deudaCruzada(gastos, movimientos);
+}
+
+export async function transferencias() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("transferencias")
+    .select("id, fecha, de_persona, monto, tipo, concepto")
+    .order("fecha", { ascending: false })
+    .order("created_at", { ascending: false })
+    .overrideTypes<TransferenciaRow[]>();
+  return data ?? [];
+}
+
+/**
+ * Todos los gastos del histórico, solo con lo que la deuda necesita.
+ *
+ * La deuda entre los dos no se reinicia el día 1: lo que se deben viene de
+ * todos los meses, así que no puede calcularse con los gastos de uno solo.
+ */
+export async function gastosParaDeuda() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("gastos")
+    .select("id, fecha, descripcion, monto, pagado_por, parte_abraham")
+    .order("fecha", { ascending: false })
+    .overrideTypes<
+      {
+        id: string;
+        fecha: string;
+        descripcion: string;
+        monto: number;
+        pagado_por: Persona;
+        parte_abraham: number;
+      }[]
+    >();
+  return data ?? [];
+}
+
 export async function categoriasUsadas(): Promise<string[]> {
   const supabase = createClient();
   const { data } = await supabase

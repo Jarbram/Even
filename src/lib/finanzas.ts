@@ -213,20 +213,39 @@ export type DeudaCruzada = {
   resumen: string;
 };
 
+/** Dinero que pasa de uno al otro: saldar una deuda o prestar. */
+export type Transferencia = {
+  /** Quien entrega el dinero. */
+  de_persona: Persona;
+  monto: number;
+};
+
 /**
  * El corazón de la app: quién le debe a quién, y cuánto.
  *
  * Cada gasto tiene dos caras — quién lo pagó y a quién le correspondía. La
  * diferencia acumulada entre ambas es la deuda. Un gasto pagado a medias por
  * quien debía pagarlo a medias no mueve nada.
+ *
+ * Las transferencias entran en la misma cuenta: saldar y prestar son la misma
+ * operación con distinta etiqueta —alguien entrega y el saldo se mueve en esa
+ * dirección—, así que no necesitan una rama propia. Isabel pagándole 300 a
+ * Abraham baja lo que Isabel debe; Abraham prestándole 200 a Isabel lo sube.
  */
-export function deudaCruzada(gastos: readonly Gasto[]): DeudaCruzada {
+export function deudaCruzada(
+  gastos: readonly Gasto[],
+  transferencias: readonly Transferencia[] = [],
+): DeudaCruzada {
   let saldoAbraham = 0;
 
   for (const gasto of gastos) {
     const puso = gasto.pagado_por === "abraham" ? gasto.monto : 0;
     const leTocaba = gasto.monto * gasto.parte_abraham;
     saldoAbraham += puso - leTocaba;
+  }
+
+  for (const t of transferencias) {
+    saldoAbraham += t.de_persona === "abraham" ? t.monto : -t.monto;
   }
 
   const monto = redondear(Math.abs(saldoAbraham));

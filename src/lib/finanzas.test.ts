@@ -77,6 +77,47 @@ test("el ruido de coma flotante no se convierte en deuda", () => {
   assert.equal(d.monto, 0.1);
 });
 
+test("saldar la deuda la deja en cero", () => {
+  const gastos = [
+    { monto: 600, pagado_por: "abraham" as const, parte_abraham: 0.5 },
+  ];
+  // Isabel le debe 300 y se los pasa.
+  const d = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 300 }]);
+  assert.equal(d.deudor, null);
+  assert.equal(d.monto, 0);
+});
+
+test("saldar de menos deja el resto, y de más da la vuelta a la deuda", () => {
+  const gastos = [
+    { monto: 600, pagado_por: "abraham" as const, parte_abraham: 0.5 },
+  ];
+
+  const parcial = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 100 }]);
+  assert.equal(parcial.deudor, "isabel");
+  assert.equal(parcial.monto, 200);
+
+  // Pagar de más no es un error: ahora le deben a ella.
+  const pasada = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 500 }]);
+  assert.equal(pasada.deudor, "abraham");
+  assert.equal(pasada.monto, 200);
+});
+
+test("un préstamo suelto suma aunque no haya ningún gasto", () => {
+  // Prestar y saldar son la misma operación con distinto signo, así que van
+  // por el mismo camino y no por una rama aparte.
+  const d = deudaCruzada([], [{ de_persona: "abraham", monto: 200 }]);
+  assert.equal(d.deudor, "isabel");
+  assert.equal(d.monto, 200);
+});
+
+test("gastos y transferencias se compensan entre sí", () => {
+  const d = deudaCruzada(
+    [{ monto: 400, pagado_por: "isabel", parte_abraham: 0.5 }], // Abraham debe 200
+    [{ de_persona: "abraham", monto: 200 }], // y se los pasa
+  );
+  assert.equal(d.deudor, null);
+});
+
 test("redondear corta en el céntimo", () => {
   assert.equal(redondear(0.1 + 0.2), 0.3);
   assert.equal(redondear(1.005), 1.01);

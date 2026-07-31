@@ -234,3 +234,34 @@ export async function borrarFondo(id: string) {
     supabase.from("fondos").delete().eq("id", id),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Entre nosotros: saldar la deuda o prestarse plata
+// ---------------------------------------------------------------------------
+
+const transferencia = z.object({
+  fecha: z.iso.date(),
+  de_persona: persona,
+  monto,
+  tipo: z.enum(["liquidacion", "prestamo"]).catch("liquidacion"),
+  concepto: z.string().trim().max(60).catch(""),
+});
+
+/**
+ * Saldar y prestar entran por aquí: son la misma operación con distinta
+ * etiqueta —alguien entrega y el saldo entre los dos se mueve—, así que
+ * comparten tabla y validación.
+ */
+export async function crearTransferencia(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(transferencia, campos(formData), (datos) =>
+    supabase.from("transferencias").insert(datos),
+  );
+}
+
+export async function borrarTransferencia(id: string) {
+  const supabase = createClient();
+  return ejecutar(uuid, id, (id) =>
+    supabase.from("transferencias").delete().eq("id", id),
+  );
+}

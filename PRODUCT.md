@@ -73,7 +73,13 @@ Confirmado y construido:
 
 - Gastos con categoría, cuenta de pago y reparto entre los dos.
 - Deuda cruzada: cada gasto tiene dos caras — quién lo pagó y a quién le tocaba;
-  la diferencia acumulada es lo que uno le debe al otro.
+  la diferencia acumulada es lo que uno le debe al otro. **No se apunta a mano**
+  (decidido el 31/07/2026): calcularla es justo lo que un Excel hace peor, así
+  que apuntarla otra vez le quitaría el sentido a la app. Lo que sí se registra
+  es el dinero que pasa de uno al otro — saldar una deuda o prestar—, porque sin
+  eso la cuenta solo crece y el número deja de ser creíble.
+- La deuda cuenta todo el histórico, no el mes: lo que se deben en julio sigue
+  debiéndose en agosto.
 - Topes de gasto por categoría, con semáforo. Se acuerdan una vez y siguen
   vigentes los meses siguientes hasta que se cambien.
 - Fondos de ahorro con monto inicial, meta opcional y aportes.
