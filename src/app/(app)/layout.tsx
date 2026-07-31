@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requirePersona } from "@/lib/sesion";
 import { BottomNav } from "@/components/bottom-nav";
 
 export default async function AppLayout({
@@ -7,19 +6,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("household_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.household_id) redirect("/bienvenida");
+  await requirePersona();
 
   return (
     <div className="mx-auto min-h-dvh w-full max-w-[430px]">

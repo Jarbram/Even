@@ -1,32 +1,31 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Cliente de Supabase para Server Components, Server Actions y Route Handlers.
- * En Next 15 `cookies()` es asíncrono, por eso esta función es async.
+ * Cliente de Supabase para Server Components y Server Actions. Solo existe este:
+ * el navegador nunca habla con Supabase directamente.
+ *
+ * Por qué la `service_role` y no la `anon`: sin login, RLS no puede distinguir a
+ * nadie, así que unas políticas abiertas a `anon` dejarían la base entera al
+ * alcance de cualquiera que sacara la URL y la clave del JavaScript — y el PIN
+ * no habría servido de nada, porque PostgREST no sabe nada del PIN.
+ *
+ * Así que las tablas están cerradas a `anon` (RLS activo y sin políticas) y el
+ * único que entra es este cliente, que corre en el servidor detrás del PIN.
+ * Ninguna de estas variables lleva el prefijo NEXT_PUBLIC_ a propósito: si lo
+ * llevaran, acabarían en el bundle del navegador.
  */
-export async function createClient() {
-  const cookieStore = await cookies();
+export function createClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            for (const { name, value, options } of cookiesToSet) {
-              cookieStore.set(name, value, options);
-            }
-          } catch {
-            // Escribir cookies desde un Server Component lanza: el middleware
-            // ya refrescó la sesión, así que aquí se puede ignorar.
-          }
-        },
-      },
-    },
-  );
+  if (!url || !key) {
+    throw new Error(
+      "Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY. Están en Supabase → Project Settings → API.",
+    );
+  }
+
+  return createSupabaseClient(url, key, {
+    // No hay sesiones que guardar: la identidad la lleva la cookie de la app.
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
