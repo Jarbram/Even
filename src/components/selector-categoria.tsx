@@ -18,10 +18,15 @@ const DESTACADAS = 6;
 export function SelectorCategoria({
   categorias,
   label = "Categoría",
+  name = "categoria",
+  nuevaEtiqueta = "Nombre de la categoría nueva",
 }: {
   /** Ya vienen ordenadas por uso, con las sugerencias detrás. */
   categorias: string[];
   label?: string;
+  /** El campo que sale del formulario. También sirve para el concepto. */
+  name?: string;
+  nuevaEtiqueta?: string;
 }) {
   const destacadas = categorias.slice(0, DESTACADAS);
   const resto = categorias.slice(DESTACADAS);
@@ -52,7 +57,7 @@ export function SelectorCategoria({
         )}
       </div>
 
-      <input type="hidden" name="categoria" value={valor} />
+      <input type="hidden" name={name} value={valor} />
 
       <div className="grid grid-cols-3 gap-2">
         {visibles.map((categoria) => {
@@ -91,9 +96,9 @@ export function SelectorCategoria({
             autoFocus
             value={nueva}
             onChange={(e) => setNueva(e.target.value)}
-            placeholder="Nombre de la categoría nueva"
+            placeholder={nuevaEtiqueta}
             maxLength={30}
-            aria-label="Nombre de la categoría nueva"
+            aria-label={nuevaEtiqueta}
           />
           <button
             type="button"
@@ -103,7 +108,7 @@ export function SelectorCategoria({
             }}
             className="self-start text-xs text-muted-foreground"
           >
-            Cancelar y elegir una existente
+            Cancelar y elegir una de la lista
           </button>
         </div>
       )}

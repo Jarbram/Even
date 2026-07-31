@@ -8,25 +8,25 @@ import type { CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
 import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
+import { SelectorCategoria } from "@/components/selector-categoria";
 import { SelectorDestino } from "@/components/selector-destino";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { guardarIngreso, type Resultado } from "../acciones";
 
-/** Conceptos que se repiten mes a mes: un toque en vez de teclearlos. */
-const CONCEPTOS = ["Sueldo", "Extra", "Venta", "Regalo"];
-
 export function FormularioIngreso({
   persona,
   mes,
   cuentas,
   fondos,
+  conceptos,
 }: {
   persona: Persona;
   mes: Mes;
   cuentas: CuentaRow[];
   fondos: FondoRow[];
+  conceptos: string[];
 }) {
   const [estado, action] = useActionState<Resultado, FormData>(
     guardarIngreso,
@@ -77,12 +77,14 @@ export function FormularioIngreso({
         opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
       />
 
-      {/* El concepto casi siempre es el mismo: tocarlo gana a teclearlo. */}
-      <Chips
+      {/* Casi siempre es el mismo, así que tocarlo gana a teclearlo — pero
+          "Otra" sigue abriendo el campo libre: pasar a pastillas fijas había
+          quitado la posibilidad de escribir un concepto propio. */}
+      <SelectorCategoria
+        categorias={conceptos}
         name="descripcion"
         label="Concepto"
-        columnas={2}
-        opciones={CONCEPTOS.map((c) => ({ value: c, label: c }))}
+        nuevaEtiqueta="Escribe el concepto"
       />
 
       <SelectorDestino cuentas={cuentas} fondos={fondos} />

@@ -1,5 +1,5 @@
 import { requirePersona } from "@/lib/sesion";
-import { resumenDelMes } from "@/lib/datos";
+import { conceptosUsados, resumenDelMes } from "@/lib/datos";
 import { NOMBRES } from "@/lib/persona";
 import { claseColor } from "@/lib/cuentas";
 import { mesActual, nombreMes, soles } from "@/lib/finanzas";
@@ -16,8 +16,8 @@ import { FormularioIngreso } from "./formulario-ingreso";
 export default async function IngresosPage() {
   const persona = await requirePersona();
   const mes = mesActual();
-  const { ingresos, ingresosTotal, cuentas, fondos } =
-    await resumenDelMes(mes);
+  const [{ ingresos, ingresosTotal, cuentas, fondos }, conceptos] =
+    await Promise.all([resumenDelMes(mes), conceptosUsados()]);
 
   return (
     <>
@@ -89,6 +89,7 @@ export default async function IngresosPage() {
         mes={mes}
         cuentas={cuentas}
         fondos={fondos}
+        conceptos={conceptos}
       />
     </>
   );

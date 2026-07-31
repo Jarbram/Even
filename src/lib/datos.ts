@@ -202,6 +202,31 @@ export async function categoriasUsadas(): Promise<string[]> {
   ];
 }
 
+const CONCEPTOS_BASE = ["Sueldo", "Extra", "Venta", "Regalo"];
+
+/** Lo mismo que `categoriasUsadas`, para el concepto de los ingresos. */
+export async function conceptosUsados(): Promise<string[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("ingresos")
+    .select("descripcion")
+    .order("created_at", { ascending: false })
+    .limit(100)
+    .overrideTypes<{ descripcion: string }[]>();
+
+  const veces = new Map<string, number>();
+  for (const { descripcion } of data ?? []) {
+    veces.set(descripcion, (veces.get(descripcion) ?? 0) + 1);
+  }
+
+  const usados = [...veces.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([concepto]) => concepto);
+
+  const vistos = new Set(usados);
+  return [...usados, ...CONCEPTOS_BASE.filter((c) => !vistos.has(c))];
+}
+
 export async function listarCuentas() {
   const supabase = createClient();
   const { data } = await supabase
