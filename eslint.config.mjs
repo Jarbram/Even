@@ -18,6 +18,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Los genera next-pwa en cada build; vienen minificados.
+      "public/sw.js",
+      "public/workbox-*.js",
+      "public/swe-worker-*.js",
     ],
   },
 ];
