@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Banknote, Wallet } from "lucide-react";
-import { NOMBRES } from "@/lib/persona";
 import { TIPOS_CUENTA, claseColor, type CuentaRow } from "@/lib/cuentas";
+import { soles } from "@/lib/finanzas";
 import { Label } from "@/components/ui/label";
 import { TarjetaOpcion } from "@/components/tarjeta-opcion";
 
@@ -32,7 +32,8 @@ export function SelectorCuenta({ cuentas }: { cuentas: CuentaRow[] }) {
             name="cuenta_id"
             value={cuenta.id}
             titulo={cuenta.nombre}
-            pie={`${TIPOS_CUENTA[cuenta.tipo]} · ${NOMBRES[cuenta.persona]}`}
+            // Saber cuánto queda en la tarjeta importa más al pagar que de quién es.
+            pie={`${TIPOS_CUENTA[cuenta.tipo]} · ${soles(cuenta.saldo)}`}
             punto={claseColor(cuenta.color)}
             icono={Wallet}
           />

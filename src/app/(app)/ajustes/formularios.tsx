@@ -17,16 +17,6 @@ import {
   type Resultado,
 } from "../acciones";
 
-/** Los nueve colores del diseño, para distinguir cuentas de un vistazo. */
-const COLORES = [
-  { value: "chart-1", label: "Indigo" },
-  { value: "chart-3", label: "Lima" },
-  { value: "chart-4", label: "Celeste" },
-  { value: "chart-6", label: "Rosa" },
-  { value: "chart-5", label: "Ámbar" },
-  { value: "chart-7", label: "Verde" },
-];
-
 function Guardar({ children }: { children: string }) {
   const { pending } = useFormStatus();
   return (
@@ -92,7 +82,25 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
           opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
         />
 
-        <Chips name="color" label="Color" columnas={3} opciones={COLORES} />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="saldo-cuenta">¿Cuánto tiene ahora? (S/)</Label>
+          <Input
+            id="saldo-cuenta"
+            name="saldo_base"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            defaultValue="0"
+          />
+          <p className="text-xs text-muted-foreground">
+            El punto de partida. A partir de ahí sube con los ingresos que
+            entren aquí y baja con lo que pagues con ella.
+          </p>
+        </div>
+
+        {/* El color ya no se elige: se asigna solo, evitando los que estén en
+            uso. Solo sirve para distinguir cuentas en la lista, y era una
+            pregunta más en un formulario que ya tenía cuatro. */}
 
         <Error estado={estado} />
         <Guardar>Añadir cuenta</Guardar>

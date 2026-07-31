@@ -91,12 +91,17 @@ export default async function AjustesPage() {
                           </p>
                         </div>
                         <span className="shrink-0 text-right">
-                          <span className="block text-sm font-semibold">
-                            {soles(redondear(gastado))}
+                          <span
+                            data-negativo={cuenta.saldo < 0}
+                            className="block text-sm font-semibold data-[negativo=true]:text-destructive"
+                          >
+                            {soles(cuenta.saldo)}
                           </span>
-                          <span className="block text-[11px] text-muted-foreground">
-                            este mes
-                          </span>
+                          {gastado > 0 && (
+                            <span className="block text-[11px] text-muted-foreground">
+                              −{soles(redondear(gastado))} este mes
+                            </span>
+                          )}
                         </span>
                         <BotonBorrar
                           accion={borrarCuenta.bind(null, cuenta.id)}

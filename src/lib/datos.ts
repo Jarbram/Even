@@ -106,8 +106,8 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .order("created_at")
         .overrideTypes<DeudaRow[]>(),
       supabase
-        .from("cuentas")
-        .select("id, nombre, tipo, persona, color, activa")
+        .from("cuentas_saldo")
+        .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo")
         .eq("activa", true)
         .order("created_at")
         .overrideTypes<CuentaRow[]>(),
@@ -229,9 +229,10 @@ export async function conceptosUsados(): Promise<string[]> {
 
 export async function listarCuentas() {
   const supabase = createClient();
+  // La vista, no la tabla: trae el saldo de hoy ya calculado.
   const { data } = await supabase
-    .from("cuentas")
-    .select("id, nombre, tipo, persona, color, activa")
+    .from("cuentas_saldo")
+    .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo")
     .order("created_at")
     .overrideTypes<CuentaRow[]>();
   return data ?? [];

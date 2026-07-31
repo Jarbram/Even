@@ -94,14 +94,38 @@ const cuenta = z.object({
   nombre: z.string().trim().min(1, "Ponle nombre a la cuenta").max(40),
   tipo: z.enum(TIPOS),
   persona,
-  color: z.enum(COLORES_DISPONIBLES as [string, ...string[]]).catch("chart-1"),
+  // El punto de partida. El saldo de hoy lo calcula la vista `cuentas_saldo`.
+  saldo_base: z.coerce.number().catch(0),
 });
 
 export async function crearCuenta(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
+  const color = await colorLibre(supabase);
+
   return ejecutar(cuenta, campos(formData), (datos) =>
-    supabase.from("cuentas").insert(datos),
+    supabase.from("cuentas").insert({ ...datos, color }),
   );
+}
+
+/**
+ * Un color que no esté ya en uso, y si están todos, uno al azar.
+ *
+ * El color no lo elige nadie: solo sirve para distinguir cuentas de un vistazo
+ * en la lista de movimientos, así que preferir uno libre antes que el azar puro
+ * es justo lo que hace que cumpla su función. Elegirlo era una pregunta más en
+ * un formulario que ya tenía cuatro.
+ */
+async function colorLibre(supabase: ReturnType<typeof createClient>) {
+  const { data } = await supabase
+    .from("cuentas")
+    .select("color")
+    .overrideTypes<{ color: string }[]>();
+
+  const usados = new Set((data ?? []).map((c) => c.color));
+  const libres = COLORES_DISPONIBLES.filter((c) => !usados.has(c));
+  const donde = libres.length > 0 ? libres : COLORES_DISPONIBLES;
+
+  return donde[Math.floor(Math.random() * donde.length)];
 }
 
 export async function borrarCuenta(id: string) {

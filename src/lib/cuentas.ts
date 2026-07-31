@@ -17,6 +17,10 @@ export type CuentaRow = {
   persona: Persona;
   color: string;
   activa: boolean;
+  /** El punto de partida que se puso al crearla. */
+  saldo_base: number;
+  /** Lo que tiene hoy: base + lo que entró - lo que salió. Lo calcula la vista. */
+  saldo: number;
 };
 
 /**
