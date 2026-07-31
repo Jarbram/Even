@@ -49,3 +49,7 @@ public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
 public/fallback-*.js
+
+# Hooks que otras herramientas de IA dejan en el proyecto. No son del producto.
+.codex/
+.cursor/

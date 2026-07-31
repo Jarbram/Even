@@ -1,0 +1,125 @@
+# Product
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+web
+
+## Users
+
+Abraham e Isabel, una pareja que lleva las cuentas de su casa en Perú. Son los
+dos únicos usuarios y no hay roles: los dos ven y editan todo. No hay invitados,
+ni contadores, ni terceros.
+
+La app se usa en dos situaciones opuestas, y ambas son primarias:
+
+1. **En caliente, al pagar.** De pie, con una mano, con prisa: en la cola del
+   supermercado, al bajar del taxi. El trabajo es *anotar un gasto antes de
+   olvidarlo*, y cada pregunta que se hace en ese momento es una razón para no
+   anotarlo.
+2. **Revisión juntos, una vez al mes.** Sentados los dos, sin prisa. El trabajo
+   es *entender cómo fue el mes, cuadrar quién le debe qué al otro y repartir el
+   presupuesto del siguiente*. Aquí sí hay atención para leer detalle.
+
+Diseñar para una sola de las dos rompe la otra: el registro tiene que ser casi
+sin fricción, la revisión tiene que ser completa.
+
+## Product Purpose
+
+Reemplazar el Excel mensual con el que llevaban las cuentas. La app registra
+gastos, calcula sola la deuda cruzada entre los dos, controla un presupuesto
+base cero por categoría, lleva los fondos de ahorro como cuentas con meta y
+guarda el histórico por mes.
+
+**Éxito confirmado: que ninguno de los dos vuelva a abrir el Excel.** Ese es el
+criterio que decide los empates. La consecuencia es dura y hay que aceptarla: si
+una sola cosa que el Excel hacía no está en la app, el Excel sobrevive y la app
+falla, por bonita que sea. La cobertura funcional gana a la elegancia mientras
+queden huecos.
+
+## Positioning
+
+Una app de dos personas, no una app multiusuario reducida a dos. Eso permite
+cosas que un producto general no puede: no hay registro ni cuentas (se entra con
+un PIN por persona), no hay invitaciones ni permisos, y la deuda cruzada es un
+único número entre dos partes en vez de un sistema de liquidaciones.
+
+## Operating Context
+
+- Moneda: soles peruanos (S/). Idioma: español (Perú). Zona horaria: Lima — el
+  mes al que pertenece un gasto se calcula con el reloj de Lima, no con el del
+  servidor.
+- Mobile-first real: la escena de registro es un móvil en la mano, de pie.
+- Instalable como PWA en la pantalla de inicio.
+- Sustituye a un Excel mensual que sigue existiendo hasta que la app lo cubra.
+
+## Capabilities and Constraints
+
+Confirmado y construido:
+
+- Gastos con categoría, cuenta de pago y reparto entre los dos.
+- Deuda cruzada: cada gasto tiene dos caras — quién lo pagó y a quién le tocaba;
+  la diferencia acumulada es lo que uno le debe al otro.
+- Presupuesto base cero por categoría y mes, con semáforo.
+- Fondos de ahorro con meta, deudas con terceros y simulador de amortización.
+- Gastos recurrentes que se materializan una vez por mes.
+- Cuentas de pago: efectivo, débito, crédito y billeteras (Yape, Plin).
+
+Constraints técnicas que el diseño no puede saltarse:
+
+- **Sin cuentas de usuario.** Se elige persona y se entra con un PIN; la sesión
+  es una cookie firmada con HMAC.
+- **El navegador nunca habla con Supabase.** Sin sesión de Supabase, RLS no
+  puede distinguir a nadie, así que las tablas están cerradas y solo entra el
+  servidor con la clave `service_role`, detrás del PIN. Toda lectura va por
+  Server Components y toda escritura por Server Actions. Un componente de
+  cliente que consulte la base directamente rompe el modelo de seguridad.
+- Las categorías son texto libre normalizado, no una lista cerrada.
+
+Decisión abierta, sin inventar:
+
+- **Las categorías del Excel son las buenas y todavía no están en la app.** Hoy
+  hay doce sugerencias puestas a ojo en `CATEGORIAS_SUGERIDAS`. Falta la lista
+  real del Excel; hasta que llegue, las que se ven son un marcador de posición,
+  no una decisión de producto.
+
+## Brand Commitments
+
+- Nombre: **Nuestro Presupuesto**.
+- Tokens del proyecto de Claude Design *Finanzas Pareja*: carbón `#111214`, lima
+  `#C7F94E`, indigo `#5B5BF5`, superficies glass translúcidas con `backdrop-blur`,
+  radios de 18–26 px, tipografía Space Grotesk.
+- Tema único oscuro. No hay tema claro y no se ha pedido.
+- Todos los tokens viven en `src/app/globals.css`; los componentes nunca
+  escriben un hex.
+
+## Evidence on Hand
+
+- El Excel mensual del que viene todo esto. **No está en el repositorio** y su
+  contenido no se ha visto: sus categorías, sus fórmulas y su histórico son
+  hechos reales que no deben inventarse.
+- No hay usuarios más allá de los dos, ni métricas de uso, ni testimonios, ni
+  datos de producción. Nada de eso debe fabricarse.
+
+## Product Principles
+
+1. **Anotar un gasto no puede costar preguntas.** Cada campo que se pregunta al
+   pagar es una probabilidad de que el gasto no se registre. Los valores del
+   caso normal van puestos; lo raro se despliega.
+2. **El Excel es la vara de medir.** Mientras algo que el Excel hacía no esté,
+   la app no ha ganado. Cobertura antes que pulido.
+3. **La deuda cruzada es el corazón.** Es lo que un Excel a mano hace peor y lo
+   que justifica la app. Tiene que estar siempre visible y siempre bien: sus
+   cálculos llevan pruebas.
+4. **Dos escenas, un producto.** Registrar es de pie y con prisa; revisar es
+   sentados y con calma. Ninguna pantalla debe servir a las dos a medias.
+5. **Lo que sabe la app, no lo pregunta.** Las categorías más usadas salen del
+   historial, la fecha viene puesta, la persona sale de la sesión.
+
+## Accessibility & Inclusion
+
+Sin requisito formal establecido. Lo que el uso real exige: objetivos táctiles
+de 44 px o más (la escena de registro es una mano de pie), contraste suficiente
+sobre superficies translúcidas oscuras, y estado que no dependa solo del color
+—el semáforo del presupuesto también dice el número.

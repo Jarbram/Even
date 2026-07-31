@@ -3,9 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
-import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
+import type { Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
-import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { SelectorCuenta } from "@/components/selector-cuenta";
 import { Button } from "@/components/ui/button";
@@ -90,38 +89,13 @@ export function FormularioGasto({
       </div>
 
       {/*
-        Por defecto: lo paga quien está registrando y se reparte a medias, que
-        es el caso de casi siempre. Quien necesite lo contrario lo despliega;
-        los radios siguen enviándose aunque el bloque esté cerrado.
+        Lo paga quien registra y se reparte a medias. La deuda cruzada sigue
+        necesitando ambos datos, así que viajan aquí en vez de preguntarse.
+        El día que haga falta un gasto de uno solo, esto vuelve a ser un par de
+        campos visibles.
       */}
-      <details className="glass rounded-xl">
-        <summary className="cursor-pointer list-none p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-          <span className="text-primary">⚙</span> Lo pagas tú, a medias
-          <span className="ml-1 text-xs font-normal text-muted-foreground">
-            · cambiar
-          </span>
-        </summary>
-
-        <div className="flex flex-col gap-7 border-t border-border p-4">
-          <Chips
-            name="pagado_por"
-            label="¿Quién pagó?"
-            defaultValue={persona}
-            opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
-          />
-
-          <Chips
-            name="parte_abraham"
-            label="¿De quién es el gasto?"
-            defaultValue="0.5"
-            opciones={[
-              { value: "0.5", label: "A medias" },
-              { value: "1", label: `De ${NOMBRES.abraham}` },
-              { value: "0", label: `De ${NOMBRES.isabel}` },
-            ]}
-          />
-        </div>
-      </details>
+      <input type="hidden" name="pagado_por" value={persona} />
+      <input type="hidden" name="parte_abraham" value="0.5" />
 
       {estado.error && (
         <p role="alert" className="text-sm font-medium text-destructive">
