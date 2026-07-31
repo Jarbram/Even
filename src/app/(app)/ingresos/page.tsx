@@ -1,6 +1,7 @@
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
 import { NOMBRES } from "@/lib/persona";
+import { claseColor } from "@/lib/cuentas";
 import { mesActual, nombreMes, soles } from "@/lib/finanzas";
 import { BotonCerrar } from "@/components/navegacion";
 import { BotonBorrar } from "@/components/boton-borrar";
@@ -15,7 +16,8 @@ import { FormularioIngreso } from "./formulario-ingreso";
 export default async function IngresosPage() {
   const persona = await requirePersona();
   const mes = mesActual();
-  const { ingresos, ingresosTotal } = await resumenDelMes(mes);
+  const { ingresos, ingresosTotal, cuentas, fondos } =
+    await resumenDelMes(mes);
 
   return (
     <>
@@ -46,12 +48,22 @@ export default async function IngresosPage() {
                 key={ingreso.id}
                 className="glass flex items-center gap-3 rounded-lg px-4 py-3"
               >
+                <span
+                  aria-hidden
+                  className={`size-2 shrink-0 rounded-full ${
+                    ingreso.fondos
+                      ? "bg-primary"
+                      : claseColor(ingreso.cuentas?.color)
+                  }`}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
                     {ingreso.descripcion}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="truncate text-[11px] text-muted-foreground">
                     {NOMBRES[ingreso.persona]}
+                    {ingreso.fondos && ` · al ahorro ${ingreso.fondos.nombre}`}
+                    {ingreso.cuentas && ` · a ${ingreso.cuentas.nombre}`}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold">
@@ -72,7 +84,12 @@ export default async function IngresosPage() {
         </>
       )}
 
-      <FormularioIngreso persona={persona} mes={mes} />
+      <FormularioIngreso
+        persona={persona}
+        mes={mes}
+        cuentas={cuentas}
+        fondos={fondos}
+      />
     </>
   );
 }

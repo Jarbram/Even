@@ -61,6 +61,11 @@ export type IngresoRow = {
   persona: Persona;
   descripcion: string;
   monto: number;
+  cuenta_id: string | null;
+  fondo_id: string | null;
+  /** PostgREST devuelve el destino enlazado, o `null` si no se indicó. */
+  cuentas: { nombre: string; color: string } | null;
+  fondos: { nombre: string } | null;
 };
 
 const CAMPOS_GASTO =
@@ -83,8 +88,11 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .overrideTypes<GastoRow[]>(),
       supabase
         .from("ingresos")
-        .select("id, persona, descripcion, monto")
+        .select(
+          "id, persona, descripcion, monto, cuenta_id, fondo_id, cuentas(nombre, color), fondos(nombre)",
+        )
         .eq("mes", mes)
+        .order("created_at", { ascending: false })
         .overrideTypes<IngresoRow[]>(),
       supabase.from("presupuestos").select("categoria, monto").eq("mes", mes),
       supabase

@@ -115,12 +115,25 @@ export async function borrarCuenta(id: string) {
 // Ingresos y presupuesto
 // ---------------------------------------------------------------------------
 
-const ingreso = z.object({
-  mes: mes.default(mesActual()),
-  persona,
-  descripcion: z.string().trim().min(1).max(60).default("Sueldo"),
-  monto,
-});
+const ingreso = z
+  .object({
+    mes: mes.default(mesActual()),
+    persona,
+    descripcion: z.string().trim().min(1).max(60).default("Sueldo"),
+    monto,
+    // El formulario manda un solo campo `destino`: "cuenta:<id>", "fondo:<id>"
+    // o vacío. Se parte aquí para que la base reciba las dos columnas que
+    // entiende, y nunca las dos llenas a la vez.
+    destino: z.string().default(""),
+  })
+  .transform(({ destino, ...resto }) => {
+    const [tipo, id] = destino.split(":");
+    return {
+      ...resto,
+      cuenta_id: tipo === "cuenta" && id ? id : null,
+      fondo_id: tipo === "fondo" && id ? id : null,
+    };
+  });
 
 export async function guardarIngreso(_prev: Resultado, formData: FormData) {
   const supabase = createClient();

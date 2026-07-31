@@ -4,19 +4,29 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
+import type { CuentaRow } from "@/lib/cuentas";
+import type { FondoRow } from "@/lib/datos";
 import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
+import { SelectorDestino } from "@/components/selector-destino";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { guardarIngreso, type Resultado } from "../acciones";
 
+/** Conceptos que se repiten mes a mes: un toque en vez de teclearlos. */
+const CONCEPTOS = ["Sueldo", "Extra", "Venta", "Regalo"];
+
 export function FormularioIngreso({
   persona,
   mes,
+  cuentas,
+  fondos,
 }: {
   persona: Persona;
   mes: Mes;
+  cuentas: CuentaRow[];
+  fondos: FondoRow[];
 }) {
   const [estado, action] = useActionState<Resultado, FormData>(
     guardarIngreso,
@@ -67,17 +77,15 @@ export function FormularioIngreso({
         opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
       />
 
-      <div className="flex flex-col gap-2.5">
-        <Label htmlFor="descripcion">Concepto</Label>
-        <Input
-          id="descripcion"
-          name="descripcion"
-          defaultValue="Sueldo"
-          placeholder="Sueldo, extra, venta…"
-          maxLength={60}
-          required
-        />
-      </div>
+      {/* El concepto casi siempre es el mismo: tocarlo gana a teclearlo. */}
+      <Chips
+        name="descripcion"
+        label="Concepto"
+        columnas={2}
+        opciones={CONCEPTOS.map((c) => ({ value: c, label: c }))}
+      />
+
+      <SelectorDestino cuentas={cuentas} fondos={fondos} />
 
       {estado.error && (
         <p role="alert" className="text-sm font-medium text-destructive">
