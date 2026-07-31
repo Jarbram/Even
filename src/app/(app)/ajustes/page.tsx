@@ -167,7 +167,7 @@ export default async function AjustesPage() {
                         aria-valuemax={100}
                       >
                         <div
-                          className="h-full rounded-full bg-primary"
+                          className="barra h-full rounded-full bg-primary"
                           style={{ width: `${progreso.proporcion * 100}%` }}
                         />
                       </div>

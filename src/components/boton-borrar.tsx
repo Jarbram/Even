@@ -40,7 +40,7 @@ export function BotonBorrar({
   }
 
   return (
-    <span className="flex shrink-0 items-center gap-1">
+    <span className="entra flex shrink-0 items-center gap-1">
       <button
         type="button"
         disabled={pendiente}

@@ -46,7 +46,7 @@ export function TarjetaOpcion({
         span y no con `peer-checked:block` en la propia marca: `peer-checked`
         solo alcanza a hermanos del input, y la marca es un descendiente.
       */}
-      <span className="glass relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition-colors peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:ring-1 peer-checked:ring-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+      <span className="glass relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition active:scale-[0.98] peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:ring-1 peer-checked:ring-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
         <span className="flex items-center justify-between">
           <span aria-hidden className={`size-2 rounded-full ${punto}`} />
           {Icono && (

@@ -114,7 +114,7 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
       >
         <div
           data-estado={estado}
-          className="h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
+          className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
           style={{ width: `${proporcion * 100}%` }}
         />
       </div>
@@ -170,7 +170,7 @@ function Linea({ linea }: { linea: LineaPresupuesto }) {
           >
             <div
               data-estado={linea.estado}
-              className="h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
+              className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
               style={{ width: `${Math.min(linea.proporcion, 1) * 100}%` }}
             />
           </div>

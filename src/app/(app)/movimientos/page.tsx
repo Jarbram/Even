@@ -85,7 +85,7 @@ export default async function MovimientosPage({
           >
             <div
               data-estado={presupuesto.estado}
-              className="h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
+              className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
               style={{
                 width: `${Math.min(totalGastado / presupuesto.tope, 1) * 100}%`,
               }}

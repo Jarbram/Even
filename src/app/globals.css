@@ -160,3 +160,84 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Movimiento
+------------------------------------------------------------------------------
+   Esto es una app que se usa de pie y con prisa, así que el movimiento solo
+   entra donde explica algo: cuánto llevas gastado, de dónde sale un panel, qué
+   acaba de cambiar. Nada de entradas coreografiadas — hacen esperar a quien
+   viene a anotar un gasto en la cola del súper.
+
+   Todo va por `transform` y `opacity`, que el compositor resuelve sin repintar,
+   y con la curva de desaceleración del sistema.
+--------------------------------------------------------------------------- */
+
+@theme inline {
+  --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* La barra crece desde cero: en una app de presupuesto el largo ES el dato, y
+   verlo llegar dice "vas por aquí" mejor que encontrarlo ya puesto. Anima
+   scaleX y no width, que forzaría un reflow por fotograma. */
+@keyframes crecer-barra {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@utility barra {
+  transform-origin: left;
+  animation: crecer-barra 700ms var(--ease-salida) both;
+}
+
+/* Aparecer sin desplazamiento largo: 6 px bastan para que se lea como algo que
+   llega, y no se confunde con el scroll. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@utility entra {
+  animation: entrar 220ms var(--ease-salida) both;
+}
+
+@layer base {
+  /* El panel plegable crece desde su propio borde, que es lo que explica de
+     dónde sale. `::details-content` es de Chrome reciente; donde no exista,
+     abre igual sin animar. */
+  /* Sin esto, una transición hacia `auto` no interpola y el panel abriría de
+     golpe igual. Es lo que hace que la altura pueda animarse sin medirla con
+     JavaScript. */
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 260ms var(--ease-salida),
+      content-visibility 260ms allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+
+  /* Quien pide menos movimiento no debería recibir ninguno: no hay animación
+     aquí que lleve información que no esté también escrita. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after,
+    details::details-content {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -84,7 +84,7 @@ export default async function CuentaPage({
               aria-label={`${soles(saldo.consumido)} consumidos de una línea de ${soles(cuenta.linea)}`}
             >
               <div
-                className="h-full rounded-full bg-primary"
+                className="barra h-full rounded-full bg-primary"
                 style={{ width: `${saldo.proporcion * 100}%` }}
               />
             </div>
