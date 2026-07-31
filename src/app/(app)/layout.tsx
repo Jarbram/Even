@@ -1,5 +1,6 @@
 import { requirePersona } from "@/lib/sesion";
 import { BottomNav } from "@/components/bottom-nav";
+import { AvisoActualizacion } from "@/components/aviso-actualizacion";
 
 export default async function AppLayout({
   children,
@@ -14,6 +15,7 @@ export default async function AppLayout({
           último botón de un formulario largo. */}
       <div className="px-[22px] pt-[26px] pb-40">{children}</div>
       <BottomNav />
+      <AvisoActualizacion />
     </div>
   );
 }

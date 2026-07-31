@@ -132,6 +132,27 @@ lima sobre carbón. El de `-maskable` es un archivo aparte y no una copia del
 normal — Android recorta el icono en círculo o squircle, así que esa versión
 deja el signo dentro del 80 % central del lienzo.
 
+## Cómo llega una versión nueva a quien ya la tiene instalada
+
+Las páginas van `NetworkFirst`, así que abrir la app con conexión ya trae lo
+último del servidor: el caché solo entra si no hay red. Los chunks de Next
+llevan hash en el nombre, de modo que un despliegue pide archivos nuevos y no
+reutiliza los viejos.
+
+El hueco es quien deja la app abierta: navegar entre pestañas no recarga el
+bundle, así que puede seguir con la versión de ayer sin enterarse. Para eso
+está `AvisoActualizacion`, que escucha al service worker y ofrece un botón de
+recargar cuando hay algo nuevo instalado. Avisa, no recarga solo: hacerlo a
+mitad de un gasto a medio escribir perdería lo tecleado.
+
+Resumen práctico tras un despliegue:
+
+| Situación | Cuándo ven lo nuevo |
+| --- | --- |
+| Abren la app desde el icono | Al momento |
+| La tienen abierta | Cuando toquen "Actualizar" en el aviso |
+| Sin conexión | La última versión que cargaron, hasta recuperar red |
+
 ## Deploy en Vercel
 
 1. Sube el repo a GitHub e impórtalo en [vercel.com/new](https://vercel.com/new).
