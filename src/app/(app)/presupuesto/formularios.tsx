@@ -3,15 +3,13 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
-import { NOMBRES, PERSONAS } from "@/lib/persona";
 import type { Mes } from "@/lib/finanzas";
-import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { Plegable } from "@/components/plegable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { guardarIngreso, guardarPresupuesto, type Resultado } from "../acciones";
+import { guardarPresupuesto, type Resultado } from "../acciones";
 
 function Guardar({ children }: { children: string }) {
   const { pending } = useFormStatus();
@@ -82,57 +80,6 @@ export function NuevoPresupuesto({
         <p className="text-xs text-muted-foreground">
           Si la categoría ya tenía monto, este lo reemplaza.
         </p>
-      </form>
-    </Plegable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-
-export function NuevoIngreso({ mes }: { mes: Mes }) {
-  const [estado, action] = useActionState<Resultado, FormData>(
-    guardarIngreso,
-    {},
-  );
-  const ref = useAlGuardar(estado, "Ingreso añadido");
-
-  return (
-    <Plegable titulo="Añadir ingreso">
-      <form ref={ref} action={action} className="flex flex-col gap-7">
-        <input type="hidden" name="mes" value={mes} />
-
-        <Chips
-          name="persona"
-          label="De quién"
-          opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
-        />
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="descripcion-ingreso">Concepto</Label>
-          <Input
-            id="descripcion-ingreso"
-            name="descripcion"
-            defaultValue="Sueldo"
-            maxLength={60}
-            required
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="monto-ingreso">Monto (S/)</Label>
-          <Input
-            id="monto-ingreso"
-            name="monto"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0.01"
-            required
-          />
-        </div>
-
-        <Error estado={estado} />
-        <Guardar>Añadir</Guardar>
       </form>
     </Plegable>
   );

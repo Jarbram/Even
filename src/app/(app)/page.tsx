@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { ArrowUpRight, Plus, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Plus,
+  SlidersHorizontal,
+} from "lucide-react";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
@@ -8,10 +13,10 @@ import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, deuda, baseCero, fondos } =
+  const { mes, gastos, restante, ahorros, deuda, presupuesto, fondos } =
     await resumenDelMes();
 
-  const sinPresupuesto = baseCero.asignado === 0;
+  const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
 
   return (
@@ -46,20 +51,20 @@ export default async function HomePage() {
         {nombreMes(mes)}
       </p>
 
-      <div className="mb-8 grid grid-cols-2 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-3">
         {/* La tarjeta grande del diseño: indigo lleno, no glass. */}
         <Tarjeta
           href="/presupuesto"
           titulo="Presupuesto restante"
           className="bg-secondary text-secondary-foreground"
         >
-          {sinPresupuesto ? (
+          {sinTopes ? (
             // Un "S/ 0.00" aquí sería mentira: no es que no quede nada, es que
-            // todavía no se ha repartido nada.
+            // todavía no hay topes contra los que medir.
             <p className="text-[15px] leading-snug font-bold">
-              Reparte el mes
+              Pon los topes
               <span className="mt-1 block text-[11px] font-medium text-white/75">
-                Aún no hay presupuesto
+                Un máximo por categoría
               </span>
             </p>
           ) : (
@@ -113,6 +118,19 @@ export default async function HomePage() {
         </Link>
       </div>
 
+      {/*
+        El ingreso va aparte y en segundo plano a propósito: se registra dos
+        veces al mes, mientras que los gastos se anotan a diario. Darles el
+        mismo peso pondría delante lo que menos se toca.
+      */}
+      <Link
+        href="/ingresos/nuevo"
+        className="glass mb-8 flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        <ArrowDownLeft aria-hidden className="size-4 text-primary" />
+        Registrar ingreso
+      </Link>
+
       <div className="mb-2.5 flex items-baseline justify-between">
         <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Actividad reciente
@@ -128,7 +146,7 @@ export default async function HomePage() {
       </div>
 
       {gastos.length === 0 ? (
-        <PrimerosPasos sinPresupuesto={sinPresupuesto} />
+        <PrimerosPasos sinTopes={sinTopes} />
       ) : (
         <ul className="flex flex-col gap-2">
           {gastos.slice(0, 6).map((gasto) => (
@@ -146,12 +164,12 @@ export default async function HomePage() {
  * El mes sin un solo gasto es la primera pantalla que van a ver, y también la
  * de cada día 1. En vez de un aviso gris, dice qué falta y lleva a hacerlo.
  */
-function PrimerosPasos({ sinPresupuesto }: { sinPresupuesto: boolean }) {
+function PrimerosPasos({ sinTopes }: { sinTopes: boolean }) {
   const pasos = [
-    sinPresupuesto && {
+    sinTopes && {
       href: "/presupuesto",
-      titulo: "Reparte el mes",
-      pie: "Carga los ingresos y dale un monto a cada categoría.",
+      titulo: "Acuerden los topes",
+      pie: "Un máximo por categoría. Valen también los meses siguientes.",
     },
     {
       href: "/movimientos/nuevo",

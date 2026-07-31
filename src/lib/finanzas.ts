@@ -311,60 +311,91 @@ export function lineasPresupuesto(
         estado: semaforo(gastado, presupuestado),
       };
     })
-    .sort((a, b) => b.gastado - a.gastado);
+    // Por urgencia, no por monto: arriba lo que hay que ajustar. Una categoría
+    // pequeña al 200 % importa más que una grande al 40 %.
+    .sort((a, b) => URGENCIA[b.estado] - URGENCIA[a.estado] || b.proporcion - a.proporcion);
 }
 
+const URGENCIA: Record<Estado, number> = { excedido: 2, ajustado: 1, ok: 0 };
+
 // ---------------------------------------------------------------------------
-// Base cero
+// Cumplimiento del presupuesto
+//
+// El presupuesto NO se reparte sobre los ingresos. La pareja decide de antemano
+// un tope de gasto por categoría, y esos topes se mantienen mes a mes. Lo que la
+// app tiene que contestar es otra cosa:
+//
+//   1. ¿Estoy cumpliendo?
+//   2. ¿En qué me estoy excediendo?
+//   3. ¿Qué tengo que ajustar?
+//
+// Por eso lo primero que se calcula y lo primero que se enseña son las
+// categorías pasadas de tope, no un total agregado.
 // ---------------------------------------------------------------------------
 
-export type BaseCero = {
-  ingresos: number;
-  asignado: number;
-  /** Positivo: queda plata sin nombre. Negativo: presupuestaron de más. */
-  porAsignar: number;
-  estado: "vacio" | "cuadrado" | "sobra" | "falta";
+export type ResumenPresupuesto = {
+  /** La suma de los topes de todas las categorías. */
+  tope: number;
+  gastado: number;
+  /** Lo que queda del tope. Negativo: se pasaron. */
+  restante: number;
+  estado: "sin-topes" | Estado;
   resumen: string;
+  /** Las categorías pasadas de tope, de la peor a la menos mala. */
+  excedidas: LineaPresupuesto[];
+  /** Las que están cerca del tope pero aún no se han pasado. */
+  enRiesgo: LineaPresupuesto[];
 };
 
 /**
- * Base cero significa que cada sol de ingreso tiene un destino asignado. Esto
- * dice cuánto falta para llegar ahí.
+ * ¿Cumplimos el presupuesto y, si no, dónde nos estamos pasando?
+ *
+ * `gastado` suma también lo de categorías sin tope: gastar donde no hay tope
+ * sigue siendo gastar, y esconderlo del total daría una sensación falsa de
+ * control. En cambio no cuenta para `restante`, que solo mide lo acordado.
  */
-export function baseCero(
-  ingresos: readonly { monto: number }[],
-  presupuestos: readonly { monto: number }[],
-): BaseCero {
-  const total = ingresos.reduce((suma, i) => suma + i.monto, 0);
-  const asignado = presupuestos.reduce((suma, p) => suma + p.monto, 0);
-  const porAsignar = redondear(total - asignado);
+export function resumenPresupuesto(
+  lineas: readonly LineaPresupuesto[],
+): ResumenPresupuesto {
+  const tope = redondear(lineas.reduce((suma, l) => suma + l.presupuestado, 0));
+  const gastado = redondear(lineas.reduce((suma, l) => suma + l.gastado, 0));
+  const restante = redondear(tope - gastado);
 
-  // Un mes en blanco también da cero, y decir "todo está asignado" cuando no se
-  // ha cargado nada es la peor manera de mentir: suena a que está hecho.
-  const enBlanco = total === 0 && asignado === 0;
+  // Peor primero: lo que más se ha pasado es lo primero que hay que ajustar.
+  const excedidas = lineas
+    .filter((l) => l.estado === "excedido" && l.presupuestado > 0)
+    .sort((a, b) => b.proporcion - a.proporcion);
 
-  const estado = enBlanco
-    ? "vacio"
-    : Math.abs(porAsignar) < 0.01
-      ? "cuadrado"
-      : porAsignar > 0
-        ? "sobra"
-        : "falta";
+  const enRiesgo = lineas
+    .filter((l) => l.estado === "ajustado")
+    .sort((a, b) => b.proporcion - a.proporcion);
 
-  const resumen = {
-    vacio: "Carga los ingresos del mes para empezar",
-    cuadrado: "Todo el mes está asignado",
-    sobra: `Te falta asignar ${soles(Math.abs(porAsignar))}`,
-    falta: `Asignaste ${soles(Math.abs(porAsignar))} de más`,
-  }[estado];
+  if (tope === 0) {
+    return {
+      tope,
+      gastado,
+      restante,
+      estado: "sin-topes",
+      resumen: "Pon un tope a cada categoría para empezar a controlar",
+      excedidas,
+      enRiesgo,
+    };
+  }
 
-  return {
-    ingresos: redondear(total),
-    asignado: redondear(asignado),
-    porAsignar,
-    estado,
-    resumen,
-  };
+  const estado = semaforo(gastado, tope);
+
+  const resumen =
+    excedidas.length > 0
+      ? `Te estás pasando en ${excedidas.length} ${
+          excedidas.length === 1 ? "categoría" : "categorías"
+        }`
+      : estado === "excedido"
+        ? `Te pasaste ${soles(Math.abs(restante))} del tope`
+        : enRiesgo.length > 0
+          ? `Ojo con ${enRiesgo[0].categoria}, va al ${Math.round(enRiesgo[0].proporcion * 100)} %`
+          : "Vas dentro de lo acordado";
+
+  return { tope, gastado, restante, estado, resumen, excedidas, enRiesgo };
 }
 
 // ---------------------------------------------------------------------------

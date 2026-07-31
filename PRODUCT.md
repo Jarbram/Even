@@ -28,9 +28,22 @@ sin fricción, la revisión tiene que ser completa.
 ## Product Purpose
 
 Reemplazar el Excel mensual con el que llevaban las cuentas. La app registra
-gastos, calcula sola la deuda cruzada entre los dos, controla un presupuesto
-base cero por categoría, lleva los fondos de ahorro como cuentas con meta y
-guarda el histórico por mes.
+gastos, calcula sola la deuda cruzada entre los dos, controla el gasto contra
+los topes acordados por categoría, lleva los fondos de ahorro como cuentas con
+meta y guarda el histórico por mes.
+
+**El presupuesto no es base cero y no se reparte sobre los ingresos.** Confirmado
+por el usuario el 31/07/2026: la pareja acuerda de antemano un tope de gasto por
+categoría, y esos topes se mantienen mes a mes. Los ingresos entran, se gasta, y
+lo que la app tiene que contestar es otra cosa:
+
+1. ¿Estoy cumpliendo el presupuesto?
+2. ¿En qué me estoy excediendo?
+3. ¿Qué tengo que ajustar?
+
+De ahí que el orden de la pantalla de presupuesto sea ese, y que las categorías
+se ordenen por urgencia y no por monto: una categoría pequeña al 200 % importa
+más que una grande al 40 %.
 
 **Éxito confirmado: que ninguno de los dos vuelva a abrir el Excel.** Ese es el
 criterio que decide los empates. La consecuencia es dura y hay que aceptarla: si
@@ -61,7 +74,8 @@ Confirmado y construido:
 - Gastos con categoría, cuenta de pago y reparto entre los dos.
 - Deuda cruzada: cada gasto tiene dos caras — quién lo pagó y a quién le tocaba;
   la diferencia acumulada es lo que uno le debe al otro.
-- Presupuesto base cero por categoría y mes, con semáforo.
+- Topes de gasto por categoría, con semáforo. Se acuerdan una vez y siguen
+  vigentes los meses siguientes hasta que se cambien.
 - Fondos de ahorro con meta, deudas con terceros y simulador de amortización.
 - Gastos recurrentes que se materializan una vez por mes.
 - Cuentas de pago: efectivo, débito, crédito y billeteras (Yape, Plin).

@@ -3,11 +3,11 @@ import type { Persona } from "./persona";
 import type { CuentaRow } from "./cuentas";
 import {
   CATEGORIAS_SUGERIDAS,
-  baseCero,
   deudaCruzada,
   lineasPresupuesto,
   mesActual,
   redondear,
+  resumenPresupuesto,
   type Mes,
 } from "./finanzas";
 
@@ -107,11 +107,16 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
 
   const listaGastos = gastos.data ?? [];
   const listaIngresos = ingresos.data ?? [];
-  const listaPresupuestos = presupuestos.data ?? [];
   const listaFondos = fondos.data ?? [];
 
-  const cuadre = baseCero(listaIngresos, listaPresupuestos);
-  const totalGastado = listaGastos.reduce((suma, g) => suma + g.monto, 0);
+  // Los topes se deciden una vez, no cada mes: si este mes no tiene ninguno
+  // propio, siguen valiendo los últimos acordados.
+  const topes = presupuestos.data?.length
+    ? presupuestos.data
+    : await topesHeredados(mes);
+
+  const lineas = lineasPresupuesto(topes, listaGastos);
+  const presupuesto = resumenPresupuesto(lineas);
 
   return {
     mes,
@@ -121,13 +126,40 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
     deudas: deudas.data ?? [],
     cuentas: cuentas.data ?? [],
     deuda: deudaCruzada(listaGastos),
-    presupuesto: lineasPresupuesto(listaPresupuestos, listaGastos),
-    baseCero: cuadre,
-    totalGastado: redondear(totalGastado),
-    /** Lo que queda del presupuesto asignado, no de los ingresos. */
-    restante: redondear(cuadre.asignado - totalGastado),
+    lineas,
+    presupuesto,
+    /** `true` si los topes vienen de un mes anterior y no de este. */
+    topesHeredados: !presupuestos.data?.length && topes.length > 0,
+    totalGastado: presupuesto.gastado,
+    restante: presupuesto.restante,
+    ingresosTotal: redondear(
+      listaIngresos.reduce((suma, i) => suma + i.monto, 0),
+    ),
     ahorros: redondear(listaFondos.reduce((suma, f) => suma + f.saldo, 0)),
   };
+}
+
+/**
+ * Los topes del mes con topes más reciente anterior a `mes`.
+ *
+ * ponytail: se copian al vuelo en vez de duplicar filas en cada mes nuevo. Así
+ * cambiar un tope en enero no reescribe la historia de diciembre, y no hace
+ * falta un proceso que cree el mes.
+ */
+async function topesHeredados(mes: Mes) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("presupuestos")
+    .select("mes, categoria, monto")
+    .lt("mes", mes)
+    .order("mes", { ascending: false })
+    .limit(60)
+    .overrideTypes<{ mes: string; categoria: string; monto: number }[]>();
+
+  if (!data?.length) return [];
+
+  const ultimo = data[0].mes;
+  return data.filter((t) => t.mes === ultimo);
 }
 
 /**

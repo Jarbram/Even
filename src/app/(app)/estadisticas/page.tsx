@@ -33,7 +33,7 @@ export default async function EstadisticasPage({
   // El mes viene de la URL, así que se valida antes de consultar con él.
   const mes: Mes = ES_MES.test(params.mes ?? "") ? params.mes! : mesActual();
 
-  const [{ gastos, presupuesto, totalGastado, ahorros, restante }, historico] =
+  const [{ gastos, lineas, totalGastado, ahorros, restante }, historico] =
     await Promise.all([resumenDelMes(mes), historicoMensual(12)]);
 
   const barras =
@@ -96,13 +96,13 @@ export default async function EstadisticasPage({
         Por categoría
       </p>
 
-      {presupuesto.length === 0 ? (
+      {lineas.length === 0 ? (
         <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
           Sin datos este mes.
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-2.5">
-          {presupuesto.map((linea) => (
+          {lineas.map((linea) => (
             <li key={linea.categoria} className="glass rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
@@ -126,8 +126,8 @@ export default async function EstadisticasPage({
                 Promedio {soles(redondear(linea.gastado / dias))}/día
                 <br />
                 {linea.presupuestado > 0
-                  ? `Meta ${soles(linea.presupuestado)}`
-                  : "Sin meta"}
+                  ? `Tope ${soles(linea.presupuestado)}`
+                  : "Sin tope"}
               </p>
             </li>
           ))}

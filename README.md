@@ -1,8 +1,9 @@
 # Nuestro Presupuesto
 
 PWA de finanzas para una pareja. Reemplaza el Excel mensual: registra gastos,
-calcula sola la deuda cruzada entre ambos, controla presupuesto base cero,
-lleva los fondos de ahorro como cuentas con meta y guarda histórico por mes.
+calcula sola la deuda cruzada entre ambos, controla el gasto contra los topes
+acordados por categoría, lleva los fondos de ahorro como cuentas con meta y
+guarda histórico por mes.
 
 Moneda: soles (S/). Idioma: español. Mobile-first, modo oscuro.
 
@@ -96,8 +97,9 @@ supabase db reset  # aplica todas las migraciones desde cero
 
 1. `npm run dev` → `http://localhost:3000`.
 2. Te manda a `/entrar`: elige quién eres y escribe tu PIN.
-3. Ve a **Presupuesto** y carga los ingresos del mes y el reparto por
-   categoría. El resto de pantallas se apoya en eso.
+3. Ve a **Presupuesto** y ponle un tope a cada categoría. Se acuerdan una vez
+   y siguen vigentes los meses siguientes; el resto de pantallas mide contra
+   ellos.
 
 ## Comandos
 
@@ -141,7 +143,8 @@ src/
   app/
     (app)/            rutas con sesión: shell + navegación inferior
       acciones.ts     todas las escrituras (Server Actions + Zod)
-      presupuesto/    ingresos, asignación por categoría y semáforo
+      presupuesto/    topes por categoría y semáforo de cumplimiento
+      ingresos/       registrar lo que entra
     entrar/           elegir persona + PIN
     globals.css       TODOS los design tokens
     manifest.ts       manifest de la PWA
@@ -176,7 +179,7 @@ cualquiera.
   PWA instalable.
 - **Fase 2 — hecha.** Esquema completo: gastos, recurrentes, ingresos,
   presupuestos, fondos y deudas.
-- **Fase 3 — hecha.** Deuda cruzada, semáforo de presupuesto base cero,
+- **Fase 3 — hecha.** Deuda cruzada, semáforo de topes por categoría,
   ahorros con meta, simulador de deudas y materialización de recurrentes, con
   pruebas.
 - Fase 4 — pantallas con datos reales. Hechas: inicio y presupuesto. Faltan

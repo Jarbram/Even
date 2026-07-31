@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   ahorroPorPagarMas,
-  baseCero,
+  resumenPresupuesto,
   desplazarMes,
   deudaCruzada,
   diasDelMes,
@@ -112,24 +112,64 @@ test("las categorías gastadas sin presupuesto aparecen igual", () => {
   assert.equal(mercado?.restante, 300);
 });
 
-test("un mes en blanco no está «cuadrado», está vacío", () => {
-  // Sin ingresos ni presupuesto la resta da cero, pero decir "todo el mes está
-  // asignado" suena a que ya está hecho. Es el peor cero de todos.
-  const blanco = baseCero([], []);
-  assert.equal(blanco.estado, "vacio");
-  assert.doesNotMatch(blanco.resumen, /asignado/);
-
-  // Con ingresos cargados y todo repartido sí está cuadrado de verdad.
-  assert.equal(baseCero([{ monto: 100 }], [{ monto: 100 }]).estado, "cuadrado");
-  // Y asignar 0 de 0 ingresos con gastos ya registrados no es un mes en blanco.
-  assert.equal(baseCero([{ monto: 500 }], []).estado, "sobra");
+test("sin topes puestos, el presupuesto no dice que vayas bien", () => {
+  const sinNada = resumenPresupuesto(lineasPresupuesto([], []));
+  assert.equal(sinNada.estado, "sin-topes");
+  assert.doesNotMatch(sinNada.resumen, /dentro/);
 });
 
-test("base cero: cuadrado, sobra y falta", () => {
-  assert.equal(baseCero([{ monto: 3000 }], [{ monto: 3000 }]).estado, "cuadrado");
-  assert.equal(baseCero([{ monto: 3000 }], [{ monto: 2500 }]).estado, "sobra");
-  assert.equal(baseCero([{ monto: 3000 }], [{ monto: 3200 }]).estado, "falta");
-  assert.equal(baseCero([{ monto: 3000 }], [{ monto: 3200 }]).porAsignar, -200);
+test("el resumen señala en qué se están pasando, no solo el total", () => {
+  const lineas = lineasPresupuesto(
+    [
+      { categoria: "Mercado", monto: 800 },
+      { categoria: "Ocio", monto: 100 },
+      { categoria: "Alquiler", monto: 1500 },
+    ],
+    [
+      { categoria: "Mercado", monto: 400 }, // 50 %: bien
+      { categoria: "Ocio", monto: 250 }, // 250 %: pasadísimo
+      { categoria: "Alquiler", monto: 1500 }, // 100 %: pasado justo
+    ],
+  );
+  const r = resumenPresupuesto(lineas);
+
+  assert.equal(r.excedidas.length, 2);
+  // Peor primero: Ocio al 250 % antes que Alquiler al 100 %.
+  assert.equal(r.excedidas[0].categoria, "Ocio");
+  assert.match(r.resumen, /2 categorías/);
+
+  // El total va holgado (2150 de 2400) y aun así hay que ajustar dos cosas: es
+  // justo lo que un único número agregado escondería.
+  assert.equal(r.tope, 2400);
+  assert.equal(r.gastado, 2150);
+  assert.ok(r.restante > 0);
+});
+
+test("cumplir el presupuesto se dice sin rodeos", () => {
+  const r = resumenPresupuesto(
+    lineasPresupuesto(
+      [{ categoria: "Mercado", monto: 800 }],
+      [{ categoria: "Mercado", monto: 200 }],
+    ),
+  );
+  assert.equal(r.estado, "ok");
+  assert.equal(r.excedidas.length, 0);
+  assert.match(r.resumen, /dentro/);
+});
+
+test("las categorías se ordenan por urgencia, no por monto", () => {
+  const lineas = lineasPresupuesto(
+    [
+      { categoria: "Alquiler", monto: 2000 },
+      { categoria: "Ocio", monto: 50 },
+    ],
+    [
+      { categoria: "Alquiler", monto: 800 }, // mucho dinero, 40 %
+      { categoria: "Ocio", monto: 100 }, // poco dinero, 200 %
+    ],
+  );
+  // Ocio primero aunque sean 100 soles contra 800: es lo que hay que ajustar.
+  assert.equal(lineas[0].categoria, "Ocio");
 });
 
 test("simulador: una deuda sin intereses son saldo / cuota meses", () => {
