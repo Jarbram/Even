@@ -2,6 +2,7 @@ import { createClient } from "./supabase/server";
 import type { Persona } from "./persona";
 import type { CuentaRow } from "./cuentas";
 import {
+  CATEGORIAS_SUGERIDAS,
   baseCero,
   deudaCruzada,
   lineasPresupuesto,
@@ -127,6 +128,38 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
     restante: redondear(cuadre.asignado - totalGastado),
     ahorros: redondear(listaFondos.reduce((suma, f) => suma + f.saldo, 0)),
   };
+}
+
+/**
+ * Las categorías ordenadas por cuánto se usan, con las sugerencias detrás para
+ * rellenar. Es lo que decide qué chips salen primero en el formulario: al mes
+ * de uso, arriba están las cuatro de siempre y no hay que buscar nada.
+ */
+export async function categoriasUsadas(): Promise<string[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("gastos")
+    .select("categoria")
+    .order("fecha", { ascending: false })
+    // Un año largo de gastos basta para saber qué se usa; leer el histórico
+    // entero solo para ordenar chips sería tirar el dinero.
+    .limit(500)
+    .overrideTypes<{ categoria: string }[]>();
+
+  const veces = new Map<string, number>();
+  for (const { categoria } of data ?? []) {
+    veces.set(categoria, (veces.get(categoria) ?? 0) + 1);
+  }
+
+  const usadas = [...veces.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([categoria]) => categoria);
+
+  const vistas = new Set(usadas);
+  return [
+    ...usadas,
+    ...CATEGORIAS_SUGERIDAS.filter((c) => !vistas.has(c)),
+  ];
 }
 
 export async function listarCuentas() {

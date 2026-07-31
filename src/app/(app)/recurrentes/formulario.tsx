@@ -4,15 +4,21 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
-import { CATEGORIAS } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
+import { SelectorCategoria } from "@/components/selector-categoria";
 import { Plegable } from "@/components/plegable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { crearRecurrente, type Resultado } from "../acciones";
 
-export function NuevoRecurrente({ persona }: { persona: Persona }) {
+export function NuevoRecurrente({
+  persona,
+  categorias,
+}: {
+  persona: Persona;
+  categorias: string[];
+}) {
   const [estado, action] = useActionState<Resultado, FormData>(
     crearRecurrente,
     {},
@@ -27,7 +33,7 @@ export function NuevoRecurrente({ persona }: { persona: Persona }) {
 
   return (
     <Plegable titulo="Añadir gasto recurrente">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="descripcion-rec">¿Qué es?</Label>
           <Input
@@ -52,12 +58,7 @@ export function NuevoRecurrente({ persona }: { persona: Persona }) {
           />
         </div>
 
-        <Chips
-          name="categoria"
-          label="Categoría"
-          columnas={3}
-          opciones={CATEGORIAS.map((c) => ({ value: c, label: c }))}
-        />
+        <SelectorCategoria categorias={categorias} />
 
         <Chips
           name="pagado_por"

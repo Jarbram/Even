@@ -24,7 +24,7 @@ export function NuevaDeuda() {
 
   return (
     <Plegable titulo="Añadir deuda">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="nombre-deuda">¿Con quién?</Label>
           <Input

@@ -11,6 +11,7 @@ import {
   lineasPresupuesto,
   mesDe,
   mesesParaMeta,
+  normalizarCategoria,
   porDiaDelMes,
   porSemanaDelMes,
   progresoFondo,
@@ -171,6 +172,18 @@ test("el promedio diario usa los días vividos, no el mes entero", () => {
   assert.equal(diasTranscurridos("2026-07-01", "2026-07-10"), 10);
   // Mes pasado: cuenta entero.
   assert.equal(diasTranscurridos("2026-06-01", "2026-07-10"), 30);
+});
+
+test("las categorías escritas a mano no se duplican por mayúsculas ni espacios", () => {
+  const esperado = "Comer fuera";
+  for (const variante of [
+    "comer fuera",
+    "COMER FUERA",
+    "  Comer Fuera  ",
+    "Comer  fuera",
+  ]) {
+    assert.equal(normalizarCategoria(variante), esperado, `falló: ${variante}`);
+  }
 });
 
 test("el calendario alinea el día 1 con su día de la semana", () => {

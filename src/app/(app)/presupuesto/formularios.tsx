@@ -4,8 +4,9 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS } from "@/lib/persona";
-import { CATEGORIAS, type Mes } from "@/lib/finanzas";
+import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
+import { SelectorCategoria } from "@/components/selector-categoria";
 import { Plegable } from "@/components/plegable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,13 @@ function Error({ estado }: { estado: Resultado }) {
 
 // ---------------------------------------------------------------------------
 
-export function NuevoPresupuesto({ mes }: { mes: Mes }) {
+export function NuevoPresupuesto({
+  mes,
+  categorias,
+}: {
+  mes: Mes;
+  categorias: string[];
+}) {
   const [estado, action] = useActionState<Resultado, FormData>(
     guardarPresupuesto,
     {},
@@ -51,15 +58,10 @@ export function NuevoPresupuesto({ mes }: { mes: Mes }) {
 
   return (
     <Plegable titulo="Asignar a una categoría">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <input type="hidden" name="mes" value={mes} />
 
-        <Chips
-          name="categoria"
-          label="Categoría"
-          columnas={3}
-          opciones={CATEGORIAS.map((c) => ({ value: c, label: c }))}
-        />
+        <SelectorCategoria categorias={categorias} />
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="monto-presupuesto">Monto (S/)</Label>
@@ -96,7 +98,7 @@ export function NuevoIngreso({ mes }: { mes: Mes }) {
 
   return (
     <Plegable titulo="Añadir ingreso">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <input type="hidden" name="mes" value={mes} />
 
         <Chips

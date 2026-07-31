@@ -59,7 +59,7 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
 
   return (
     <Plegable titulo="Añadir billetera o tarjeta">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="nombre-cuenta">Nombre</Label>
           <Input
@@ -104,7 +104,7 @@ export function NuevoFondo() {
 
   return (
     <Plegable titulo="Crear fondo de ahorro">
-      <form ref={ref} action={action} className="flex flex-col gap-5">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="nombre-fondo">Nombre</Label>
           <Input

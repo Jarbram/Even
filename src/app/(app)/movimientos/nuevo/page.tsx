@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { requirePersona } from "@/lib/sesion";
-import { listarCuentas } from "@/lib/datos";
+import { categoriasUsadas, listarCuentas } from "@/lib/datos";
 import { hoyISO } from "@/lib/finanzas";
 import { FormularioGasto } from "./formulario-gasto";
 
 export default async function NuevoGastoPage() {
   const persona = await requirePersona();
-  const cuentas = (await listarCuentas()).filter((c) => c.activa);
+  const [cuentas, categorias] = await Promise.all([
+    listarCuentas(),
+    categoriasUsadas(),
+  ]);
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-7 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold">Nuevo gasto</h1>
         <Link
           href="/"
@@ -21,7 +24,12 @@ export default async function NuevoGastoPage() {
         </Link>
       </div>
 
-      <FormularioGasto persona={persona} cuentas={cuentas} hoy={hoyISO()} />
+      <FormularioGasto
+        persona={persona}
+        cuentas={cuentas.filter((c) => c.activa)}
+        categorias={categorias}
+        hoy={hoyISO()}
+      />
     </>
   );
 }

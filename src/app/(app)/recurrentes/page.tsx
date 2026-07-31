@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { requirePersona } from "@/lib/sesion";
-import { listarRecurrentes } from "@/lib/datos";
+import { categoriasUsadas, listarRecurrentes } from "@/lib/datos";
 import { NOMBRES } from "@/lib/persona";
 import { soles } from "@/lib/finanzas";
 import { NuevoRecurrente } from "./formulario";
 
 export default async function RecurrentesPage() {
   const persona = await requirePersona();
-  const recurrentes = await listarRecurrentes();
+  const [recurrentes, categorias] = await Promise.all([
+    listarRecurrentes(),
+    categoriasUsadas(),
+  ]);
 
   const activos = recurrentes.filter((r) => r.activo);
   const mensual = activos.reduce((suma, r) => suma + r.monto, 0);
@@ -66,7 +69,7 @@ export default async function RecurrentesPage() {
         </ul>
       )}
 
-      <NuevoRecurrente persona={persona} />
+      <NuevoRecurrente persona={persona} categorias={categorias} />
     </>
   );
 }

@@ -13,7 +13,7 @@ export function EntrarForm() {
   const [persona, setPersona] = useState<Persona>(PERSONAS[0]);
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form action={action} className="flex flex-col gap-7">
       <fieldset className="flex gap-2.5">
         <legend className="sr-only">Elige quién eres</legend>
         {PERSONAS.map((p) => (

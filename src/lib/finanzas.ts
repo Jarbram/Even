@@ -31,26 +31,37 @@ export function soles(monto: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * ponytail: constante, no tabla con seed. Son doce, no cambian solas y así el
- * presupuesto puede iterarlas sin una consulta más. Se vuelven tabla el día que
- * quieran crear categorías desde la app.
+ * Semillas, no una lista cerrada: la categoría de un gasto es texto libre.
+ *
+ * ponytail: ni enum ni tabla con seed. Las categorías que de verdad se usan se
+ * descubren solas del historial (ver `categoriasUsadas`), y estas doce están
+ * solo para que la primera vez no haya una pantalla en blanco. Escribir una
+ * nueva no necesita migración ni pantalla de administración.
  */
-export const CATEGORIAS = [
-  "Alquiler",
-  "Servicios",
+export const CATEGORIAS_SUGERIDAS = [
   "Mercado",
-  "Transporte",
   "Comer fuera",
-  "Salud",
-  "Mascotas",
+  "Transporte",
+  "Servicios",
   "Ocio",
+  "Salud",
+  "Alquiler",
+  "Mascotas",
   "Ropa",
   "Regalos",
   "Ahorro",
   "Otros",
 ] as const;
 
-export type Categoria = (typeof CATEGORIAS)[number];
+/**
+ * Deja la categoría en forma canónica antes de guardarla. Sin esto, "mercado",
+ * "Mercado " y "MERCADO" serían tres categorías distintas en las estadísticas,
+ * que es como se degrada el texto libre.
+ */
+export function normalizarCategoria(valor: string): string {
+  const limpia = valor.trim().replace(/\s+/g, " ");
+  return limpia.charAt(0).toUpperCase() + limpia.slice(1).toLowerCase();
+}
 
 // ---------------------------------------------------------------------------
 // Meses

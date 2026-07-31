@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePersona } from "@/lib/sesion";
 import { PERSONAS } from "@/lib/persona";
 import { COLORES_DISPONIBLES, TIPOS_CUENTA } from "@/lib/cuentas";
-import { CATEGORIAS, mesActual } from "@/lib/finanzas";
+import { mesActual, normalizarCategoria } from "@/lib/finanzas";
 
 /**
  * Escrituras. Todo lo que entra por aquí viene de un formulario del navegador,
@@ -17,7 +17,16 @@ import { CATEGORIAS, mesActual } from "@/lib/finanzas";
 export type Resultado = { error?: string; ok?: boolean };
 
 const persona = z.enum(PERSONAS);
-const categoria = z.enum(CATEGORIAS);
+
+// Texto libre, no lista cerrada: se puede escribir una categoría nueva sin
+// tocar el código. Se normaliza para que no acaben "Mercado" y "mercado"
+// conviviendo como dos categorías distintas.
+const categoria = z
+  .string()
+  .trim()
+  .min(1, "Elige o escribe una categoría")
+  .max(30, "La categoría es demasiado larga")
+  .transform(normalizarCategoria);
 const monto = z.coerce.number().positive("El monto tiene que ser mayor que cero");
 const mes = z.string().regex(/^\d{4}-\d{2}-01$/, "Mes inválido");
 const uuid = z.uuid("Identificador inválido");

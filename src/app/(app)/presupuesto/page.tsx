@@ -1,11 +1,12 @@
 import { requirePersona } from "@/lib/sesion";
-import { resumenDelMes } from "@/lib/datos";
+import { categoriasUsadas, resumenDelMes } from "@/lib/datos";
 import { nombreMes, soles, type LineaPresupuesto } from "@/lib/finanzas";
 import { NuevoIngreso, NuevoPresupuesto } from "./formularios";
 
 export default async function PresupuestoPage() {
   await requirePersona();
-  const { mes, presupuesto, baseCero, ingresos } = await resumenDelMes();
+  const [{ mes, presupuesto, baseCero, ingresos }, categorias] =
+    await Promise.all([resumenDelMes(), categoriasUsadas()]);
 
   return (
     <>
@@ -76,7 +77,7 @@ export default async function PresupuestoPage() {
         </ul>
       )}
 
-      <NuevoPresupuesto mes={mes} />
+      <NuevoPresupuesto mes={mes} categorias={categorias} />
     </>
   );
 }

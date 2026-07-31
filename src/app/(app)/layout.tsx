@@ -10,8 +10,9 @@ export default async function AppLayout({
 
   return (
     <div className="mx-auto min-h-dvh w-full max-w-[430px]">
-      {/* pb generoso: la navegación flota encima del contenido */}
-      <div className="px-[22px] pt-[26px] pb-32">{children}</div>
+      {/* pb generoso: la navegación flota encima del contenido y taparía el
+          último botón de un formulario largo. */}
+      <div className="px-[22px] pt-[26px] pb-40">{children}</div>
       <BottomNav />
     </div>
   );
