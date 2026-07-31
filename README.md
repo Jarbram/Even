@@ -144,7 +144,7 @@ src/
     (app)/            rutas con sesión: shell + navegación inferior
       acciones.ts     todas las escrituras (Server Actions + Zod)
       presupuesto/    topes por categoría y semáforo de cumplimiento
-      ingresos/       registrar lo que entra
+      ingresos/       registrar y revisar lo que entra
     entrar/           elegir persona + PIN
     globals.css       TODOS los design tokens
     manifest.ts       manifest de la PWA
@@ -153,7 +153,7 @@ src/
     persona.ts        quiénes usan la app (constantes puras)
     firma.ts          HMAC de la cookie y comprobación del PIN
     sesion.ts         cookie, freno de fuerza bruta, requirePersona()
-    finanzas.ts       TODOS los cálculos: deuda cruzada, semáforo, simulador
+    finanzas.ts       TODOS los cálculos: deuda cruzada, topes, ahorros
     datos.ts          lecturas de Supabase
     supabase/server.ts  el único cliente, con service_role
 supabase/migrations/  SQL versionado
@@ -177,10 +177,9 @@ cualquiera.
 
 - **Fase 1 — hecha.** Scaffold, entrada con PIN por persona, navegación,
   PWA instalable.
-- **Fase 2 — hecha.** Esquema completo: gastos, recurrentes, ingresos,
-  presupuestos, fondos y deudas.
-- **Fase 3 — hecha.** Deuda cruzada, semáforo de topes por categoría,
-  ahorros con meta, simulador de deudas y materialización de recurrentes, con
-  pruebas.
-- Fase 4 — pantallas con datos reales. Hechas: inicio y presupuesto. Faltan
-  movimientos, estadísticas, y las de ahorros, deudas y recurrentes.
+- **Fase 2 — hecha.** Esquema completo: gastos, ingresos, presupuestos,
+  fondos y cuentas.
+- **Fase 3 — hecha.** Deuda cruzada, semáforo de topes por categoría y
+  ahorros con meta, con pruebas.
+- **Fase 4 — hecha.** Inicio, movimientos con calendario, nuevo gasto,
+  ingresos, presupuesto, estadísticas y ajustes.

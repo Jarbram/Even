@@ -76,9 +76,9 @@ Confirmado y construido:
   la diferencia acumulada es lo que uno le debe al otro.
 - Topes de gasto por categoría, con semáforo. Se acuerdan una vez y siguen
   vigentes los meses siguientes hasta que se cambien.
-- Fondos de ahorro con meta, deudas con terceros y simulador de amortización.
-- Gastos recurrentes que se materializan una vez por mes.
-- Cuentas de pago: efectivo, débito, crédito y billeteras (Yape, Plin).
+- Fondos de ahorro con monto inicial, meta opcional y aportes.
+- Cuentas de pago: efectivo, débito, crédito y billeteras (Yape, Plin), con
+  saldo calculado a partir de lo que entra y sale.
 
 Constraints técnicas que el diseño no puede saltarse:
 
@@ -90,6 +90,12 @@ Constraints técnicas que el diseño no puede saltarse:
   Server Components y toda escritura por Server Actions. Un componente de
   cliente que consulte la base directamente rompe el modelo de seguridad.
 - Las categorías son texto libre normalizado, no una lista cerrada.
+
+Fuera del alcance, decidido el 31/07/2026:
+
+- **Gastos recurrentes:** no hacen falta por ahora.
+- **Deudas con terceros y su simulador:** se van a llevar en otro sitio, aún
+  por definir. Ninguna de las dos debe volver a construirse sin pedirlo.
 
 Decisión abierta, sin inventar:
 

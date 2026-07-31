@@ -24,21 +24,9 @@ export type GastoRow = {
   monto: number;
   pagado_por: Persona;
   parte_abraham: number;
-  recurrente_id: string | null;
   cuenta_id: string | null;
   /** PostgREST devuelve la cuenta enlazada como objeto, o `null` si no tiene. */
   cuentas: { nombre: string; color: string } | null;
-};
-
-export type RecurrenteRow = {
-  id: string;
-  descripcion: string;
-  categoria: string;
-  monto: number;
-  pagado_por: Persona;
-  parte_abraham: number;
-  dia: number;
-  activo: boolean;
 };
 
 export type FondoRow = {
@@ -46,14 +34,6 @@ export type FondoRow = {
   nombre: string;
   meta: number | null;
   saldo: number;
-};
-
-export type DeudaRow = {
-  id: string;
-  nombre: string;
-  saldo: number;
-  tasa_anual: number;
-  pago_mensual: number;
 };
 
 export type IngresoRow = {
@@ -69,7 +49,7 @@ export type IngresoRow = {
 };
 
 const CAMPOS_GASTO =
-  "id, fecha, descripcion, categoria, monto, pagado_por, parte_abraham, recurrente_id, cuenta_id, cuentas(nombre, color)";
+  "id, fecha, descripcion, categoria, monto, pagado_por, parte_abraham, cuenta_id, cuentas(nombre, color)";
 
 /**
  * Todo lo del mes en una sola pasada. Las consultas son independientes entre
@@ -78,7 +58,7 @@ const CAMPOS_GASTO =
 export async function resumenDelMes(mes: Mes = mesActual()) {
   const supabase = createClient();
 
-  const [gastos, ingresos, presupuestos, fondos, deudas, cuentas] =
+  const [gastos, ingresos, presupuestos, fondos, cuentas] =
     await Promise.all([
       supabase
         .from("gastos")
@@ -100,11 +80,6 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .select("id, nombre, meta, saldo")
         .order("created_at")
         .overrideTypes<FondoRow[]>(),
-      supabase
-        .from("deudas")
-        .select("id, nombre, saldo, tasa_anual, pago_mensual")
-        .order("created_at")
-        .overrideTypes<DeudaRow[]>(),
       supabase
         .from("cuentas_saldo")
         .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo")
@@ -131,7 +106,6 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
     gastos: listaGastos,
     ingresos: listaIngresos,
     fondos: listaFondos,
-    deudas: deudas.data ?? [],
     cuentas: cuentas.data ?? [],
     deuda: deudaCruzada(listaGastos),
     lineas,
@@ -236,66 +210,6 @@ export async function listarCuentas() {
     .order("created_at")
     .overrideTypes<CuentaRow[]>();
   return data ?? [];
-}
-
-export async function listarRecurrentes() {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("recurrentes")
-    .select(
-      "id, descripcion, categoria, monto, pagado_por, parte_abraham, dia, activo",
-    )
-    .order("dia")
-    .overrideTypes<RecurrenteRow[]>();
-  return data ?? [];
-}
-
-/**
- * Crea en el mes los gastos de los recurrentes activos que aún no estén.
- * Idempotente: se puede llamar en cada carga de la pantalla del mes.
- *
- * La condición de carrera (dos pestañas abriendo el mes a la vez) la corta el
- * índice único `gastos_recurrente_mes_idx`, no este código — por eso el
- * conflicto se ignora en vez de reintentarse.
- */
-export async function materializarRecurrentes(mes: Mes = mesActual()) {
-  const supabase = createClient();
-
-  const [{ data: recurrentes }, { data: yaCreados }] = await Promise.all([
-    supabase
-      .from("recurrentes")
-      .select("id, descripcion, categoria, monto, pagado_por, parte_abraham, dia")
-      .eq("activo", true)
-      .overrideTypes<Omit<RecurrenteRow, "activo">[]>(),
-    supabase
-      .from("gastos")
-      .select("recurrente_id")
-      .eq("mes", mes)
-      .not("recurrente_id", "is", null),
-  ]);
-
-  if (!recurrentes?.length) return 0;
-
-  const hechos = new Set((yaCreados ?? []).map((g) => g.recurrente_id));
-  const faltan = recurrentes.filter((r) => !hechos.has(r.id));
-  if (!faltan.length) return 0;
-
-  const { error } = await supabase.from("gastos").insert(
-    faltan.map((r) => ({
-      fecha: `${mes.slice(0, 8)}${String(r.dia).padStart(2, "0")}`,
-      descripcion: r.descripcion,
-      categoria: r.categoria,
-      monto: r.monto,
-      pagado_por: r.pagado_por,
-      parte_abraham: r.parte_abraham,
-      recurrente_id: r.id,
-    })),
-  );
-
-  // 23505 = otra pestaña ganó la carrera. No es un fallo: el gasto ya existe.
-  if (error && error.code !== "23505") throw error;
-
-  return faltan.length;
 }
 
 /** Gasto total por mes, de más antiguo a más reciente. */

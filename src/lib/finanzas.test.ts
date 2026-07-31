@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ahorroPorPagarMas,
   resumenPresupuesto,
   desplazarMes,
   deudaCruzada,
@@ -18,7 +17,6 @@ import {
   progresoFondo,
   redondear,
   semaforo,
-  simularDeuda,
 } from "./finanzas.ts";
 
 // Un solo archivo de pruebas para la lógica que, si se rompe, hace que la app
@@ -170,40 +168,6 @@ test("las categorías se ordenan por urgencia, no por monto", () => {
   );
   // Ocio primero aunque sean 100 soles contra 800: es lo que hay que ajustar.
   assert.equal(lineas[0].categoria, "Ocio");
-});
-
-test("simulador: una deuda sin intereses son saldo / cuota meses", () => {
-  const s = simularDeuda({ saldo: 1000, tasa_anual: 0, pago_mensual: 250 });
-  assert.equal(s.meses, 4);
-  assert.equal(s.interesTotal, 0);
-});
-
-test("simulador: con interés se paga más y tarda más", () => {
-  const sin = simularDeuda({ saldo: 5000, tasa_anual: 0, pago_mensual: 500 });
-  const con = simularDeuda({ saldo: 5000, tasa_anual: 24, pago_mensual: 500 });
-  assert.ok(con.meses! > sin.meses!);
-  assert.ok(con.interesTotal > 0);
-  assert.equal(con.totalPagado, redondear(5000 + con.interesTotal));
-});
-
-test("simulador: si la cuota no cubre el interés, la deuda es impagable", () => {
-  // 10 000 al 24 % anual generan 200 de interés al mes; pagando 150 nunca baja.
-  const s = simularDeuda({ saldo: 10_000, tasa_anual: 24, pago_mensual: 150 });
-  assert.equal(s.meses, null);
-  assert.match(s.resumen, /nunca baja/);
-});
-
-test("simulador: una deuda en cero ya está pagada", () => {
-  assert.equal(simularDeuda({ saldo: 0, tasa_anual: 24, pago_mensual: 100 }).meses, 0);
-});
-
-test("pagar de más acorta la deuda y ahorra intereses", () => {
-  const a = ahorroPorPagarMas(
-    { saldo: 5000, tasa_anual: 24, pago_mensual: 300 },
-    200,
-  );
-  assert.ok(a.mesesMenos! > 0);
-  assert.ok(a.interesAhorrado! > 0);
 });
 
 test("meses: se calculan sin caerse al cambiar de año", () => {
