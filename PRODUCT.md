@@ -112,7 +112,9 @@ Decisión abierta, sin inventar:
 
 ## Brand Commitments
 
-- Nombre: **Nuestro Presupuesto**.
+- Nombre: **Even** — de *"we're even"*, estar en paz, que es justo lo que la
+  app contesta cuando las cuentas están al día. La interfaz sigue en español;
+  el nombre se lee igual en los dos idiomas.
 - Tokens del proyecto de Claude Design *Finanzas Pareja*: carbón `#111214`, lima
   `#C7F94E`, indigo `#5B5BF5`, superficies glass translúcidas con `backdrop-blur`,
   radios de 18–26 px, tipografía Space Grotesk.

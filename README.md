@@ -1,4 +1,7 @@
-# Nuestro Presupuesto
+# Even
+
+*We're even.* Es lo que la app contesta cuando las cuentas están al día, y es
+todo lo que hace: que dos personas sepan siempre a cuánto están.
 
 PWA de finanzas para una pareja. Reemplaza el Excel mensual: registra gastos,
 calcula sola la deuda cruzada entre ambos, controla el gasto contra los topes

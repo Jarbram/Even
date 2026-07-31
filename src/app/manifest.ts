@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 // Next genera /manifest.webmanifest desde este archivo; no hace falta un JSON aparte.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Nuestro Presupuesto",
-    short_name: "Presupuesto",
+    name: "Even · Nuestro Presupuesto",
+    short_name: "Even",
     description: "Gastos, ahorros y deudas de la casa, en un solo lugar.",
     start_url: "/",
     display: "standalone",
