@@ -33,8 +33,12 @@ export default async function EstadisticasPage({
   // El mes viene de la URL, así que se valida antes de consultar con él.
   const mes: Mes = ES_MES.test(params.mes ?? "") ? params.mes! : mesActual();
 
-  const [{ gastos, lineas, totalGastado, ahorros, restante }, historico] =
-    await Promise.all([resumenDelMes(mes), historicoMensual(12)]);
+  const [
+    { gastos, lineas, totalGastado, ahorros, restante, presupuesto },
+    historico,
+  ] = await Promise.all([resumenDelMes(mes), historicoMensual(12)]);
+
+  const conTope = presupuesto.estado !== "sin-topes";
 
   const barras =
     vista === "diario"
@@ -87,8 +91,14 @@ export default async function EstadisticasPage({
         <Barras datos={barras} />
         <dl className="mt-4 flex justify-between text-xs">
           <Dato titulo="Gastado" valor={soles(totalGastado)} />
-          <Dato titulo="Ahorrado" valor={soles(ahorros)} />
-          <Dato titulo="Restante" valor={soles(restante)} destacado />
+          {/* "Ahorrado" era engañoso: es el saldo acumulado de los fondos, no
+              lo que se metió este mes. */}
+          <Dato titulo="En ahorros" valor={soles(ahorros)} />
+          <Dato
+            titulo={conTope ? "Del tope queda" : "Sin topes"}
+            valor={conTope ? soles(restante) : "—"}
+            destacado={conTope}
+          />
         </dl>
       </section>
 
@@ -158,22 +168,56 @@ function Dato({
   );
 }
 
+/**
+ * Las barras del periodo.
+ *
+ * El `title` no basta: en un móvil no hay puntero, así que un valor que solo
+ * aparece al pasar por encima no existe. La barra más alta lleva su cifra
+ * escrita, y debajo van las referencias del eje — con eso se lee la forma sin
+ * tocar nada.
+ */
 function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
   // Sin gastos, todas las barras medirían lo mismo: mejor un techo de 1.
   const techo = Math.max(...datos.map((d) => d.total), 1);
+  const hayGastos = datos.some((d) => d.total > 0);
+  const pico = datos.findIndex((d) => d.total === techo);
+
+  if (!hayGastos) {
+    return (
+      <p className="mt-4 flex h-24 items-center justify-center text-sm opacity-70">
+        Sin gastos en este periodo
+      </p>
+    );
+  }
 
   return (
-    <div className="mt-4 flex h-24 items-end gap-[3px]">
-      {datos.map((dato) => (
-        <div
-          key={dato.etiqueta}
-          title={`${dato.etiqueta}: ${soles(dato.total)}`}
-          // Un mínimo del 4 % para que un día sin gasto siga siendo una barra
-          // y el eje no aparezca con huecos.
-          style={{ height: `${Math.max((dato.total / techo) * 100, 4)}%` }}
-          className="flex-1 rounded-[3px] bg-white/85"
-        />
-      ))}
-    </div>
+    <figure className="mt-4">
+      <figcaption className="mb-1.5 text-[11px] opacity-70">
+        Máximo {soles(techo)} · {datos[pico].etiqueta}
+      </figcaption>
+
+      <div className="flex h-24 items-end gap-[3px]">
+        {datos.map((dato, i) => (
+          <div
+            key={dato.etiqueta}
+            title={`${dato.etiqueta}: ${soles(dato.total)}`}
+            data-pico={i === pico}
+            // Un mínimo del 4 % para que un periodo sin gasto siga siendo una
+            // barra y el eje no aparezca con huecos.
+            style={{ height: `${Math.max((dato.total / techo) * 100, 4)}%` }}
+            className="flex-1 rounded-[3px] bg-white/45 data-[pico=true]:bg-white"
+          />
+        ))}
+      </div>
+
+      {/* Primera, media y última: sitúan el eje sin apelotonar 31 etiquetas. */}
+      <div className="mt-1.5 flex justify-between text-[10px] opacity-60">
+        <span>{datos[0].etiqueta}</span>
+        {datos.length > 2 && (
+          <span>{datos[Math.floor(datos.length / 2)].etiqueta}</span>
+        )}
+        <span>{datos[datos.length - 1].etiqueta}</span>
+      </div>
+    </figure>
   );
 }

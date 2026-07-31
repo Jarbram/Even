@@ -2,6 +2,8 @@ import { NOMBRES } from "@/lib/persona";
 import { claseColor } from "@/lib/cuentas";
 import { soles } from "@/lib/finanzas";
 import type { GastoRow } from "@/lib/datos";
+import { BotonBorrar } from "@/components/boton-borrar";
+import { borrarGasto } from "@/app/(app)/acciones";
 
 /** Fecha corta del diseño: "24 jul". */
 const DIA_MES = new Intl.DateTimeFormat("es-PE", {
@@ -11,7 +13,14 @@ const DIA_MES = new Intl.DateTimeFormat("es-PE", {
 });
 
 /** Una línea de gasto: punto de color de la cuenta, qué fue, quién y cuánto. */
-export function FilaGasto({ gasto }: { gasto: GastoRow }) {
+export function FilaGasto({
+  gasto,
+  borrable,
+}: {
+  gasto: GastoRow;
+  /** Solo donde se van a revisar y corregir gastos, no en el resumen de inicio. */
+  borrable?: boolean;
+}) {
   return (
     <div className="glass flex items-center gap-3 rounded-lg px-4 py-3">
       <span
@@ -27,6 +36,13 @@ export function FilaGasto({ gasto }: { gasto: GastoRow }) {
         </p>
       </div>
       <span className="shrink-0 text-sm font-semibold">{soles(gasto.monto)}</span>
+      {borrable && (
+        <BotonBorrar
+          accion={borrarGasto.bind(null, gasto.id)}
+          que="el gasto"
+          etiqueta={`${gasto.descripcion}, ${soles(gasto.monto)}`}
+        />
+      )}
     </div>
   );
 }
