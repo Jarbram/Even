@@ -5,16 +5,27 @@ import { NOMBRES, PERSONAS } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
 import { listarCuentas, resumenDelMes } from "@/lib/datos";
 import { TIPOS_CUENTA, claseColor } from "@/lib/cuentas";
-import { progresoFondo, soles } from "@/lib/finanzas";
+import { progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { NuevaCuenta, NuevoFondo } from "./formularios";
 
 export default async function AjustesPage() {
   const persona = await requirePersona();
-  const [cuentas, { fondos }] = await Promise.all([
+  const [cuentas, { fondos, gastos }] = await Promise.all([
     listarCuentas(),
     resumenDelMes(),
   ]);
+
+  // Cuánto ha salido por cada cuenta este mes. Una billetera sin una cifra al
+  // lado no dice nada; con ella, la lista contesta "¿por dónde se nos va?".
+  const gastadoPorCuenta = new Map<string, number>();
+  for (const gasto of gastos) {
+    if (!gasto.cuenta_id) continue;
+    gastadoPorCuenta.set(
+      gasto.cuenta_id,
+      (gastadoPorCuenta.get(gasto.cuenta_id) ?? 0) + gasto.monto,
+    );
+  }
 
   async function salir() {
     "use server";
@@ -24,133 +35,181 @@ export default async function AjustesPage() {
 
   return (
     <>
-      <h1 className="mb-6 text-2xl font-extrabold">Ajustes</h1>
+      <h1 className="mb-7 text-2xl font-extrabold">Ajustes</h1>
 
-      <p className="mb-3 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-        Billeteras
-      </p>
+      <Seccion titulo="Billeteras">
+        {cuentas.length === 0 ? (
+          // Un único vacío para la sección. Antes salía la misma frase repetida
+          // una vez por persona, que es ruido diciendo dos veces "aquí no hay
+          // nada".
+          <p className="glass rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
+            Sin cuentas todavía. Añade el efectivo, las tarjetas y el Yape de
+            cada uno para saber por dónde se va la plata.
+          </p>
+        ) : (
+          PERSONAS.map((quien) => {
+            const suyas = cuentas.filter((c) => c.persona === quien);
+            if (suyas.length === 0) return null;
 
-      {PERSONAS.map((quien) => {
-        const suyas = cuentas.filter((c) => c.persona === quien);
-        return (
-          <section key={quien} className="mb-4">
-            <div className="mb-2 flex items-center gap-2">
-              <span
-                data-persona={quien}
-                className="flex size-6 items-center justify-center rounded-full text-[11px] font-bold data-[persona=abraham]:bg-secondary data-[persona=isabel]:bg-chart-6"
-              >
-                {NOMBRES[quien][0]}
-              </span>
-              <span className="text-sm font-semibold">{NOMBRES[quien]}</span>
-              {quien === persona && (
-                <span className="text-[11px] text-muted-foreground">(tú)</span>
-              )}
-            </div>
-
-            {suyas.length === 0 ? (
-              <p className="glass rounded-lg px-4 py-3 text-xs text-muted-foreground">
-                Sin cuentas todavía.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {suyas.map((cuenta) => (
-                  <li
-                    key={cuenta.id}
-                    className="glass flex items-center gap-3 rounded-lg px-4 py-3"
-                  >
-                    <span
-                      aria-hidden
-                      className={`size-2 shrink-0 rounded-full ${claseColor(cuenta.color)}`}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                      {cuenta.nombre}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {TIPOS_CUENTA[cuenta.tipo]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        );
-      })}
-
-      <NuevaCuenta persona={persona} />
-
-      <p className="mt-8 mb-3 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-        Metas compartidas
-      </p>
-
-      {fondos.length === 0 ? (
-        <p className="glass mb-2.5 rounded-lg px-4 py-3 text-xs text-muted-foreground">
-          Sin fondos de ahorro. Crea el primero: un viaje, el colchón de
-          emergencia.
-        </p>
-      ) : (
-        <ul className="mb-2.5 flex flex-col gap-2">
-          {fondos.map((fondo) => {
-            const progreso = progresoFondo(fondo);
             return (
-              <li key={fondo.id} className="glass rounded-lg p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="truncate text-sm font-semibold">
-                    Ahorro → {fondo.nombre}
+              <div key={quien} className="mb-4 last:mb-0">
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    data-persona={quien}
+                    className="flex size-6 items-center justify-center rounded-full text-[11px] font-bold data-[persona=abraham]:bg-secondary data-[persona=isabel]:bg-chart-6"
+                  >
+                    {NOMBRES[quien][0]}
                   </span>
-                  <span className="shrink-0 text-sm font-bold text-primary">
-                    {soles(fondo.saldo)}
-                  </span>
+                  <span className="text-sm font-semibold">{NOMBRES[quien]}</span>
+                  {quien === persona && (
+                    <span className="text-[11px] text-muted-foreground">
+                      (tú)
+                    </span>
+                  )}
                 </div>
 
-                {fondo.meta && (
-                  <>
-                    <div
-                      className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
-                      role="progressbar"
-                      aria-label={`${fondo.nombre}: ${soles(fondo.saldo)} de ${soles(fondo.meta)}`}
-                      aria-valuenow={Math.round(progreso.proporcion * 100)}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                    >
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${progreso.proporcion * 100}%` }}
-                      />
-                    </div>
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      {Math.round(progreso.proporcion * 100)} % de la meta ·{" "}
-                      {soles(fondo.meta)}
-                    </p>
-                  </>
-                )}
-              </li>
+                <ul className="flex flex-col gap-2">
+                  {suyas.map((cuenta) => {
+                    const gastado = gastadoPorCuenta.get(cuenta.id) ?? 0;
+                    return (
+                      <li
+                        key={cuenta.id}
+                        className="glass flex items-center gap-3 rounded-lg px-4 py-3.5"
+                      >
+                        <span
+                          aria-hidden
+                          className={`size-2 shrink-0 rounded-full ${claseColor(cuenta.color)}`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">
+                            {cuenta.nombre}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {TIPOS_CUENTA[cuenta.tipo]}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-semibold">
+                            {soles(redondear(gastado))}
+                          </span>
+                          <span className="block text-[11px] text-muted-foreground">
+                            este mes
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             );
-          })}
-        </ul>
-      )}
+          })
+        )}
 
-      <NuevoFondo />
+        <div className="mt-2.5">
+          <NuevaCuenta persona={persona} />
+        </div>
+      </Seccion>
 
-      <nav className="mt-8 flex flex-col gap-2.5">
-        <Enlace href="/presupuesto">Categorías y presupuestos</Enlace>
-        <Enlace href="/recurrentes">Gastos recurrentes</Enlace>
-        <Enlace href="/deudas">Deudas y simulador</Enlace>
-      </nav>
+      <Seccion titulo="Metas compartidas">
+        {fondos.length === 0 ? (
+          <p className="glass rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
+            Sin fondos de ahorro. Crea el primero: un viaje, el colchón de
+            emergencia.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {fondos.map((fondo) => {
+              const progreso = progresoFondo(fondo);
+              return (
+                <li key={fondo.id} className="glass rounded-lg p-4">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate text-sm font-semibold">
+                      {fondo.nombre}
+                    </span>
+                    <span className="shrink-0 text-sm font-bold text-primary">
+                      {soles(fondo.saldo)}
+                    </span>
+                  </div>
 
-      <form action={salir} className="mt-2.5">
-        <Button
-          type="submit"
-          variant="ghost"
-          className="glass h-auto w-full justify-start rounded-lg p-4 text-sm font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          Cerrar sesión
-        </Button>
-      </form>
+                  {fondo.meta && (
+                    <>
+                      <div
+                        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
+                        role="progressbar"
+                        aria-label={`${fondo.nombre}: ${soles(fondo.saldo)} de ${soles(fondo.meta)}`}
+                        aria-valuenow={Math.round(progreso.proporcion * 100)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${progreso.proporcion * 100}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {progreso.completado
+                          ? progreso.resumen
+                          : `${Math.round(progreso.proporcion * 100)} % de ${soles(fondo.meta)} · ${progreso.resumen}`}
+                      </p>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      <p className="mt-6 text-center text-[11px] text-muted-foreground">
-        Sesión de {NOMBRES[persona]} en este dispositivo
-      </p>
+        <div className="mt-2.5">
+          <NuevoFondo />
+        </div>
+      </Seccion>
+
+      {/* Presupuesto ya está en la barra de navegación: repetirlo aquí sobraba. */}
+      <Seccion titulo="Más">
+        <nav className="flex flex-col gap-2">
+          <Enlace href="/recurrentes">Gastos recurrentes</Enlace>
+          <Enlace href="/deudas">Deudas y simulador</Enlace>
+        </nav>
+      </Seccion>
+
+      {/*
+        La salida va separada del resto por una línea y no como un enlace más:
+        es la única acción de esta pantalla que se puede lamentar, y estaba al
+        mismo peso visual que "Gastos recurrentes".
+      */}
+      <div className="mt-10 border-t border-border pt-6">
+        <p className="mb-3 text-center text-xs text-muted-foreground">
+          Estás como <span className="font-semibold">{NOMBRES[persona]}</span> en
+          este dispositivo
+        </p>
+        <form action={salir}>
+          <Button
+            type="submit"
+            variant="ghost"
+            className="h-auto w-full justify-center rounded-lg p-4 text-sm font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            Cerrar sesión
+          </Button>
+        </form>
+      </div>
     </>
+  );
+}
+
+function Seccion({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-9">
+      <h2 className="mb-3 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+        {titulo}
+      </h2>
+      {children}
+    </section>
   );
 }
 
