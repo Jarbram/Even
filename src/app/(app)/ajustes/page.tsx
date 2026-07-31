@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
@@ -183,14 +181,6 @@ export default async function AjustesPage() {
         </div>
       </Seccion>
 
-      {/* Presupuesto ya está en la barra de navegación: repetirlo aquí sobraba. */}
-      <Seccion titulo="Más">
-        <nav className="flex flex-col gap-2">
-          <Enlace href="/recurrentes">Gastos recurrentes</Enlace>
-          <Enlace href="/deudas">Deudas y simulador</Enlace>
-        </nav>
-      </Seccion>
-
       {/*
         La salida va separada del resto por una línea y no como un enlace más:
         es la única acción de esta pantalla que se puede lamentar, y estaba al
@@ -232,14 +222,3 @@ function Seccion({
   );
 }
 
-function Enlace({ href, children }: { href: string; children: string }) {
-  return (
-    <Link
-      href={href}
-      className="glass flex items-center justify-between rounded-lg p-4 text-sm font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      {children}
-      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-    </Link>
-  );
-}
