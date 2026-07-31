@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { requirePersona } from "@/lib/sesion";
-import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, redondear, soles } from "@/lib/finanzas";
+import { resumenDelMes, type GastoRow } from "@/lib/datos";
+import {
+  desplazarMes,
+  diasDelMes,
+  huecoInicial,
+  mesActual,
+  nombreMes,
+  porDiaDelMes,
+  redondear,
+  soles,
+  type Mes,
+} from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
 const DIA_LARGO = new Intl.DateTimeFormat("es-PE", {
@@ -11,17 +21,27 @@ const DIA_LARGO = new Intl.DateTimeFormat("es-PE", {
   timeZone: "UTC",
 });
 
-export default async function MovimientosPage() {
-  await requirePersona();
-  const { mes, gastos, totalGastado, deuda } = await resumenDelMes();
+const SEMANA = ["L", "M", "X", "J", "V", "S", "D"];
+const ES_MES = /^\d{4}-\d{2}-01$/;
 
-  // Agrupados por día, que es como se recuerda un gasto: "el martes gastamos…".
-  // Los gastos ya vienen ordenados por fecha descendente, así que el Map
-  // conserva ese orden sin volver a ordenar nada.
-  const porDia = new Map<string, typeof gastos>();
-  for (const gasto of gastos) {
-    porDia.set(gasto.fecha, [...(porDia.get(gasto.fecha) ?? []), gasto]);
-  }
+export default async function MovimientosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string; dia?: string }>;
+}) {
+  await requirePersona();
+  const params = await searchParams;
+
+  // Los dos vienen de la URL, así que se validan antes de consultar con ellos.
+  const mes: Mes = ES_MES.test(params.mes ?? "") ? params.mes! : mesActual();
+  const diaActivo = Number(params.dia);
+  const hayDia = diaActivo >= 1 && diaActivo <= diasDelMes(mes);
+
+  const { gastos, totalGastado, deuda } = await resumenDelMes(mes);
+
+  const visibles = hayDia
+    ? gastos.filter((g) => Number(g.fecha.slice(8, 10)) === diaActivo)
+    : gastos;
 
   return (
     <>
@@ -41,6 +61,8 @@ export default async function MovimientosPage() {
         </Link>
       </div>
 
+      <Calendario mes={mes} gastos={gastos} diaActivo={hayDia ? diaActivo : 0} />
+
       <div className="glass mb-6 rounded-xl p-5">
         <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Total del mes
@@ -51,31 +73,158 @@ export default async function MovimientosPage() {
         <p className="mt-2 text-xs text-muted-foreground">{deuda.resumen}</p>
       </div>
 
-      {gastos.length === 0 ? (
+      {hayDia && (
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-semibold">
+            Solo el día {diaActivo}
+          </p>
+          <Link
+            href={`/movimientos?mes=${mes}`}
+            className="text-xs text-primary"
+          >
+            Ver el mes
+          </Link>
+        </div>
+      )}
+
+      {visibles.length === 0 ? (
         <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
-          Sin gastos este mes. Toca el + para registrar el primero.
+          {hayDia
+            ? "Ese día no gastaron nada."
+            : "Sin gastos este mes. Toca el + para registrar el primero."}
         </p>
       ) : (
-        [...porDia.entries()].map(([fecha, delDia]) => (
-          <section key={fecha} className="mb-5">
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-                {DIA_LARGO.format(new Date(`${fecha}T00:00:00Z`))}
-              </h2>
-              <span className="text-[11px] text-muted-foreground">
-                {soles(redondear(delDia.reduce((suma, g) => suma + g.monto, 0)))}
-              </span>
-            </div>
-            <ul className="flex flex-col gap-2">
-              {delDia.map((gasto) => (
-                <li key={gasto.id}>
-                  <FilaGasto gasto={gasto} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+        <ListaPorDia gastos={visibles} />
       )}
     </>
   );
+}
+
+/**
+ * El mes de un vistazo: cada día con un punto si hubo gasto, y el punto crece
+ * con el gasto. Tocar un día filtra la lista de abajo.
+ *
+ * ponytail: la selección es un enlace con `?dia=`, no estado de React. La URL
+ * se puede compartir, el botón de atrás funciona y no cuesta JavaScript.
+ */
+function Calendario({
+  mes,
+  gastos,
+  diaActivo,
+}: {
+  mes: Mes;
+  gastos: GastoRow[];
+  diaActivo: number;
+}) {
+  const porDia = porDiaDelMes(mes, gastos);
+  const techo = Math.max(...porDia.map((d) => d.total), 1);
+  const huecos = huecoInicial(mes);
+
+  return (
+    <section className="glass mb-6 rounded-xl p-4">
+      <nav
+        aria-label="Mes"
+        className="mb-3 flex items-center justify-between text-sm"
+      >
+        <Link
+          href={`/movimientos?mes=${desplazarMes(mes, -1)}`}
+          aria-label="Mes anterior"
+          className="px-2 text-muted-foreground"
+        >
+          ‹
+        </Link>
+        <span className="text-xs font-semibold capitalize">
+          {nombreMes(mes)}
+        </span>
+        <Link
+          href={`/movimientos?mes=${desplazarMes(mes, 1)}`}
+          aria-label="Mes siguiente"
+          className="px-2 text-muted-foreground"
+        >
+          ›
+        </Link>
+      </nav>
+
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {SEMANA.map((letra, i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="pb-1 text-[10px] font-bold text-muted-foreground"
+          >
+            {letra}
+          </span>
+        ))}
+
+        {Array.from({ length: huecos }, (_, i) => (
+          <span key={`hueco-${i}`} />
+        ))}
+
+        {porDia.map((dia, i) => {
+          const numero = i + 1;
+          const activo = numero === diaActivo;
+          const gastado = dia.total > 0;
+
+          return (
+            <Link
+              key={numero}
+              href={
+                activo
+                  ? `/movimientos?mes=${mes}`
+                  : `/movimientos?mes=${mes}&dia=${numero}`
+              }
+              aria-label={`Día ${numero}: ${soles(dia.total)}`}
+              aria-current={activo ? "date" : undefined}
+              data-activo={activo}
+              className="group flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold data-[activo=true]:bg-primary data-[activo=true]:text-primary-foreground"
+            >
+              {numero}
+              <span
+                aria-hidden
+                data-gastado={gastado}
+                // El punto crece con el gasto del día, entre 3 y 7 px: se ve de
+                // un vistazo dónde se fue la plata sin leer un solo número.
+                style={
+                  gastado
+                    ? { width: 3 + (dia.total / techo) * 4, height: 3 + (dia.total / techo) * 4 }
+                    : undefined
+                }
+                className="rounded-full bg-primary group-data-[activo=true]:bg-primary-foreground data-[gastado=false]:size-[3px] data-[gastado=false]:bg-transparent"
+              />
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Los gastos agrupados por día: es como se recuerda un gasto. */
+function ListaPorDia({ gastos }: { gastos: GastoRow[] }) {
+  // Ya vienen ordenados por fecha descendente, así que el Map conserva ese
+  // orden sin volver a ordenar nada.
+  const porDia = new Map<string, GastoRow[]>();
+  for (const gasto of gastos) {
+    porDia.set(gasto.fecha, [...(porDia.get(gasto.fecha) ?? []), gasto]);
+  }
+
+  return [...porDia.entries()].map(([fecha, delDia]) => (
+    <section key={fecha} className="mb-5">
+      <div className="mb-2 flex items-baseline justify-between">
+        <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+          {DIA_LARGO.format(new Date(`${fecha}T00:00:00Z`))}
+        </h2>
+        <span className="text-[11px] text-muted-foreground">
+          {soles(redondear(delDia.reduce((suma, g) => suma + g.monto, 0)))}
+        </span>
+      </div>
+      <ul className="flex flex-col gap-2">
+        {delDia.map((gasto) => (
+          <li key={gasto.id}>
+            <FilaGasto gasto={gasto} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ));
 }

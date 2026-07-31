@@ -139,6 +139,15 @@ export function porDiaDelMes(
 }
 
 /**
+ * Cuántas casillas vacías van antes del día 1 en una rejilla de calendario que
+ * empieza en lunes. `getUTCDay()` cuenta desde el domingo, de ahí el ajuste.
+ */
+export function huecoInicial(mes: Mes): number {
+  const [a, m] = mes.split("-").map(Number);
+  return (new Date(Date.UTC(a, m - 1, 1)).getUTCDay() + 6) % 7;
+}
+
+/**
  * Suma por semana del mes, en bloques de 7 días desde el día 1.
  *
  * ponytail: semanas del 1–7, 8–14… y no semanas ISO que empiezan en lunes. Para

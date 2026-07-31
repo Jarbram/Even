@@ -7,6 +7,7 @@ import {
   deudaCruzada,
   diasDelMes,
   diasTranscurridos,
+  huecoInicial,
   lineasPresupuesto,
   mesDe,
   mesesParaMeta,
@@ -170,6 +171,16 @@ test("el promedio diario usa los días vividos, no el mes entero", () => {
   assert.equal(diasTranscurridos("2026-07-01", "2026-07-10"), 10);
   // Mes pasado: cuenta entero.
   assert.equal(diasTranscurridos("2026-06-01", "2026-07-10"), 30);
+});
+
+test("el calendario alinea el día 1 con su día de la semana", () => {
+  // 1 de julio de 2026 es miércoles → dos huecos (lunes y martes).
+  assert.equal(huecoInicial("2026-07-01"), 2);
+  // 1 de junio de 2026 es lunes → ninguno.
+  assert.equal(huecoInicial("2026-06-01"), 0);
+  // 1 de noviembre de 2026 es domingo → seis, el caso que rompe el `% 7` mal
+  // hecho porque en la cuenta original el domingo es 0 y no 6.
+  assert.equal(huecoInicial("2026-11-01"), 6);
 });
 
 test("las barras por día cubren el mes completo, con ceros", () => {
