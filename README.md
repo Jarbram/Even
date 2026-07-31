@@ -127,8 +127,10 @@ Abre `http://localhost:3000` en Chrome → DevTools → **Application**:
 *Manifest* debe listar los íconos y *Service Workers* debe mostrar `sw.js`
 activo. En Android/iOS aparece "Añadir a pantalla de inicio".
 
-Los íconos de `public/icons/` son placeholders generados. Reemplázalos por los
-definitivos manteniendo los nombres.
+Los íconos de `public/icons/` son los definitivos: el signo igual en indigo y
+lima sobre carbón. El de `-maskable` es un archivo aparte y no una copia del
+normal — Android recorta el icono en círculo o squircle, así que esa versión
+deja el signo dentro del 80 % central del lienzo.
 
 ## Deploy en Vercel
 
