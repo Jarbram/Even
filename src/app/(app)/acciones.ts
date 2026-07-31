@@ -157,6 +157,8 @@ export async function guardarPresupuesto(_prev: Resultado, formData: FormData) {
 
 const fondo = z.object({
   nombre: z.string().trim().min(1, "Ponle nombre al fondo").max(40),
+  // Un fondo suele nacer con algo dentro: lo que ya tenían ahorrado.
+  saldo: z.coerce.number().min(0).catch(0),
   meta: z.coerce.number().positive().nullable().catch(null),
 });
 
@@ -167,15 +169,25 @@ export async function crearFondo(_prev: Resultado, formData: FormData) {
   );
 }
 
-const saldoFondo = z.object({
+const movimientoFondo = z.object({
   id: uuid,
-  saldo: z.coerce.number().min(0, "El saldo no puede ser negativo"),
+  monto: z.coerce.number().positive("Escribe cuánto quieres mover"),
+  // "sacar" invierte el signo; el resto entra como aporte.
+  direccion: z.enum(["meter", "sacar"]).catch("meter"),
 });
 
-export async function actualizarSaldoFondo(_prev: Resultado, formData: FormData) {
+/**
+ * Mueve dinero al fondo (o lo saca). La suma la hace Postgres, no este código:
+ * leer el saldo, sumar aquí y volver a escribirlo perdería un aporte si los dos
+ * guardan a la vez.
+ */
+export async function moverEnFondo(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
-  return ejecutar(saldoFondo, campos(formData), ({ id, saldo }) =>
-    supabase.from("fondos").update({ saldo }).eq("id", id),
+  return ejecutar(movimientoFondo, campos(formData), ({ id, monto, direccion }) =>
+    supabase.rpc("aportar_a_fondo", {
+      fondo_id: id,
+      aporte: direccion === "sacar" ? -monto : monto,
+    }),
   );
 }
 
@@ -242,9 +254,14 @@ export async function crearRecurrente(_prev: Resultado, formData: FormData) {
 
 const cambioActivo = z.object({ id: uuid, activo: z.stringbool() });
 
-export async function activarRecurrente(_prev: Resultado, formData: FormData) {
+/**
+ * Pausar o reanudar. No devuelve nada a propósito: va en un `<form action>`
+ * suelto, que exige `void`, y el resultado se ve en la propia lista al
+ * revalidarse.
+ */
+export async function activarRecurrente(formData: FormData): Promise<void> {
   const supabase = createClient();
-  return ejecutar(cambioActivo, campos(formData), ({ id, activo }) =>
+  await ejecutar(cambioActivo, campos(formData), ({ id, activo }) =>
     supabase.from("recurrentes").update({ activo }).eq("id", id),
   );
 }

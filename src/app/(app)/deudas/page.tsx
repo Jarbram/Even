@@ -3,6 +3,8 @@ import { BotonCerrar } from "@/components/navegacion";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
 import { ahorroPorPagarMas, simularDeuda, soles } from "@/lib/finanzas";
+import { BotonBorrar } from "@/components/boton-borrar";
+import { borrarDeuda } from "../acciones";
 import { NuevaDeuda } from "./formulario";
 
 /** Cuánto más al mes se puede simular. Pasos redondos, que es como se piensa. */
@@ -72,13 +74,18 @@ export default async function DeudasPage({
 
             return (
               <li key={deuda.id} className="glass rounded-xl p-5">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="truncate text-sm font-semibold">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                     {deuda.nombre}
                   </span>
                   <span className="shrink-0 text-lg font-extrabold">
                     {soles(deuda.saldo)}
                   </span>
+                  <BotonBorrar
+                    accion={borrarDeuda.bind(null, deuda.id)}
+                    que="la deuda"
+                    etiqueta={deuda.nombre}
+                  />
                 </div>
 
                 <p className="mt-1 text-[11px] text-muted-foreground">

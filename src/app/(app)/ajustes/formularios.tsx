@@ -10,7 +10,12 @@ import { Plegable } from "@/components/plegable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { crearCuenta, crearFondo, type Resultado } from "../acciones";
+import {
+  crearCuenta,
+  crearFondo,
+  moverEnFondo,
+  type Resultado,
+} from "../acciones";
 
 /** Los nueve colores del diseño, para distinguir cuentas de un vistazo. */
 const COLORES = [
@@ -117,7 +122,28 @@ export function NuevoFondo() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="meta">Meta (S/)</Label>
+          <Label htmlFor="saldo-fondo">¿Cuánto tiene ya? (S/)</Label>
+          <Input
+            id="saldo-fondo"
+            name="saldo"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            defaultValue="0"
+          />
+          <p className="text-xs text-muted-foreground">
+            Lo que ya tengan ahorrado. Después se le va metiendo más.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="meta">
+            Meta{" "}
+            <span className="font-normal text-muted-foreground">
+              · opcional
+            </span>
+          </Label>
           <Input
             id="meta"
             name="meta"
@@ -125,7 +151,7 @@ export function NuevoFondo() {
             inputMode="decimal"
             step="0.01"
             min="0.01"
-            placeholder="Opcional"
+            placeholder="Déjalo vacío si no hay una cifra fija"
           />
         </div>
 
@@ -133,5 +159,75 @@ export function NuevoFondo() {
         <Guardar>Crear fondo</Guardar>
       </form>
     </Plegable>
+  );
+}
+
+/**
+ * Mover plata al fondo, o sacarla. Es lo que hace que un fondo crezca; sin esto
+ * el saldo se quedaba congelado en lo que se puso al crearlo.
+ */
+export function MoverEnFondo({
+  id,
+  nombre,
+}: {
+  id: string;
+  nombre: string;
+}) {
+  const [estado, action] = useActionState<Resultado, FormData>(
+    moverEnFondo,
+    {},
+  );
+  const ref = useAlGuardar(estado, "Saldo actualizado");
+
+  return (
+    <form ref={ref} action={action} className="mt-3 flex flex-col gap-2">
+      <input type="hidden" name="id" value={id} />
+      <div className="flex gap-2">
+        <Input
+          name="monto"
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0.01"
+          placeholder="Monto"
+          required
+          aria-label={`Cuánto mover en ${nombre}`}
+          className="h-10 flex-1 text-sm"
+        />
+        <Mover direccion="meter" nombre={nombre}>
+          Meter
+        </Mover>
+        <Mover direccion="sacar" nombre={nombre}>
+          Sacar
+        </Mover>
+      </div>
+      <Error estado={estado} />
+    </form>
+  );
+}
+
+/** Los dos botones mandan el mismo formulario cambiando solo la dirección. */
+function Mover({
+  direccion,
+  nombre,
+  children,
+}: {
+  direccion: "meter" | "sacar";
+  nombre: string;
+  children: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      name="direccion"
+      value={direccion}
+      disabled={pending}
+      variant={direccion === "meter" ? "default" : "ghost"}
+      aria-label={`${children} en ${nombre}`}
+      className="h-10 shrink-0 rounded-lg px-3 text-xs"
+    >
+      {children}
+    </Button>
   );
 }

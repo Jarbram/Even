@@ -124,7 +124,7 @@ export default async function HomePage() {
         mismo peso pondría delante lo que menos se toca.
       */}
       <Link
-        href="/ingresos/nuevo"
+        href="/ingresos"
         className="glass mb-8 flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <ArrowDownLeft aria-hidden className="size-4 text-primary" />

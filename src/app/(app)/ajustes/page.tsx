@@ -7,7 +7,9 @@ import { listarCuentas, resumenDelMes } from "@/lib/datos";
 import { TIPOS_CUENTA, claseColor } from "@/lib/cuentas";
 import { progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
-import { NuevaCuenta, NuevoFondo } from "./formularios";
+import { BotonBorrar } from "@/components/boton-borrar";
+import { borrarCuenta, borrarFondo } from "../acciones";
+import { MoverEnFondo, NuevaCuenta, NuevoFondo } from "./formularios";
 
 export default async function AjustesPage() {
   const persona = await requirePersona();
@@ -96,6 +98,11 @@ export default async function AjustesPage() {
                             este mes
                           </span>
                         </span>
+                        <BotonBorrar
+                          accion={borrarCuenta.bind(null, cuenta.id)}
+                          que="la cuenta"
+                          etiqueta={cuenta.nombre}
+                        />
                       </li>
                     );
                   })}
@@ -122,13 +129,18 @@ export default async function AjustesPage() {
               const progreso = progresoFondo(fondo);
               return (
                 <li key={fondo.id} className="glass rounded-lg p-4">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="truncate text-sm font-semibold">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                       {fondo.nombre}
                     </span>
-                    <span className="shrink-0 text-sm font-bold text-primary">
+                    <span className="shrink-0 text-lg font-bold text-primary">
                       {soles(fondo.saldo)}
                     </span>
+                    <BotonBorrar
+                      accion={borrarFondo.bind(null, fondo.id)}
+                      que="el fondo"
+                      etiqueta={fondo.nombre}
+                    />
                   </div>
 
                   {fondo.meta && (
@@ -153,6 +165,8 @@ export default async function AjustesPage() {
                       </p>
                     </>
                   )}
+
+                  <MoverEnFondo id={fondo.id} nombre={fondo.nombre} />
                 </li>
               );
             })}
