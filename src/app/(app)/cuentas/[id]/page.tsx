@@ -32,6 +32,12 @@ export default async function CuentaPage({
 
   const saldo = leerSaldo(cuenta);
   const gastadoTotal = redondear(gastos.reduce((s, g) => s + g.monto, 0));
+  const pagadoTotal = redondear(pagos.reduce((s, p) => s + p.monto, 0));
+
+  // Lo que ya venía consumido antes de usar la app. No tiene gastos detrás
+  // —ni categoría, ni fecha— porque ocurrió fuera, y sin decirlo la pantalla
+  // parece que se hubieran perdido gastos.
+  const arrastre = redondear(Math.max(-cuenta.saldo_base, 0));
   // De dónde puede salir el pago: cualquier cuenta menos ella misma.
   const origenes = todas.filter((c) => c.id !== cuenta.id && c.activa);
 
@@ -92,6 +98,31 @@ export default async function CuentaPage({
                 <dd className="mt-1 font-semibold">{soles(cuenta.linea)}</dd>
               </div>
             </dl>
+
+            {/* De dónde sale el consumo, para que un arrastre sin gastos
+                detrás no parezca que la app perdió algo. */}
+            {arrastre > 0 && (
+              <ul className="mt-4 space-y-1 border-t border-white/15 pt-3 text-[11px] opacity-80">
+                <li className="flex justify-between gap-3">
+                  <span>Ya venía consumido</span>
+                  <span className="font-semibold">{soles(arrastre)}</span>
+                </li>
+                {gastadoTotal > 0 && (
+                  <li className="flex justify-between gap-3">
+                    <span>Gastos registrados aquí</span>
+                    <span className="font-semibold">
+                      {soles(gastadoTotal)}
+                    </span>
+                  </li>
+                )}
+                {pagadoTotal > 0 && (
+                  <li className="flex justify-between gap-3">
+                    <span>Pagado</span>
+                    <span className="font-semibold">−{soles(pagadoTotal)}</span>
+                  </li>
+                )}
+              </ul>
+            )}
           </>
         )}
       </section>
@@ -150,8 +181,10 @@ export default async function CuentaPage({
         </div>
 
         {gastos.length === 0 ? (
-          <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
-            Todavía no se ha pagado nada con esta cuenta.
+          <p className="glass rounded-lg p-4 text-sm leading-relaxed text-muted-foreground">
+            {arrastre > 0
+              ? `Todavía nada. Los ${soles(arrastre)} que ya venías debiendo son de antes de usar la app, así que no tienen categoría ni cuentan contra el presupuesto de este mes — pero sí ocupan tu línea.`
+              : "Todavía no se ha pagado nada con esta cuenta."}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
