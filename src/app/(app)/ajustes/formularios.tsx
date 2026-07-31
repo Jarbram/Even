@@ -1,13 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import { TIPOS_CUENTA } from "@/lib/cuentas";
 import { Chips } from "@/components/chips";
 import { Plegable } from "@/components/plegable";
 import { Button } from "@/components/ui/button";
+import {
+  BotonGuardar,
+  ErrorForm,
+  useAlGuardar,
+} from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,35 +20,6 @@ import {
   moverEnFondo,
   type Resultado,
 } from "../acciones";
-
-function Guardar({ children }: { children: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="rounded-lg">
-      {pending ? "Guardando…" : children}
-    </Button>
-  );
-}
-
-/** Limpia el formulario y avisa, pero solo cuando de verdad se guardó. */
-function useAlGuardar(estado: Resultado, mensaje: string) {
-  const ref = useRef<HTMLFormElement>(null);
-  useEffect(() => {
-    if (!estado.ok) return;
-    toast.success(mensaje);
-    ref.current?.reset();
-  }, [estado, mensaje]);
-  return ref;
-}
-
-function Error({ estado }: { estado: Resultado }) {
-  if (!estado.error) return null;
-  return (
-    <p role="alert" className="text-sm font-medium text-destructive">
-      {estado.error}
-    </p>
-  );
-}
 
 // ---------------------------------------------------------------------------
 
@@ -69,6 +44,7 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
         <Chips
           name="tipo"
           label="Tipo"
+          columnas={2}
           opciones={Object.entries(TIPOS_CUENTA).map(([value, label]) => ({
             value,
             label,
@@ -93,8 +69,7 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
             defaultValue="0"
           />
           <p className="text-xs text-muted-foreground">
-            El punto de partida. A partir de ahí sube con los ingresos que
-            entren aquí y baja con lo que pagues con ella.
+            Sube y baja solo con lo que entre y salga.
           </p>
         </div>
 
@@ -102,8 +77,8 @@ export function NuevaCuenta({ persona }: { persona: Persona }) {
             uso. Solo sirve para distinguir cuentas en la lista, y era una
             pregunta más en un formulario que ya tenía cuatro. */}
 
-        <Error estado={estado} />
-        <Guardar>Añadir cuenta</Guardar>
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Añadir cuenta</BotonGuardar>
       </form>
     </Plegable>
   );
@@ -141,7 +116,7 @@ export function NuevoFondo() {
             defaultValue="0"
           />
           <p className="text-xs text-muted-foreground">
-            Lo que ya tengan ahorrado. Después se le va metiendo más.
+            Lo que ya tengan guardado.
           </p>
         </div>
 
@@ -159,12 +134,12 @@ export function NuevoFondo() {
             inputMode="decimal"
             step="0.01"
             min="0.01"
-            placeholder="Déjalo vacío si no hay una cifra fija"
+            placeholder="Sin meta fija"
           />
         </div>
 
-        <Error estado={estado} />
-        <Guardar>Crear fondo</Guardar>
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Crear fondo</BotonGuardar>
       </form>
     </Plegable>
   );
@@ -209,7 +184,7 @@ export function MoverEnFondo({
           Sacar
         </Mover>
       </div>
-      <Error estado={estado} />
+      <ErrorForm estado={estado} />
     </form>
   );
 }

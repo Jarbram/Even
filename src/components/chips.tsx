@@ -35,7 +35,7 @@ export function Chips({
 }) {
   if (opciones.length === 0 && vacio) {
     return (
-      <fieldset className="flex flex-col gap-2">
+      <fieldset className="flex flex-col gap-3">
         <Label asChild>
           <legend>{label}</legend>
         </Label>
@@ -45,11 +45,11 @@ export function Chips({
   }
 
   const disposicion = columnas
-    ? `grid gap-2 ${columnas === 2 ? "grid-cols-2" : "grid-cols-3"}`
-    : "flex flex-wrap gap-2";
+    ? `grid gap-2.5 ${columnas === 2 ? "grid-cols-2" : "grid-cols-3"}`
+    : "flex flex-wrap gap-2.5";
 
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex flex-col gap-3">
       <Label asChild>
         <legend>{label}</legend>
       </Label>
@@ -66,7 +66,7 @@ export function Chips({
               className="peer sr-only"
             />
             <span
-              className={`flex h-full flex-col justify-center rounded-full border border-border px-4 py-2.5 text-center text-sm font-semibold transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${
+              className={`flex h-full min-h-11 flex-col justify-center rounded-full border border-border px-4 py-2.5 text-center text-sm font-semibold transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${
                 columnas ? "" : "whitespace-nowrap"
               }`}
             >

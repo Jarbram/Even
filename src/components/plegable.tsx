@@ -16,14 +16,14 @@ export function Plegable({
 }) {
   return (
     <details className="glass rounded-xl [&[open]_.marca]:rotate-45">
-      <summary className="flex cursor-pointer list-none items-center gap-2.5 p-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 p-5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         <Plus
           aria-hidden
           className="marca size-4 text-primary transition-transform duration-200"
         />
         {titulo}
       </summary>
-      <div className="border-t border-border p-4">{children}</div>
+      <div className="border-t border-border p-5">{children}</div>
     </details>
   );
 }

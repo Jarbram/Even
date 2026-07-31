@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
+import { useActionState } from "react";
 import { Plegable } from "@/components/plegable";
-import { Button } from "@/components/ui/button";
+import {
+  BotonGuardar,
+  ErrorForm,
+  useAlGuardar,
+} from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { guardarDeuda, type Resultado } from "../acciones";
@@ -14,13 +16,7 @@ export function NuevaDeuda() {
     guardarDeuda,
     {},
   );
-  const ref = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (!estado.ok) return;
-    toast.success("Deuda registrada");
-    ref.current?.reset();
-  }, [estado]);
+  const ref = useAlGuardar(estado, "Deuda registrada");
 
   return (
     <Plegable titulo="Añadir deuda">
@@ -80,23 +76,10 @@ export function NuevaDeuda() {
           </p>
         </div>
 
-        {estado.error && (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {estado.error}
-          </p>
-        )}
-
-        <Enviar />
-      </form>
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Añadir deuda</BotonGuardar>
+</form>
     </Plegable>
   );
 }
 
-function Enviar() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="rounded-lg">
-      {pending ? "Guardando…" : "Añadir deuda"}
-    </Button>
-  );
-}

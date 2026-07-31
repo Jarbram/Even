@@ -1,43 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
+import { useActionState } from "react";
 import type { Mes } from "@/lib/finanzas";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { Plegable } from "@/components/plegable";
-import { Button } from "@/components/ui/button";
+import {
+  BotonGuardar,
+  ErrorForm,
+  useAlGuardar,
+} from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { guardarPresupuesto, type Resultado } from "../acciones";
-
-function Guardar({ children }: { children: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="rounded-lg">
-      {pending ? "Guardando…" : children}
-    </Button>
-  );
-}
-
-function useAlGuardar(estado: Resultado, mensaje: string) {
-  const ref = useRef<HTMLFormElement>(null);
-  useEffect(() => {
-    if (!estado.ok) return;
-    toast.success(mensaje);
-    ref.current?.reset();
-  }, [estado, mensaje]);
-  return ref;
-}
-
-function Error({ estado }: { estado: Resultado }) {
-  if (!estado.error) return null;
-  return (
-    <p role="alert" className="text-sm font-medium text-destructive">
-      {estado.error}
-    </p>
-  );
-}
 
 // ---------------------------------------------------------------------------
 
@@ -74,8 +48,8 @@ export function NuevoPresupuesto({
           />
         </div>
 
-        <Error estado={estado} />
-        <Guardar>Asignar</Guardar>
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Asignar</BotonGuardar>
 
         <p className="text-xs text-muted-foreground">
           Si la categoría ya tenía monto, este lo reemplaza.

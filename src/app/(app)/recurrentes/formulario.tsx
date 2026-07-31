@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
-import { toast } from "sonner";
+import { useActionState } from "react";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { Plegable } from "@/components/plegable";
-import { Button } from "@/components/ui/button";
+import {
+  BotonGuardar,
+  ErrorForm,
+  useAlGuardar,
+} from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { crearRecurrente, type Resultado } from "../acciones";
@@ -23,13 +25,7 @@ export function NuevoRecurrente({
     crearRecurrente,
     {},
   );
-  const ref = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (!estado.ok) return;
-    toast.success("Recurrente creado");
-    ref.current?.reset();
-  }, [estado]);
+  const ref = useAlGuardar(estado, "Recurrente creado");
 
   return (
     <Plegable titulo="Añadir gasto recurrente">
@@ -95,23 +91,10 @@ export function NuevoRecurrente({
           </p>
         </div>
 
-        {estado.error && (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {estado.error}
-          </p>
-        )}
-
-        <Enviar />
-      </form>
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Crear recurrente</BotonGuardar>
+</form>
     </Plegable>
   );
 }
 
-function Enviar() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="rounded-lg">
-      {pending ? "Guardando…" : "Crear recurrente"}
-    </Button>
-  );
-}
