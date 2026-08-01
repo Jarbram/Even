@@ -15,6 +15,9 @@ import { NuevoPresupuesto } from "./formularios";
  *   1. ¿Estoy cumpliendo?      → el titular
  *   2. ¿En qué me estoy pasando? → lo excedido, arriba y en rojo
  *   3. ¿Qué ajusto?            → cada categoría con su tope a mano
+ *
+ * Asignar un tope va justo debajo del titular, no al final: con muchas
+ * categorías la lista se alarga y ese botón quedaba fuera de la pantalla.
  */
 export default async function PresupuestoPage() {
   await requirePersona();
@@ -32,6 +35,10 @@ export default async function PresupuestoPage() {
       </p>
 
       {sinTopes ? <SinTopes /> : <Titular presupuesto={presupuesto} />}
+
+      <div className="mt-3">
+        <NuevoPresupuesto mes={mes} categorias={categorias} />
+      </div>
 
       {presupuesto.excedidas.length > 0 && (
         <section className="mt-6">
@@ -64,10 +71,6 @@ export default async function PresupuestoPage() {
           </ul>
         </section>
       )}
-
-      <div className="mt-3">
-        <NuevoPresupuesto mes={mes} categorias={categorias} />
-      </div>
     </>
   );
 }
