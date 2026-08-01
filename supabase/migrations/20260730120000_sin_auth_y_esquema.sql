@@ -73,8 +73,10 @@ create table if not exists public.ingresos (
 create index if not exists ingresos_mes_idx on public.ingresos (mes);
 
 -- ---------------------------------------------------------------------------
--- Presupuesto asignado por categoría y mes. Base cero: la suma de estos montos
--- debería igualar los ingresos del mes; la app lo calcula, no la base.
+-- Tope de gasto por categoría. Se guarda con el mes en que se acordó, pero el
+-- tope no expira: vale también para los meses siguientes hasta que se cambie.
+-- La app resuelve, para cada categoría, el último monto con mes <= al mes en
+-- pantalla (ver `presupuestosVigentes` en src/lib/finanzas.ts).
 -- ---------------------------------------------------------------------------
 create table if not exists public.presupuestos (
   mes       date not null,

@@ -14,6 +14,7 @@ import {
   normalizarCategoria,
   porDiaDelMes,
   porSemanaDelMes,
+  presupuestosVigentes,
   progresoFondo,
   redondear,
   semaforo,
@@ -194,6 +195,45 @@ test("cumplir el presupuesto se dice sin rodeos", () => {
   assert.equal(r.estado, "ok");
   assert.equal(r.excedidas.length, 0);
   assert.match(r.resumen, /dentro/);
+});
+
+test("editar el tope de una categoría no borra el de las demás", () => {
+  // Caso real del bug: en enero se ponen 3 topes; en agosto se toca solo uno.
+  const vigentes = presupuestosVigentes(
+    [
+      { mes: "2026-01-01", categoria: "Mercado", monto: 500 },
+      { mes: "2026-01-01", categoria: "Ocio", monto: 100 },
+      { mes: "2026-01-01", categoria: "Transporte", monto: 150 },
+      { mes: "2026-08-01", categoria: "Transporte", monto: 200 },
+    ],
+    "2026-08-01",
+  );
+
+  assert.equal(vigentes.length, 3);
+  assert.equal(vigentes.find((t) => t.categoria === "Mercado")?.monto, 500);
+  assert.equal(vigentes.find((t) => t.categoria === "Ocio")?.monto, 100);
+  // La categoría tocada este mes usa el valor nuevo, no el heredado.
+  assert.equal(vigentes.find((t) => t.categoria === "Transporte")?.monto, 200);
+});
+
+test("sin ningún tope puesto este mes, se hereda el último acordado", () => {
+  const vigentes = presupuestosVigentes(
+    [{ mes: "2026-01-01", categoria: "Mercado", monto: 500 }],
+    "2026-07-01",
+  );
+  assert.deepEqual(vigentes, [{ mes: "2026-01-01", categoria: "Mercado", monto: 500 }]);
+});
+
+test("un tope de un mes futuro no aplica todavía", () => {
+  const vigentes = presupuestosVigentes(
+    [
+      { mes: "2026-01-01", categoria: "Mercado", monto: 500 },
+      { mes: "2026-12-01", categoria: "Mercado", monto: 900 },
+    ],
+    "2026-06-01",
+  );
+  assert.equal(vigentes.length, 1);
+  assert.equal(vigentes[0].monto, 500);
 });
 
 test("las categorías se ordenan por urgencia, no por monto", () => {

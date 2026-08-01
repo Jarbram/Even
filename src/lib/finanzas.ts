@@ -337,6 +337,30 @@ export function lineasPresupuesto(
 
 const URGENCIA: Record<Estado, number> = { excedido: 2, ajustado: 1, ok: 0 };
 
+export type TopeVigente = { categoria: string; monto: number; mes: string };
+
+/**
+ * El tope vigente de cada categoría en `mes`: el más reciente que no sea
+ * posterior a ese mes. Se resuelve categoría por categoría, no por mes
+ * entero, para que editar el tope de una sola categoría no borre las demás
+ * de la cuenta — cada una conserva su último valor acordado hasta que
+ * alguien lo cambie.
+ */
+export function presupuestosVigentes(
+  historico: readonly { mes: string; categoria: string; monto: number }[],
+  mes: Mes,
+): TopeVigente[] {
+  const porCategoria = new Map<string, TopeVigente>();
+  for (const t of historico) {
+    if (t.mes > mes) continue;
+    const vigente = porCategoria.get(t.categoria);
+    if (!vigente || t.mes > vigente.mes) {
+      porCategoria.set(t.categoria, { categoria: t.categoria, monto: t.monto, mes: t.mes });
+    }
+  }
+  return [...porCategoria.values()];
+}
+
 // ---------------------------------------------------------------------------
 // Cumplimiento del presupuesto
 //
