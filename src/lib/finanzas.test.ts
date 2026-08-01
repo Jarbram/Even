@@ -16,6 +16,7 @@ import {
   presupuestosVigentes,
   progresoFondo,
   redondear,
+  ritmoDeGasto,
   semaforo,
 } from "./finanzas.ts";
 
@@ -245,4 +246,22 @@ test("fondos: progreso y meses hasta la meta", () => {
   // Un fondo sin meta no divide entre cero.
   assert.equal(progresoFondo({ nombre: "Colchón", saldo: 50, meta: null }).proporcion, 0);
   assert.equal(mesesParaMeta({ nombre: "Colchón", saldo: 50, meta: null }, 100), null);
+});
+
+test("el ritmo de gasto proyecta el mes con lo gastado hasta hoy", () => {
+  // 10 días vividos de julio (31 días), 200 gastados → 20/día → 620 al mes.
+  const r = ritmoDeGasto("2026-07-01", 200, "2026-07-10");
+  assert.equal(r.promedioDiario, 20);
+  assert.equal(r.proyeccion, 620);
+});
+
+test("un mes ya cerrado proyecta lo mismo que se gastó", () => {
+  const r = ritmoDeGasto("2026-06-01", 900, "2026-07-10");
+  assert.equal(r.proyeccion, 900);
+});
+
+test("sin gastos, el ritmo no divide entre cero", () => {
+  const r = ritmoDeGasto("2026-07-01", 0, "2026-07-01");
+  assert.equal(r.promedioDiario, 0);
+  assert.equal(r.proyeccion, 0);
 });

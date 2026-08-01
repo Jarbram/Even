@@ -8,16 +8,30 @@ import {
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, soles } from "@/lib/finanzas";
+import { hoyISO, nombreMes, redondear, ritmoDeGasto, soles } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, presupuesto, fondos } =
-    await resumenDelMes();
+  const {
+    mes,
+    gastos,
+    restante,
+    ahorros,
+    presupuesto,
+    fondos,
+    totalGastado,
+    ingresosTotal,
+  } = await resumenDelMes();
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
+
+  const balance = redondear(ingresosTotal - totalGastado);
+  const balancePositivo = balance >= 0;
+
+  const ritmo = ritmoDeGasto(mes, totalGastado, hoyISO());
+  const ritmoExcedido = !sinTopes && ritmo.proyeccion > presupuesto.tope;
 
   return (
     <>
@@ -51,7 +65,30 @@ export default async function HomePage() {
         {nombreMes(mes)}
       </p>
 
-      <div className="mb-6 grid grid-cols-2 gap-3">
+      {/*
+        Anotar un gasto es lo que se hace a diario; las cifras de abajo son
+        para consultar, no para actuar. Por eso los botones van primero, antes
+        de tener que pasar por cuatro tarjetas para llegar a ellos.
+      */}
+      <div className="mb-6 flex flex-col gap-3">
+        <Link
+          href="/movimientos/nuevo"
+          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
+        >
+          <Plus aria-hidden className="size-6 text-primary" />
+          <span className="text-[13px] font-semibold">Agregar gasto</span>
+        </Link>
+
+        <Link
+          href="/ingresos"
+          className="glass flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <ArrowDownLeft aria-hidden className="size-4 text-primary" />
+          Registrar ingreso
+        </Link>
+      </div>
+
+      <div className="mb-8 grid grid-cols-2 gap-3">
         {/* La tarjeta grande del diseño: indigo lleno, no glass. */}
         <Tarjeta
           href="/presupuesto"
@@ -92,27 +129,41 @@ export default async function HomePage() {
           )}
         </Tarjeta>
 
-        <Link
-          href="/movimientos/nuevo"
-          className="col-span-2 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
-        >
-          <Plus aria-hidden className="size-6 text-primary" />
-          <span className="text-[13px] font-semibold">Agregar gasto</span>
-        </Link>
-      </div>
+        {/* Presupuesto restante dice si cumples el tope; esto dice si el mes,
+            en conjunto, deja plata o se la come. Son preguntas distintas. */}
+        <Tarjeta href="/ingresos" titulo="Balance del mes" className="glass">
+          <div>
+            <p
+              data-negativo={!balancePositivo}
+              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[negativo=true]:text-destructive"
+            >
+              {balancePositivo ? "+" : "−"}
+              {soles(Math.abs(balance))}
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+              {balancePositivo
+                ? "Ingresos por encima del gasto"
+                : "Gastando más de lo que entra"}
+            </p>
+          </div>
+        </Tarjeta>
 
-      {/*
-        El ingreso va aparte y en segundo plano a propósito: se registra dos
-        veces al mes, mientras que los gastos se anotan a diario. Darles el
-        mismo peso pondría delante lo que menos se toca.
-      */}
-      <Link
-        href="/ingresos"
-        className="glass mb-8 flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <ArrowDownLeft aria-hidden className="size-4 text-primary" />
-        Registrar ingreso
-      </Link>
+        {/* Al ritmo de hoy, cuánto va a terminar sumando el mes: se nota el
+            problema antes de llegar al tope, no cuando ya te pasaste. */}
+        <Tarjeta href="/estadisticas" titulo="Ritmo de gasto" className="glass">
+          <div>
+            <p
+              data-excedido={ritmoExcedido}
+              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[excedido=true]:text-destructive"
+            >
+              {soles(ritmo.proyeccion)}
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+              {soles(ritmo.promedioDiario)}/día
+            </p>
+          </div>
+        </Tarjeta>
+      </div>
 
       <div className="mb-2.5 flex items-baseline justify-between">
         <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
