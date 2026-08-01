@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   resumenPresupuesto,
   desplazarMes,
-  deudaCruzada,
   diasDelMes,
   diasTranscurridos,
   huecoInicial,
@@ -22,102 +21,6 @@ import {
 
 // Un solo archivo de pruebas para la lógica que, si se rompe, hace que la app
 // mienta sobre el dinero. Se corre con `npm test`.
-
-test("gastos a medias pagados a medias no generan deuda", () => {
-  const d = deudaCruzada([
-    { monto: 100, pagado_por: "abraham", parte_abraham: 0.5 },
-    { monto: 100, pagado_por: "isabel", parte_abraham: 0.5 },
-  ]);
-  assert.equal(d.deudor, null);
-  assert.equal(d.monto, 0);
-});
-
-test("quien paga de más es el acreedor", () => {
-  // Abraham pone 200 de un gasto que era a medias: Isabel le debe 100.
-  const d = deudaCruzada([
-    { monto: 200, pagado_por: "abraham", parte_abraham: 0.5 },
-  ]);
-  assert.equal(d.deudor, "isabel");
-  assert.equal(d.acreedor, "abraham");
-  assert.equal(d.monto, 100);
-});
-
-test("un gasto que le toca entero a quien no lo pagó se debe completo", () => {
-  // Isabel paga la ropa de Abraham: se la debe entera.
-  const d = deudaCruzada([
-    { monto: 80, pagado_por: "isabel", parte_abraham: 1 },
-  ]);
-  assert.equal(d.deudor, "abraham");
-  assert.equal(d.monto, 80);
-});
-
-test("las deudas de ida y vuelta se compensan", () => {
-  const d = deudaCruzada([
-    { monto: 200, pagado_por: "abraham", parte_abraham: 0.5 }, // +100 Abraham
-    { monto: 100, pagado_por: "isabel", parte_abraham: 1 }, // -100 Abraham
-  ]);
-  assert.equal(d.deudor, null);
-});
-
-test("repartos desiguales", () => {
-  // 300 pagados por Isabel, 70 % de Abraham → le debe 210.
-  const d = deudaCruzada([
-    { monto: 300, pagado_por: "isabel", parte_abraham: 0.7 },
-  ]);
-  assert.equal(d.deudor, "abraham");
-  assert.equal(d.monto, 210);
-});
-
-test("el ruido de coma flotante no se convierte en deuda", () => {
-  const d = deudaCruzada([
-    { monto: 0.1, pagado_por: "abraham", parte_abraham: 0.5 },
-    { monto: 0.2, pagado_por: "isabel", parte_abraham: 0.5 },
-    { monto: 0.3, pagado_por: "abraham", parte_abraham: 0.5 },
-  ]);
-  // Abraham puso 0.4 de 0.3 que le tocaban → 0.1, no 0.10000000000000003.
-  assert.equal(d.monto, 0.1);
-});
-
-test("saldar la deuda la deja en cero", () => {
-  const gastos = [
-    { monto: 600, pagado_por: "abraham" as const, parte_abraham: 0.5 },
-  ];
-  // Isabel le debe 300 y se los pasa.
-  const d = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 300 }]);
-  assert.equal(d.deudor, null);
-  assert.equal(d.monto, 0);
-});
-
-test("saldar de menos deja el resto, y de más da la vuelta a la deuda", () => {
-  const gastos = [
-    { monto: 600, pagado_por: "abraham" as const, parte_abraham: 0.5 },
-  ];
-
-  const parcial = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 100 }]);
-  assert.equal(parcial.deudor, "isabel");
-  assert.equal(parcial.monto, 200);
-
-  // Pagar de más no es un error: ahora le deben a ella.
-  const pasada = deudaCruzada(gastos, [{ de_persona: "isabel", monto: 500 }]);
-  assert.equal(pasada.deudor, "abraham");
-  assert.equal(pasada.monto, 200);
-});
-
-test("un préstamo suelto suma aunque no haya ningún gasto", () => {
-  // Prestar y saldar son la misma operación con distinto signo, así que van
-  // por el mismo camino y no por una rama aparte.
-  const d = deudaCruzada([], [{ de_persona: "abraham", monto: 200 }]);
-  assert.equal(d.deudor, "isabel");
-  assert.equal(d.monto, 200);
-});
-
-test("gastos y transferencias se compensan entre sí", () => {
-  const d = deudaCruzada(
-    [{ monto: 400, pagado_por: "isabel", parte_abraham: 0.5 }], // Abraham debe 200
-    [{ de_persona: "abraham", monto: 200 }], // y se los pasa
-  );
-  assert.equal(d.deudor, null);
-});
 
 test("redondear corta en el céntimo", () => {
   assert.equal(redondear(0.1 + 0.2), 0.3);

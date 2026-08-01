@@ -1,7 +1,3 @@
-// La extensión .ts es lo que permite correr las pruebas con `node --test` sin
-// bundler ni dependencias: Node resuelve la ruta exacta y se salta los tipos.
-import { NOMBRES, laOtra, type Persona } from "./persona.ts";
-
 /**
  * Todos los cálculos del presupuesto, sin tocar la base de datos ni React.
  * Funciones puras: se prueban con `npm test` y se usan igual en el servidor
@@ -191,80 +187,6 @@ export function porSemanaDelMes(
     etiqueta: `S${i + 1}`,
     total: redondear(total),
   }));
-}
-
-// ---------------------------------------------------------------------------
-// Deuda cruzada
-// ---------------------------------------------------------------------------
-
-export type Gasto = {
-  monto: number;
-  pagado_por: Persona;
-  /** Fracción del gasto que le corresponde a Abraham. 0.5 = a medias. */
-  parte_abraham: number;
-};
-
-export type DeudaCruzada = {
-  /** Quién debe. `null` cuando están en paz. */
-  deudor: Persona | null;
-  acreedor: Persona | null;
-  monto: number;
-  /** Frase lista para la pantalla. */
-  resumen: string;
-};
-
-/** Dinero que pasa de uno al otro: saldar una deuda o prestar. */
-export type Transferencia = {
-  /** Quien entrega el dinero. */
-  de_persona: Persona;
-  monto: number;
-};
-
-/**
- * El corazón de la app: quién le debe a quién, y cuánto.
- *
- * Cada gasto tiene dos caras — quién lo pagó y a quién le correspondía. La
- * diferencia acumulada entre ambas es la deuda. Un gasto pagado a medias por
- * quien debía pagarlo a medias no mueve nada.
- *
- * Las transferencias entran en la misma cuenta: saldar y prestar son la misma
- * operación con distinta etiqueta —alguien entrega y el saldo se mueve en esa
- * dirección—, así que no necesitan una rama propia. Isabel pagándole 300 a
- * Abraham baja lo que Isabel debe; Abraham prestándole 200 a Isabel lo sube.
- */
-export function deudaCruzada(
-  gastos: readonly Gasto[],
-  transferencias: readonly Transferencia[] = [],
-): DeudaCruzada {
-  let saldoAbraham = 0;
-
-  for (const gasto of gastos) {
-    const puso = gasto.pagado_por === "abraham" ? gasto.monto : 0;
-    const leTocaba = gasto.monto * gasto.parte_abraham;
-    saldoAbraham += puso - leTocaba;
-  }
-
-  for (const t of transferencias) {
-    saldoAbraham += t.de_persona === "abraham" ? t.monto : -t.monto;
-  }
-
-  const monto = redondear(Math.abs(saldoAbraham));
-
-  // Menos de un céntimo es estar en paz, no una deuda de 0.004 soles.
-  if (monto < 0.01) {
-    return { deudor: null, acreedor: null, monto: 0, resumen: "Están en paz" };
-  }
-
-  // Saldo positivo: Abraham puso de más, así que le deben a él.
-  const acreedor: Persona = saldoAbraham > 0 ? "abraham" : "isabel";
-  const deudor = laOtra(acreedor);
-
-  return {
-    deudor,
-    acreedor,
-    monto,
-    resumen: `${NOMBRES[deudor]} le debe ${soles(monto)} a ${NOMBRES[acreedor]}`,
-  };
 }
 
 // ---------------------------------------------------------------------------

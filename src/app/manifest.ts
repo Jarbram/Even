@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Even · Nuestro Presupuesto",
     short_name: "Even",
-    description: "Gastos, ahorros y deudas de la casa, en un solo lugar.",
+    description: "Gastos, ahorros y presupuesto de la casa, en un solo lugar.",
     start_url: "/",
     display: "standalone",
     background_color: "#111214",

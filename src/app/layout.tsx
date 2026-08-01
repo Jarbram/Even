@@ -15,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "Even",
-  description: "Gastos, ahorros y deudas de la casa, en un solo lugar.",
+  description: "Gastos, ahorros y presupuesto de la casa, en un solo lugar.",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
 };
 

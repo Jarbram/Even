@@ -13,7 +13,7 @@ import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, deuda, presupuesto, fondos } =
+  const { mes, gastos, restante, ahorros, presupuesto, fondos } =
     await resumenDelMes();
 
   const sinTopes = presupuesto.estado === "sin-topes";
@@ -92,26 +92,9 @@ export default async function HomePage() {
           )}
         </Tarjeta>
 
-        <Tarjeta
-          href="/deuda"
-          titulo="Deuda entre nosotros"
-          className="glass"
-        >
-          {deuda.deudor ? (
-            <p className="text-[15px] leading-snug font-bold">
-              {NOMBRES[deuda.deudor]} debe
-              <span className="mt-1 block text-lg text-primary">
-                {soles(deuda.monto)}
-              </span>
-            </p>
-          ) : (
-            <p className="text-[15px] leading-snug font-bold">Están en paz</p>
-          )}
-        </Tarjeta>
-
         <Link
           href="/movimientos/nuevo"
-          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
+          className="col-span-2 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
         >
           <Plus aria-hidden className="size-6 text-primary" />
           <span className="text-[13px] font-semibold">Agregar gasto</span>

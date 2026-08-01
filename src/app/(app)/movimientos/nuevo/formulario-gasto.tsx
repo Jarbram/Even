@@ -91,26 +91,11 @@ export function FormularioGasto({
         />
       </div>
 
-      {/* Los dos campos de los que sale la deuda entre ustedes. Vuelven a la
-          vista porque un gasto personal registrado como compartido reparte la
-          mitad al otro sin querer, y eso descuadra la cuenta en silencio. */}
       <Chips
         name="pagado_por"
         label="¿Quién pagó?"
         defaultValue={persona}
         opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
-      />
-
-      <Chips
-        name="parte_abraham"
-        label="¿De quién es el gasto?"
-        columnas={3}
-        defaultValue="0.5"
-        opciones={[
-          { value: "0.5", label: "A medias" },
-          { value: "1", label: NOMBRES.abraham },
-          { value: "0", label: NOMBRES.isabel },
-        ]}
       />
 
       <ErrorForm estado={estado} />

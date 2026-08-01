@@ -4,9 +4,8 @@
 todo lo que hace: que dos personas sepan siempre a cuánto están.
 
 PWA de finanzas para una pareja. Reemplaza el Excel mensual: registra gastos,
-calcula sola la deuda cruzada entre ambos, controla el gasto contra los topes
-acordados por categoría, lleva los fondos de ahorro como cuentas con meta y
-guarda histórico por mes.
+controla el gasto contra los topes acordados por categoría, lleva los fondos
+de ahorro como cuentas con meta y guarda histórico por mes.
 
 Moneda: soles (S/). Idioma: español. Mobile-first, modo oscuro.
 
@@ -179,7 +178,7 @@ src/
     persona.ts        quiénes usan la app (constantes puras)
     firma.ts          HMAC de la cookie y comprobación del PIN
     sesion.ts         cookie, freno de fuerza bruta, requirePersona()
-    finanzas.ts       TODOS los cálculos: deuda cruzada, topes, ahorros
+    finanzas.ts       TODOS los cálculos: topes de presupuesto, ahorros
     datos.ts          lecturas de Supabase
     supabase/server.ts  el único cliente, con service_role
 supabase/migrations/  SQL versionado
@@ -205,7 +204,7 @@ cualquiera.
   PWA instalable.
 - **Fase 2 — hecha.** Esquema completo: gastos, ingresos, presupuestos,
   fondos y cuentas.
-- **Fase 3 — hecha.** Deuda cruzada, semáforo de topes por categoría y
-  ahorros con meta, con pruebas.
+- **Fase 3 — hecha.** Semáforo de topes por categoría y ahorros con meta,
+  con pruebas.
 - **Fase 4 — hecha.** Inicio, movimientos con calendario, nuevo gasto,
   ingresos, presupuesto, estadísticas y ajustes.

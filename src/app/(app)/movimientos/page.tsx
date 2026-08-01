@@ -39,7 +39,7 @@ export default async function MovimientosPage({
   const diaActivo = Number(params.dia);
   const hayDia = diaActivo >= 1 && diaActivo <= diasDelMes(mes);
 
-  const { gastos, totalGastado, deuda, presupuesto } = await resumenDelMes(mes);
+  const { gastos, totalGastado, presupuesto } = await resumenDelMes(mes);
 
   const visibles = hayDia
     ? gastos.filter((g) => Number(g.fecha.slice(8, 10)) === diaActivo)
@@ -92,12 +92,6 @@ export default async function MovimientosPage({
             />
           </div>
         )}
-
-        {/* La deuda cruzada es otro asunto que el total: va separada, no como
-            pie de página de una cifra con la que no tiene relación. */}
-        <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
-          {deuda.resumen}
-        </p>
       </div>
 
       {hayDia && (

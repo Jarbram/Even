@@ -3,7 +3,6 @@ import type { Persona } from "./persona";
 import type { CuentaRow } from "./cuentas";
 import {
   CATEGORIAS_SUGERIDAS,
-  deudaCruzada,
   lineasPresupuesto,
   mesActual,
   presupuestosVigentes,
@@ -24,7 +23,6 @@ export type GastoRow = {
   categoria: string;
   monto: number;
   pagado_por: Persona;
-  parte_abraham: number;
   cuenta_id: string | null;
   /** PostgREST devuelve la cuenta enlazada como objeto, o `null` si no tiene. */
   cuentas: { nombre: string; color: string } | null;
@@ -35,15 +33,6 @@ export type FondoRow = {
   nombre: string;
   meta: number | null;
   saldo: number;
-};
-
-export type TransferenciaRow = {
-  id: string;
-  fecha: string;
-  de_persona: Persona;
-  monto: number;
-  tipo: "liquidacion" | "prestamo";
-  concepto: string;
 };
 
 export type IngresoRow = {
@@ -59,7 +48,7 @@ export type IngresoRow = {
 };
 
 const CAMPOS_GASTO =
-  "id, fecha, descripcion, categoria, monto, pagado_por, parte_abraham, cuenta_id, cuentas(nombre, color)";
+  "id, fecha, descripcion, categoria, monto, pagado_por, cuenta_id, cuentas(nombre, color)";
 
 /**
  * Todo lo del mes en una sola pasada. Las consultas son independientes entre
@@ -68,7 +57,7 @@ const CAMPOS_GASTO =
 export async function resumenDelMes(mes: Mes = mesActual()) {
   const supabase = createClient();
 
-  const [gastos, ingresos, presupuestos, fondos, cuentas, deuda] =
+  const [gastos, ingresos, presupuestos, fondos, cuentas] =
     await Promise.all([
       supabase
         .from("gastos")
@@ -100,7 +89,6 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
         .eq("activa", true)
         .order("created_at")
         .overrideTypes<CuentaRow[]>(),
-      deudaActual(),
     ]);
 
   const listaGastos = gastos.data ?? [];
@@ -121,7 +109,6 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
     ingresos: listaIngresos,
     fondos: listaFondos,
     cuentas: cuentas.data ?? [],
-    deuda,
     lineas,
     presupuesto,
     /** `true` si ninguna categoría tiene un tope puesto este mismo mes. */
@@ -140,58 +127,6 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
  * rellenar. Es lo que decide qué chips salen primero en el formulario: al mes
  * de uso, arriba están las cuatro de siempre y no hay que buscar nada.
  */
-/**
- * Lo que se deben hoy, contando todo el histórico.
- *
- * No es un dato del mes: una deuda de julio sigue existiendo en agosto. Antes
- * esto se calculaba con los gastos del mes en curso, así que cada día 1 la
- * cuenta volvía a cero sola y lo que se debían desaparecía sin que nadie lo
- * hubiera pagado.
- */
-export async function deudaActual() {
-  const [gastos, movimientos] = await Promise.all([
-    gastosParaDeuda(),
-    transferencias(),
-  ]);
-  return deudaCruzada(gastos, movimientos);
-}
-
-export async function transferencias() {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("transferencias")
-    .select("id, fecha, de_persona, monto, tipo, concepto")
-    .order("fecha", { ascending: false })
-    .order("created_at", { ascending: false })
-    .overrideTypes<TransferenciaRow[]>();
-  return data ?? [];
-}
-
-/**
- * Todos los gastos del histórico, solo con lo que la deuda necesita.
- *
- * La deuda entre los dos no se reinicia el día 1: lo que se deben viene de
- * todos los meses, así que no puede calcularse con los gastos de uno solo.
- */
-export async function gastosParaDeuda() {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("gastos")
-    .select("id, fecha, descripcion, monto, pagado_por, parte_abraham")
-    .order("fecha", { ascending: false })
-    .overrideTypes<
-      {
-        id: string;
-        fecha: string;
-        descripcion: string;
-        monto: number;
-        pagado_por: Persona;
-        parte_abraham: number;
-      }[]
-    >();
-  return data ?? [];
-}
-
 export async function categoriasUsadas(): Promise<string[]> {
   const supabase = createClient();
   const { data } = await supabase
