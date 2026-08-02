@@ -400,32 +400,3 @@ export function mesesParaMeta(
   const falta = fondo.meta - fondo.saldo;
   return falta <= 0 ? 0 : Math.ceil(falta / aporteMensual);
 }
-
-// ---------------------------------------------------------------------------
-// Ritmo de gasto
-// ---------------------------------------------------------------------------
-
-export type RitmoGasto = {
-  promedioDiario: number;
-  /** Si se sigue gastando al mismo promedio, cuánto suma el mes completo. */
-  proyeccion: number;
-};
-
-/**
- * Proyecta el mes al ritmo actual: lo gastado hasta hoy dividido entre los
- * días vividos, multiplicado por los días que tiene el mes. En un mes
- * cerrado los días vividos son todos, así que la proyección coincide con lo
- * ya gastado.
- */
-export function ritmoDeGasto(
-  mes: Mes,
-  gastado: number,
-  hoy: string,
-): RitmoGasto {
-  const diasVividos = diasTranscurridos(mes, hoy);
-  const promedioDiario = diasVividos > 0 ? gastado / diasVividos : 0;
-  return {
-    promedioDiario: redondear(promedioDiario),
-    proyeccion: redondear(promedioDiario * diasDelMes(mes)),
-  };
-}

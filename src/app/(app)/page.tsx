@@ -8,30 +8,16 @@ import {
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
-import { hoyISO, nombreMes, redondear, ritmoDeGasto, soles } from "@/lib/finanzas";
+import { nombreMes, soles } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const {
-    mes,
-    gastos,
-    restante,
-    ahorros,
-    presupuesto,
-    fondos,
-    totalGastado,
-    ingresosTotal,
-  } = await resumenDelMes();
+  const { mes, gastos, restante, ahorros, presupuesto, fondos } =
+    await resumenDelMes();
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
-
-  const balance = redondear(ingresosTotal - totalGastado);
-  const balancePositivo = balance >= 0;
-
-  const ritmo = ritmoDeGasto(mes, totalGastado, hoyISO());
-  const ritmoExcedido = !sinTopes && ritmo.proyeccion > presupuesto.tope;
 
   return (
     <>
@@ -127,41 +113,6 @@ export default async function HomePage() {
               {soles(ahorros)}
             </p>
           )}
-        </Tarjeta>
-
-        {/* Presupuesto restante dice si cumples el tope; esto dice si el mes,
-            en conjunto, deja plata o se la come. Son preguntas distintas. */}
-        <Tarjeta href="/ingresos" titulo="Balance del mes" className="glass">
-          <div>
-            <p
-              data-negativo={!balancePositivo}
-              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[negativo=true]:text-destructive"
-            >
-              {balancePositivo ? "+" : "−"}
-              {soles(Math.abs(balance))}
-            </p>
-            <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-              {balancePositivo
-                ? "Ingresos por encima del gasto"
-                : "Gastando más de lo que entra"}
-            </p>
-          </div>
-        </Tarjeta>
-
-        {/* Al ritmo de hoy, cuánto va a terminar sumando el mes: se nota el
-            problema antes de llegar al tope, no cuando ya te pasaste. */}
-        <Tarjeta href="/estadisticas" titulo="Ritmo de gasto" className="glass">
-          <div>
-            <p
-              data-excedido={ritmoExcedido}
-              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[excedido=true]:text-destructive"
-            >
-              {soles(ritmo.proyeccion)}
-            </p>
-            <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-              {soles(ritmo.promedioDiario)}/día
-            </p>
-          </div>
         </Tarjeta>
       </div>
 
