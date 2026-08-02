@@ -15,7 +15,6 @@ import {
   NuevoFondo,
   SaldarReembolso,
 } from "./formularios";
-import { ActivarNotificaciones } from "./notificaciones";
 
 export default async function AjustesPage() {
   const persona = await requirePersona();
@@ -241,12 +240,6 @@ export default async function AjustesPage() {
         <div className="mt-2.5">
           <NuevoFondo />
         </div>
-      </Seccion>
-
-      <Seccion titulo="Notificaciones">
-        <ActivarNotificaciones
-          vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? null}
-        />
       </Seccion>
 
       {/*

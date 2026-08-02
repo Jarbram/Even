@@ -22,7 +22,6 @@ const eslintConfig = [
       "public/sw.js",
       "public/workbox-*.js",
       "public/swe-worker-*.js",
-      "public/worker-*.js",
     ],
   },
 ];

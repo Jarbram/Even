@@ -71,20 +71,6 @@ npm run dev
 No hace falta tocar **Authentication** en el dashboard: la app no usa Supabase
 Auth.
 
-5. (Opcional) Notificaciones push — avisan cuando el otro registra un gasto o
-   un ingreso, y si pasan un par de días sin anotar nada. Sin esto la app
-   funciona igual, solo sin avisos:
-
-   ```bash
-   npx web-push generate-vapid-keys
-   ```
-
-   Pon la pública en `VAPID_PUBLIC_KEY`, la privada en `VAPID_PRIVATE_KEY`, y
-   un contacto (`mailto:tucorreo@ejemplo.com`) en `VAPID_SUBJECT` — lo exige el
-   estándar VAPID, no se usa para nada más. Genera también `CRON_SECRET`
-   (`openssl rand -hex 32`): autentica al cron diario contra
-   `/api/cron/recordatorio`, para que nadie más pueda dispararlo a mano.
-
 ### 2. Correr las migraciones
 
 Las migraciones versionadas viven en `supabase/migrations/`.
@@ -171,13 +157,9 @@ Resumen práctico tras un despliegue:
 1. Sube el repo a GitHub e impórtalo en [vercel.com/new](https://vercel.com/new).
    Vercel detecta Next.js solo.
 2. **Settings → Environment Variables**: añade `SUPABASE_URL`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `APP_SECRET`, `PIN_ABRAHAM`, `PIN_ISABEL` y,
-   si vas a usar notificaciones, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
-   `VAPID_SUBJECT` y `CRON_SECRET` — para Production, Preview y Development.
-3. Deploy. `vercel.json` ya declara el cron diario del recordatorio
-   (`/api/cron/recordatorio`); Vercel lo activa solo, sin nada más que
-   configurar. En el plan Hobby solo corre una vez al día, que es justo lo
-   que necesita.
+   `SUPABASE_SERVICE_ROLE_KEY`, `APP_SECRET`, `PIN_ABRAHAM` y `PIN_ISABEL`
+   para Production, Preview y Development.
+3. Deploy.
 
 ## Cómo está organizado
 
@@ -188,8 +170,7 @@ src/
       acciones.ts     todas las escrituras (Server Actions + Zod)
       presupuesto/    topes por categoría y semáforo de cumplimiento
       ingresos/       registrar y revisar lo que entra
-      ajustes/        cuentas, fondos, devoluciones, notificaciones
-    api/cron/         endpoints que solo llama el cron de Vercel
+      ajustes/        cuentas, fondos, devoluciones
     entrar/           elegir persona + PIN
     globals.css       TODOS los design tokens
     manifest.ts       manifest de la PWA
@@ -200,9 +181,7 @@ src/
     sesion.ts         cookie, freno de fuerza bruta, requirePersona()
     finanzas.ts       TODOS los cálculos: topes de presupuesto, ahorros
     datos.ts          lecturas de Supabase
-    push.ts           mandar notificaciones (efecto secundario, no lectura)
     supabase/server.ts  el único cliente, con service_role
-worker/index.js        push y notificationclick del service worker
 supabase/migrations/  SQL versionado
 ```
 
