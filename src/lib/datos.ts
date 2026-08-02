@@ -123,23 +123,31 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
 }
 
 /**
- * Las categorías ordenadas por cuánto se usan, con las sugerencias detrás para
- * rellenar. Es lo que decide qué chips salen primero en el formulario: al mes
- * de uso, arriba están las cuatro de siempre y no hay que buscar nada.
+ * Las categorías ordenadas por cuánto se usan, con las que ya tienen
+ * presupuesto puesto justo detrás —aunque no se les haya cargado ni un
+ * gasto— y las sugerencias al final para rellenar. Es lo que decide qué
+ * chips salen primero en el formulario: al mes de uso, arriba están las
+ * cuatro de siempre y no hay que buscar nada.
+ *
+ * Una categoría con presupuesto es una categoría que sí o sí se va a usar:
+ * sin esto, tocaba escribirla a mano con "+ Otra" hasta el primer gasto.
  */
 export async function categoriasUsadas(): Promise<string[]> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("gastos")
-    .select("categoria")
-    .order("fecha", { ascending: false })
-    // Un año largo de gastos basta para saber qué se usa; leer el histórico
-    // entero solo para ordenar chips sería tirar el dinero.
-    .limit(500)
-    .overrideTypes<{ categoria: string }[]>();
+  const [gastos, presupuestos] = await Promise.all([
+    supabase
+      .from("gastos")
+      .select("categoria")
+      .order("fecha", { ascending: false })
+      // Un año largo de gastos basta para saber qué se usa; leer el histórico
+      // entero solo para ordenar chips sería tirar el dinero.
+      .limit(500)
+      .overrideTypes<{ categoria: string }[]>(),
+    supabase.from("presupuestos").select("categoria").overrideTypes<{ categoria: string }[]>(),
+  ]);
 
   const veces = new Map<string, number>();
-  for (const { categoria } of data ?? []) {
+  for (const { categoria } of gastos.data ?? []) {
     veces.set(categoria, (veces.get(categoria) ?? 0) + 1);
   }
 
@@ -148,8 +156,14 @@ export async function categoriasUsadas(): Promise<string[]> {
     .map(([categoria]) => categoria);
 
   const vistas = new Set(usadas);
+  const conPresupuesto = [
+    ...new Set((presupuestos.data ?? []).map((p) => p.categoria)),
+  ].filter((c) => !vistas.has(c));
+  for (const c of conPresupuesto) vistas.add(c);
+
   return [
     ...usadas,
+    ...conPresupuesto,
     ...CATEGORIAS_SUGERIDAS.filter((c) => !vistas.has(c)),
   ];
 }
