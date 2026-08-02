@@ -19,7 +19,7 @@ export function BotonCerrar({
     <Link
       href={href}
       aria-label={label}
-      className="glass flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <X aria-hidden className="size-[18px]" />
     </Link>

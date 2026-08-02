@@ -84,7 +84,7 @@ export default async function AjustesPage() {
                       <li key={cuenta.id}>
                         <Link
                           href={`/cuentas/${cuenta.id}`}
-                          className="glass flex items-center gap-3 rounded-lg px-4 py-3.5 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          className="glass-accion flex items-center gap-3 rounded-lg px-4 py-3.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         >
                           <span
                             aria-hidden
@@ -210,7 +210,7 @@ export default async function AjustesPage() {
                   {fondo.meta && (
                     <>
                       <div
-                        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
+                        className="glass-hueco mt-2.5 h-1.5 overflow-hidden rounded-full"
                         role="progressbar"
                         aria-label={`${fondo.nombre}: ${soles(fondo.saldo)} de ${soles(fondo.meta)}`}
                         aria-valuenow={Math.round(progreso.proporcion * 100)}

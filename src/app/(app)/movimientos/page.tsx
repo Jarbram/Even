@@ -79,7 +79,7 @@ export default async function MovimientosPage({
 
         {conTope && (
           <div
-            className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted"
+            className="glass-hueco mt-4 h-1.5 overflow-hidden rounded-full"
             role="img"
             aria-label={`${soles(totalGastado)} gastados de ${soles(presupuesto.tope)} presupuestados`}
           >

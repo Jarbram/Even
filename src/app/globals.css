@@ -35,7 +35,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Superficies glass propias del diseño */
+  /* Superficies de cristal propias del diseño */
   --color-glass: var(--glass);
   --color-glass-strong: var(--glass-strong);
   --color-shell: var(--shell);
@@ -72,13 +72,16 @@
   --background: #111214;
   --foreground: #ffffff;
 
-  --card: rgb(45 46 51 / 0.55);
+  --card: var(--glass);
   --card-foreground: #ffffff;
   --popover: #1a1b1e;
   --popover-foreground: #ffffff;
 
+  /* Cristal: cuatro rellenos, uno por profundidad. Ver el bloque «Cristal». */
   --glass: rgb(45 46 51 / 0.55);
   --glass-strong: rgb(52 53 59 / 0.5);
+  --glass-alto: rgb(62 63 70 / 0.62);
+  --glass-hueco: rgb(8 8 10 / 0.4);
 
   --primary: #c7f94e;
   --primary-foreground: #111214;
@@ -137,19 +140,124 @@
   }
 }
 
-/* Superficie glass del diseño: translúcida + blur + borde de 1px muy tenue */
+/* ---------------------------------------------------------------------------
+   Cristal
+------------------------------------------------------------------------------
+   Cuatro profundidades, no una. Antes todo —tarjeta, fila, campo y navegación—
+   llevaba la misma superficie plana, así que nada parecía estar delante ni
+   detrás de nada:
+
+   · `glass`        apoyado sobre el fondo: tarjetas, filas, paneles.
+   · `glass-accion` lo mismo, pero se toca: se levanta al pasar y se hunde al
+                    pulsar.
+   · `glass-nav`    flota por encima de todo: la navegación.
+   · `glass-hueco`  hundido en la superficie: campos y canales de barra. Un
+                    input no se apoya encima de la página, se abre dentro.
+
+   Lo que hace que se lea como cristal —y no como un gris translúcido— son tres
+   cosas, y ninguna es el desenfoque:
+
+   1. El filo: una línea de luz de 1 px arriba y una de sombra abajo. Es como
+      se ve un canto biselado cuando la luz viene de arriba.
+   2. La saturación: `blur()` a secas lava el color de lo que hay detrás. Con
+      `saturate()` los halos indigo y lima del `body` atraviesan el cristal y
+      lo tiñen, que es justo lo que hace un vidrio de verdad.
+   3. La sombra con desplazamiento: separa la superficie del fondo. Un halo
+      centrado no separa nada, solo decora.
+--------------------------------------------------------------------------- */
+
+:root,
+.dark {
+  --filo: inset 0 1px 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 rgb(0 0 0 / 0.16);
+  --filo-alto: inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 -1px 0 rgb(0 0 0 / 0.24);
+  --filo-hueco: inset 0 1px 2px rgb(0 0 0 / 0.45),
+    inset 0 -1px 0 rgb(255 255 255 / 0.05);
+
+  --sombra-apoyada: 0 1px 2px rgb(0 0 0 / 0.28), 0 10px 24px -14px rgb(0 0 0 / 0.7);
+  --sombra-levantada: 0 3px 8px rgb(0 0 0 / 0.3), 0 16px 32px -14px rgb(0 0 0 / 0.75);
+  --sombra-flotante: 0 6px 14px rgb(0 0 0 / 0.35), 0 24px 48px -16px rgb(0 0 0 / 0.8);
+
+  /* El brillo que baja desde el borde superior. En porcentaje para que un panel
+     alto y una pastilla de 40 px se lean con el mismo material. */
+  --lustre: linear-gradient(180deg, rgb(255 255 255 / 0.055), transparent 42%);
+}
+
 @utility glass {
   background-color: var(--glass);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background-image: var(--lustre);
+  /* ponytail: 16 px basta. Los halos del fondo son degradados enormes, así que
+     desenfocar más no cambia lo que se ve y sí lo que cuesta pintar cada fila
+     de una lista larga. El cristal lo hacen el filo y la saturación. */
+  backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid var(--border);
+  box-shadow: var(--filo), var(--sombra-apoyada);
+}
+
+/* La misma superficie, cuando además es un enlace o un botón. Antes cada sitio
+   se inventaba su `hover:border-primary`: un contorno lima entero para decir
+   «puedes tocar esto», que grita más que el estado seleccionado. Aquí el cristal
+   se acerca a la luz y vuelve al pulsar, que es lo que hace una superficie
+   física. */
+@utility glass-accion {
+  @apply glass;
+  transition:
+    background-color 180ms var(--ease-salida),
+    border-color 180ms var(--ease-salida),
+    box-shadow 180ms var(--ease-salida),
+    translate 180ms var(--ease-salida);
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--glass-alto);
+      border-color: rgb(255 255 255 / 0.16);
+      box-shadow: var(--filo-alto), var(--sombra-levantada);
+      translate: 0 -1px;
+    }
+  }
+
+  &:active {
+    background-color: var(--glass-alto);
+    box-shadow: var(--filo), var(--sombra-apoyada);
+    translate: 0 0;
+  }
 }
 
 @utility glass-nav {
   background-color: var(--glass-strong);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background-image: var(--lustre);
+  backdrop-filter: blur(28px) saturate(190%);
   border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: var(--filo-alto), var(--sombra-flotante);
+}
+
+/* Hundido: relleno más oscuro que el fondo y la sombra por dentro. Sin borde
+   propio —lo pone quien lo usa (el input trae el suyo) o no lleva ninguno (el
+   canal de una barra de 6 px, donde un borde se comería el dato). */
+@utility glass-hueco {
+  background-color: var(--glass-hueco);
+  backdrop-filter: blur(10px) saturate(130%);
+  box-shadow: var(--filo-hueco);
+}
+
+/* Quien pide menos transparencia no debería recibir ninguna: el sistema se
+   vuelve opaco y las cuatro profundidades siguen distinguiéndose por el relleno
+   y la sombra, que es lo que llevaba la información. */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  .dark {
+    --glass: #26272c;
+    --glass-strong: #2e2f35;
+    --glass-alto: #34353c;
+    --glass-hueco: #0c0d0f;
+  }
+  .glass,
+  .glass-accion,
+  .glass-nav,
+  .glass-hueco {
+    backdrop-filter: none;
+    background-image: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
