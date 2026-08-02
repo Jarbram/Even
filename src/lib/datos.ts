@@ -26,6 +26,7 @@ export type GastoRow = {
   cuenta_id: string | null;
   /** PostgREST devuelve la cuenta enlazada como objeto, o `null` si no tiene. */
   cuentas: { nombre: string; color: string } | null;
+  a_reembolsar: boolean;
 };
 
 export type FondoRow = {
@@ -48,7 +49,7 @@ export type IngresoRow = {
 };
 
 const CAMPOS_GASTO =
-  "id, fecha, descripcion, categoria, monto, pagado_por, cuenta_id, cuentas(nombre, color)";
+  "id, fecha, descripcion, categoria, monto, pagado_por, cuenta_id, cuentas(nombre, color), a_reembolsar";
 
 /**
  * Todo lo del mes en una sola pasada. Las consultas son independientes entre

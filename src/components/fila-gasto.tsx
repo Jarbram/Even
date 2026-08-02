@@ -3,6 +3,7 @@ import { claseColor } from "@/lib/cuentas";
 import { soles } from "@/lib/finanzas";
 import type { GastoRow } from "@/lib/datos";
 import { BotonBorrar } from "@/components/boton-borrar";
+import { ToggleReembolsar } from "@/components/toggle-reembolsar";
 import { borrarGasto } from "@/app/(app)/acciones";
 
 /** Fecha corta del diseño: "24 jul". */
@@ -34,6 +35,15 @@ export function FilaGasto({
           {DIA_MES.format(new Date(`${gasto.fecha}T00:00:00Z`))}
           {gasto.cuentas && ` · ${gasto.cuentas.nombre}`}
         </p>
+        {borrable && (
+          <div className="mt-1.5">
+            <ToggleReembolsar
+              id={gasto.id}
+              activo={gasto.a_reembolsar}
+              etiqueta={`${gasto.descripcion}, ${soles(gasto.monto)}`}
+            />
+          </div>
+        )}
       </div>
       <span className="shrink-0 text-sm font-semibold">{soles(gasto.monto)}</span>
       {borrable && (

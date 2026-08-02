@@ -86,6 +86,23 @@ export async function borrarGasto(id: string) {
   );
 }
 
+const marcaReembolso = z.object({ id: uuid, a_reembolsar: z.coerce.boolean() });
+
+/**
+ * Etiqueta (o quita la etiqueta de) un gasto ya guardado, para el que se
+ * olvidó marcar al crearlo o el que se marcó de más. No toca ningún
+ * reembolso ya hecho: solo cambia la intención, no el dinero que ya se movió.
+ */
+export async function marcarReembolsar(id: string, aReembolsar: boolean) {
+  const supabase = createClient();
+  return ejecutar(
+    marcaReembolso,
+    { id, a_reembolsar: aReembolsar },
+    ({ id, a_reembolsar }) =>
+      supabase.from("gastos").update({ a_reembolsar }).eq("id", id),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Cuentas: efectivo, tarjetas, billeteras
 // ---------------------------------------------------------------------------
