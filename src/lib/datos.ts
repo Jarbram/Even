@@ -125,12 +125,15 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
 /**
  * Las categorías ordenadas por cuánto se usan, con las que ya tienen
  * presupuesto puesto justo detrás —aunque no se les haya cargado ni un
- * gasto— y las sugerencias al final para rellenar. Es lo que decide qué
- * chips salen primero en el formulario: al mes de uso, arriba están las
- * cuatro de siempre y no hay que buscar nada.
+ * gasto—. Es lo que decide qué chips salen primero en el formulario: al mes
+ * de uso, arriba están las cuatro de siempre y no hay que buscar nada.
  *
  * Una categoría con presupuesto es una categoría que sí o sí se va a usar:
  * sin esto, tocaba escribirla a mano con "+ Otra" hasta el primer gasto.
+ *
+ * Las doce sugeridas (`CATEGORIAS_SUGERIDAS`) solo aparecen si todavía no hay
+ * ni un gasto ni un presupuesto propios: en cuanto la pareja tiene sus
+ * categorías, las genéricas que nunca eligieron solo estorban en la lista.
  */
 export async function categoriasUsadas(): Promise<string[]> {
   const supabase = createClient();
@@ -159,13 +162,9 @@ export async function categoriasUsadas(): Promise<string[]> {
   const conPresupuesto = [
     ...new Set((presupuestos.data ?? []).map((p) => p.categoria)),
   ].filter((c) => !vistas.has(c));
-  for (const c of conPresupuesto) vistas.add(c);
 
-  return [
-    ...usadas,
-    ...conPresupuesto,
-    ...CATEGORIAS_SUGERIDAS.filter((c) => !vistas.has(c)),
-  ];
+  const propias = [...usadas, ...conPresupuesto];
+  return propias.length > 0 ? propias : [...CATEGORIAS_SUGERIDAS];
 }
 
 const CONCEPTOS_BASE = ["Sueldo", "Extra", "Venta", "Regalo"];
