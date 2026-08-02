@@ -50,7 +50,13 @@ export function TarjetaOpcion({
         span y no con `peer-checked:block` en la propia marca: `peer-checked`
         solo alcanza a hermanos del input, y la marca es un descendiente.
       */}
-      <span className="glass relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition active:scale-[0.98] peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:ring-1 peer-checked:ring-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+      {/*
+        El grosor de la selección va por `outline` y no por `ring`: `ring` es
+        `box-shadow` por dentro, y le quitaría a la tarjeta elegida el filo y la
+        sombra del cristal justo mientras está elegida, que es cuando más se
+        mira. `outline` es otra propiedad y convive con las dos.
+      */}
+      <span className="glass relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition active:scale-[0.98] peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:outline-1 peer-checked:-outline-offset-1 peer-checked:outline-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
         <span className="flex items-center justify-between">
           <span aria-hidden className={`size-2 rounded-full ${punto}`} />
           {Icono && (

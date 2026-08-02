@@ -36,7 +36,7 @@ export default async function HomePage() {
         <Link
           href="/ajustes"
           aria-label="Ajustes"
-          className="glass flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <SlidersHorizontal aria-hidden className="size-[18px]" />
         </Link>
@@ -67,7 +67,7 @@ export default async function HomePage() {
 
         <Link
           href="/ingresos"
-          className="glass flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="glass-accion flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <ArrowDownLeft aria-hidden className="size-4 text-primary" />
           Registrar ingreso
@@ -169,7 +169,7 @@ function PrimerosPasos({ sinTopes }: { sinTopes: boolean }) {
         <li key={paso.href}>
           <Link
             href={paso.href}
-            className="glass flex items-center gap-3 rounded-lg p-4 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="glass-accion flex items-center gap-3 rounded-lg p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">{paso.titulo}</p>

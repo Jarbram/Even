@@ -113,7 +113,7 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
       <p className="mt-1.5 text-xs text-muted-foreground">{resumen}</p>
 
       <div
-        className="mt-5 h-2.5 overflow-hidden rounded-full bg-muted"
+        className="glass-hueco mt-5 h-2.5 overflow-hidden rounded-full"
         role="img"
         aria-label={`Llevas ${soles(gastado)} gastados de ${soles(tope)} presupuestados`}
       >
@@ -177,7 +177,7 @@ function Linea({ mes, linea }: { mes: Mes; linea: LineaPresupuesto }) {
         ) : (
           <>
             <div
-              className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
+              className="glass-hueco mt-2.5 h-1.5 overflow-hidden rounded-full"
               role="progressbar"
               aria-label={`${linea.categoria}: gastado ${linea.gastado} de ${linea.presupuestado} soles`}
               aria-valuenow={Math.round(linea.proporcion * 100)}

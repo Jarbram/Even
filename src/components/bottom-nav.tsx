@@ -23,7 +23,7 @@ export function BottomNav() {
       aria-label="Navegación principal"
       className="fixed inset-x-0 bottom-[max(1.375rem,env(safe-area-inset-bottom))] z-40 flex justify-center"
     >
-      <ul className="glass-nav flex gap-1.5 rounded-[30px] p-2 shadow-[0_16px_36px_rgba(0,0,0,0.45)]">
+      <ul className="glass-nav flex gap-1.5 rounded-[30px] p-2">
         {TABS.map((tab) => {
           const active =
             tab.href === "/"

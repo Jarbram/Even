@@ -61,7 +61,9 @@ export default async function EstadisticasPage({
 
       <nav
         aria-label="Agrupación"
-        className="glass mb-4 flex rounded-full p-1 text-[13px]"
+        // El grupo es un canal hundido y la pastilla activa se apoya dentro: es
+        // lo que distingue «elegir entre estas tres» de «tocar esta tarjeta».
+        className="glass-hueco mb-4 flex rounded-full p-1 text-[13px]"
       >
         {VISTAS.map((v) => (
           <Link
@@ -69,7 +71,7 @@ export default async function EstadisticasPage({
             href={`/estadisticas?vista=${v}&mes=${mes}`}
             aria-current={v === vista ? "page" : undefined}
             data-activo={v === vista}
-            className="flex-1 rounded-full py-2.5 text-center font-medium text-muted-foreground capitalize transition-colors data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground"
+            className="flex-1 rounded-full py-2.5 text-center font-medium text-muted-foreground capitalize transition-colors hover:text-foreground data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground data-[activo=true]:shadow-[0_2px_6px_rgb(0_0_0/0.4)]"
           >
             {v}
           </Link>
