@@ -1,12 +1,14 @@
+import { ChevronDown } from "lucide-react";
 import { requirePersona } from "@/lib/sesion";
 import { categoriasUsadas, resumenDelMes } from "@/lib/datos";
 import {
   nombreMes,
   soles,
   type LineaPresupuesto,
+  type Mes,
   type ResumenPresupuesto,
 } from "@/lib/finanzas";
-import { NuevoPresupuesto } from "./formularios";
+import { EditarPresupuesto, NuevoPresupuesto } from "./formularios";
 
 /**
  * El presupuesto no se reparte sobre los ingresos: los topes se acuerdan de
@@ -48,7 +50,7 @@ export default async function PresupuestoPage() {
           <ul className="flex flex-col gap-2.5">
             {presupuesto.excedidas.map((linea) => (
               <li key={linea.categoria}>
-                <Linea linea={linea} />
+                <Linea mes={mes} linea={linea} />
               </li>
             ))}
           </ul>
@@ -65,7 +67,7 @@ export default async function PresupuestoPage() {
               .filter((l) => !presupuesto.excedidas.includes(l))
               .map((linea) => (
                 <li key={linea.categoria}>
-                  <Linea linea={linea} />
+                  <Linea mes={mes} linea={linea} />
                 </li>
               ))}
           </ul>
@@ -136,63 +138,79 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
   );
 }
 
-/** Una categoría con su tope: cuánto va, cuánto queda y si hay que frenar. */
-function Linea({ linea }: { linea: LineaPresupuesto }) {
+/**
+ * Una categoría con su tope: cuánto va, cuánto queda y si hay que frenar.
+ * Desplegable: adentro va el mismo formulario de asignar, con el monto ya
+ * puesto, para subirlo o bajarlo sin tener que volver a elegir la categoría.
+ */
+function Linea({ mes, linea }: { mes: Mes; linea: LineaPresupuesto }) {
   const sinTope = linea.presupuestado === 0;
 
   return (
-    <div className="glass rounded-xl p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-          {linea.categoria}
-        </span>
-        <span className="shrink-0 text-sm">
-          <span className="font-semibold">{soles(linea.gastado)}</span>
-          {!sinTope && (
-            <span className="text-muted-foreground">
-              {" "}
-              / {soles(linea.presupuestado)}
+    <details className="glass rounded-xl [&[open]_.marca]:rotate-180">
+      <summary className="cursor-pointer list-none p-4 [&::-webkit-details-marker]:hidden">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+            {linea.categoria}
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-sm">
+            <span>
+              <span className="font-semibold">{soles(linea.gastado)}</span>
+              {!sinTope && (
+                <span className="text-muted-foreground">
+                  {" "}
+                  / {soles(linea.presupuestado)}
+                </span>
+              )}
             </span>
-          )}
-        </span>
-      </div>
-
-      {sinTope ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Sin tope: no entra en la cuenta. Ponle uno para controlarlo.
-        </p>
-      ) : (
-        <>
-          <div
-            className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-label={`${linea.categoria}: gastado ${linea.gastado} de ${linea.presupuestado} soles`}
-            aria-valuenow={Math.round(linea.proporcion * 100)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div
-              data-estado={linea.estado}
-              className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
-              style={{ width: `${Math.min(linea.proporcion, 1) * 100}%` }}
+            <ChevronDown
+              aria-hidden
+              className="marca size-3.5 shrink-0 text-muted-foreground transition-transform duration-200"
             />
-          </div>
+          </span>
+        </div>
 
-          <p className="mt-2 flex items-baseline justify-between text-xs">
-            <span className="text-muted-foreground">
-              {linea.restante >= 0
-                ? `Quedan ${soles(linea.restante)}`
-                : `${soles(-linea.restante)} de más`}
-            </span>
-            <span
-              data-estado={linea.estado}
-              className="font-semibold text-ok data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
-            >
-              {Math.round(linea.proporcion * 100)} %
-            </span>
+        {sinTope ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Sin tope: no entra en la cuenta. Ponle uno para controlarlo.
           </p>
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            <div
+              className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label={`${linea.categoria}: gastado ${linea.gastado} de ${linea.presupuestado} soles`}
+              aria-valuenow={Math.round(linea.proporcion * 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                data-estado={linea.estado}
+                className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
+                style={{ width: `${Math.min(linea.proporcion, 1) * 100}%` }}
+              />
+            </div>
+
+            <p className="mt-2 flex items-baseline justify-between text-xs">
+              <span className="text-muted-foreground">
+                {linea.restante >= 0
+                  ? `Quedan ${soles(linea.restante)}`
+                  : `${soles(-linea.restante)} de más`}
+              </span>
+              <span
+                data-estado={linea.estado}
+                className="font-semibold text-ok data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
+              >
+                {Math.round(linea.proporcion * 100)} %
+              </span>
+            </p>
+          </>
+        )}
+      </summary>
+
+      <div className="border-t border-border p-4">
+        <EditarPresupuesto mes={mes} categoria={linea.categoria} monto={linea.presupuestado} />
+      </div>
+    </details>
   );
 }

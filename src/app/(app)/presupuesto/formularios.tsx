@@ -58,3 +58,50 @@ export function NuevoPresupuesto({
     </Plegable>
   );
 }
+
+// ---------------------------------------------------------------------------
+
+/**
+ * El formulario que aparece al desplegar una categoría en la lista: mismo
+ * upsert que `NuevoPresupuesto`, pero con la categoría ya fija y el monto
+ * actual precargado, para subirlo o bajarlo sin volver a elegirla.
+ */
+export function EditarPresupuesto({
+  mes,
+  categoria,
+  monto,
+}: {
+  mes: Mes;
+  categoria: string;
+  monto: number;
+}) {
+  const [estado, action] = useActionState<Resultado, FormData>(
+    guardarPresupuesto,
+    {},
+  );
+  const ref = useAlGuardar(estado, "Presupuesto actualizado");
+
+  return (
+    <form ref={ref} action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="mes" value={mes} />
+      <input type="hidden" name="categoria" value={categoria} />
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`monto-${categoria}`}>Monto (S/)</Label>
+        <Input
+          id={`monto-${categoria}`}
+          name="monto"
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          defaultValue={monto}
+          required
+        />
+      </div>
+
+      <ErrorForm estado={estado} />
+      <BotonGuardar>Guardar</BotonGuardar>
+    </form>
+  );
+}
