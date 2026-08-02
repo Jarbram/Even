@@ -203,6 +203,39 @@ export async function listarCuentas() {
   return data ?? [];
 }
 
+export type GastoPorCobrar = {
+  id: string;
+  fecha: string;
+  descripcion: string;
+  categoria: string;
+  monto: number;
+  pagado_por: Persona;
+};
+
+/**
+ * Gastos marcados "a reembolsar" que todavía no tienen un reembolso que los
+ * salde. No se limita al mes: una devolución pendiente no se resuelve sola
+ * el día 1, igual que la deuda del histórico.
+ */
+export async function gastosPorCobrar(): Promise<GastoPorCobrar[]> {
+  const supabase = createClient();
+  const [gastos, reembolsos] = await Promise.all([
+    supabase
+      .from("gastos")
+      .select("id, fecha, descripcion, categoria, monto, pagado_por")
+      .eq("a_reembolsar", true)
+      .order("fecha", { ascending: false })
+      .overrideTypes<GastoPorCobrar[]>(),
+    supabase
+      .from("reembolsos")
+      .select("gasto_id")
+      .overrideTypes<{ gasto_id: string | null }[]>(),
+  ]);
+
+  const saldados = new Set((reembolsos.data ?? []).map((r) => r.gasto_id));
+  return (gastos.data ?? []).filter((g) => !saldados.has(g.id));
+}
+
 /** Gasto total por mes, de más antiguo a más reciente. */
 export async function historicoMensual(meses = 6) {
   const supabase = createClient();

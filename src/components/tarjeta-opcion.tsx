@@ -20,6 +20,7 @@ export function TarjetaOpcion({
   icono: Icono,
   acento,
   predeterminada,
+  required,
 }: {
   name: string;
   value: string;
@@ -31,6 +32,8 @@ export function TarjetaOpcion({
   /** Tiñe el icono de lima: lo usa el ahorro, que es la opción con carácter. */
   acento?: boolean;
   predeterminada?: boolean;
+  /** Para grupos sin opción por defecto, donde elegir no es opcional. */
+  required?: boolean;
 }) {
   return (
     <label className="cursor-pointer">
@@ -39,6 +42,7 @@ export function TarjetaOpcion({
         name={name}
         value={value}
         defaultChecked={predeterminada}
+        required={required}
         className="peer sr-only"
       />
       {/*

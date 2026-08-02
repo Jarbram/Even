@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
+import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
@@ -29,14 +30,18 @@ export function FormularioGasto({
 }) {
   const [estado, action] = useActionState<Resultado, FormData>(crearGasto, {});
   const ref = useRef<HTMLFormElement>(null);
+  // Para que el check de "a reembolsar" diga la persona correcta sin
+  // recargar: sigue a "¿Quién pagó?" en vivo.
+  const [pagadoPor, setPagadoPor] = useState<Persona>(persona);
 
   useEffect(() => {
     if (!estado.ok) return;
     toast.success("Gasto registrado");
     ref.current?.reset();
+    setPagadoPor(persona);
     // Al terminar, arriba: así se encadena un gasto tras otro sin desplazarse.
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [estado]);
+  }, [estado, persona]);
 
   return (
     <form ref={ref} action={action} className="flex flex-col gap-9">
@@ -95,8 +100,29 @@ export function FormularioGasto({
         name="pagado_por"
         label="¿Quién pagó?"
         defaultValue={persona}
+        onChange={(v) => setPagadoPor(v as Persona)}
         opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
       />
+
+      {/* Un caso puntual, no un reparto: solo se marca cuando alguien de
+          verdad tiene que devolver este gasto en concreto. */}
+      <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-4">
+        <input type="checkbox" name="a_reembolsar" className="peer sr-only" />
+        <span
+          aria-hidden
+          className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
+        >
+          <Check className="hidden size-3.5 text-primary-foreground" />
+        </span>
+        <span className="text-sm">
+          <span className="block font-semibold">
+            {NOMBRES[laOtra(pagadoPor)]} le debe esto a {NOMBRES[pagadoPor]}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            Queda pendiente en Ajustes hasta que se marque como devuelto
+          </span>
+        </span>
+      </label>
 
       <ErrorForm estado={estado} />
 

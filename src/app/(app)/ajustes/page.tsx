@@ -1,21 +1,27 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
-import { NOMBRES, PERSONAS } from "@/lib/persona";
+import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
-import { listarCuentas, resumenDelMes } from "@/lib/datos";
+import { gastosPorCobrar, listarCuentas, resumenDelMes } from "@/lib/datos";
 import { TIPOS_CUENTA, claseColor, leerSaldo } from "@/lib/cuentas";
-import { progresoFondo, redondear, soles } from "@/lib/finanzas";
+import { hoyISO, progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { BotonBorrar } from "@/components/boton-borrar";
 import { borrarFondo } from "../acciones";
-import { MoverEnFondo, NuevaCuenta, NuevoFondo } from "./formularios";
+import {
+  MoverEnFondo,
+  NuevaCuenta,
+  NuevoFondo,
+  SaldarReembolso,
+} from "./formularios";
 
 export default async function AjustesPage() {
   const persona = await requirePersona();
-  const [cuentas, { fondos, gastos }] = await Promise.all([
+  const [cuentas, { fondos, gastos }, porCobrar] = await Promise.all([
     listarCuentas(),
     resumenDelMes(),
+    gastosPorCobrar(),
   ]);
 
   // Cuánto ha salido por cada cuenta este mes. Una billetera sin una cifra al
@@ -129,6 +135,51 @@ export default async function AjustesPage() {
           <NuevaCuenta persona={persona} />
         </div>
       </Seccion>
+
+      {porCobrar.length > 0 && (
+        <Seccion titulo="Por cobrar">
+          <ul className="flex flex-col gap-2">
+            {porCobrar.map((gasto) => {
+              const deudor = laOtra(gasto.pagado_por);
+              return (
+                <li key={gasto.id}>
+                  <details className="glass rounded-xl [&[open]_.marca]:rotate-180">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">
+                          {gasto.descripcion}
+                        </p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {NOMBRES[deudor]} le debe a {NOMBRES[gasto.pagado_por]}{" "}
+                          · {gasto.categoria}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold">
+                        {soles(gasto.monto)}
+                      </span>
+                      <ChevronDown
+                        aria-hidden
+                        className="marca size-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      />
+                    </summary>
+                    <div className="border-t border-border p-4">
+                      <SaldarReembolso
+                        gastoId={gasto.id}
+                        monto={gasto.monto}
+                        cuentasDesde={cuentas.filter((c) => c.persona === deudor)}
+                        cuentasHacia={cuentas.filter(
+                          (c) => c.persona === gasto.pagado_por,
+                        )}
+                        hoy={hoyISO()}
+                      />
+                    </div>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        </Seccion>
+      )}
 
       <Seccion titulo="Metas compartidas">
         {fondos.length === 0 ? (

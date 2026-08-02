@@ -68,6 +68,8 @@ const gasto = z.object({
   pagado_por: persona,
   // Un gasto puede no tener cuenta: el campo solo aparece si ya hay alguna.
   cuenta_id: uuid.nullable().catch(null),
+  // El checkbox solo manda el campo si está marcado ("on"); si no, no llega.
+  a_reembolsar: z.string().optional().transform((v) => v === "on"),
 });
 
 export async function crearGasto(_prev: Resultado, formData: FormData) {
@@ -276,5 +278,41 @@ export async function borrarPagoTarjeta(id: string) {
   const supabase = createClient();
   return ejecutar(uuid, id, (id) =>
     supabase.from("pagos_tarjeta").delete().eq("id", id),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Devoluciones: gastos que paga una persona y debe devolver la otra
+// ---------------------------------------------------------------------------
+
+const reembolso = z
+  .object({
+    gasto_id: uuid,
+    fecha: z.iso.date(),
+    desde_cuenta_id: uuid,
+    hacia_cuenta_id: uuid,
+    monto,
+  })
+  .refine((datos) => datos.desde_cuenta_id !== datos.hacia_cuenta_id, {
+    message: "Las dos cuentas tienen que ser distintas",
+    path: ["hacia_cuenta_id"],
+  });
+
+/**
+ * Salda un gasto marcado "a reembolsar". No es un gasto de la casa: es plata
+ * que sale de una cuenta y entra a otra, igual que pagar una tarjeta — por
+ * eso las dos cuentas son obligatorias y no un "efectivo sin cuenta".
+ */
+export async function crearReembolso(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(reembolso, campos(formData), (datos) =>
+    supabase.from("reembolsos").insert(datos),
+  );
+}
+
+export async function borrarReembolso(id: string) {
+  const supabase = createClient();
+  return ejecutar(uuid, id, (id) =>
+    supabase.from("reembolsos").delete().eq("id", id),
   );
 }

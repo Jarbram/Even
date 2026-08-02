@@ -3,9 +3,11 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
-import { TIPOS_CUENTA } from "@/lib/cuentas";
+import { TIPOS_CUENTA, claseColor, type CuentaRow } from "@/lib/cuentas";
+import { soles } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
 import { Plegable } from "@/components/plegable";
+import { TarjetaOpcion } from "@/components/tarjeta-opcion";
 import { Button } from "@/components/ui/button";
 import {
   BotonGuardar,
@@ -17,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import {
   crearCuenta,
   crearFondo,
+  crearReembolso,
   moverEnFondo,
   type Resultado,
 } from "../acciones";
@@ -237,5 +240,93 @@ function Mover({
     >
       {children}
     </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Salda un gasto marcado "a reembolsar": plata real que sale de una cuenta
+ * de quien debe y entra a una de quien pagó. Las dos son obligatorias — sin
+ * ellas el saldo de alguna de las dos personas quedaría mintiendo.
+ */
+export function SaldarReembolso({
+  gastoId,
+  monto,
+  cuentasDesde,
+  cuentasHacia,
+  hoy,
+}: {
+  gastoId: string;
+  monto: number;
+  /** Cuentas de quien debe devolver. */
+  cuentasDesde: CuentaRow[];
+  /** Cuentas de quien pagó y va a cobrar. */
+  cuentasHacia: CuentaRow[];
+  /** La fecha de hoy en Lima, calculada en el servidor. */
+  hoy: string;
+}) {
+  const [estado, action] = useActionState<Resultado, FormData>(
+    crearReembolso,
+    {},
+  );
+  const ref = useAlGuardar(estado, "Devolución registrada");
+
+  if (cuentasDesde.length === 0 || cuentasHacia.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Para registrar esta devolución, las dos personas necesitan al menos
+        una cuenta propia en Billeteras.
+      </p>
+    );
+  }
+
+  return (
+    <form ref={ref} action={action} className="flex flex-col gap-6">
+      <input type="hidden" name="gasto_id" value={gastoId} />
+      <input type="hidden" name="fecha" value={hoy} />
+      <input type="hidden" name="monto" value={monto} />
+
+      <fieldset className="flex flex-col gap-2.5">
+        <Label asChild>
+          <legend>Sale de</legend>
+        </Label>
+        <div className="grid grid-cols-2 gap-2.5">
+          {cuentasDesde.map((cuenta) => (
+            <TarjetaOpcion
+              key={cuenta.id}
+              name="desde_cuenta_id"
+              value={cuenta.id}
+              titulo={cuenta.nombre}
+              pie={TIPOS_CUENTA[cuenta.tipo]}
+              punto={claseColor(cuenta.color)}
+              required
+            />
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-2.5">
+        <Label asChild>
+          <legend>Entra a</legend>
+        </Label>
+        <div className="grid grid-cols-2 gap-2.5">
+          {cuentasHacia.map((cuenta) => (
+            <TarjetaOpcion
+              key={cuenta.id}
+              name="hacia_cuenta_id"
+              value={cuenta.id}
+              titulo={cuenta.nombre}
+              pie={TIPOS_CUENTA[cuenta.tipo]}
+              punto={claseColor(cuenta.color)}
+              required
+            />
+          ))}
+        </div>
+      </fieldset>
+
+      <ErrorForm estado={estado} />
+      <BotonGuardar>{`Registrar devolución de ${soles(monto)}`}</BotonGuardar>
+    </form>
   );
 }
