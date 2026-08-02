@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requirePersona } from "@/lib/sesion";
-import { PERSONAS } from "@/lib/persona";
+import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { COLORES_DISPONIBLES, TIPOS_CUENTA } from "@/lib/cuentas";
-import { mesActual, normalizarCategoria } from "@/lib/finanzas";
+import { mesActual, normalizarCategoria, soles } from "@/lib/finanzas";
+import { enviarPush } from "@/lib/push";
 
 /**
  * Escrituras. Todo lo que entra por aquí viene de un formulario del navegador,
@@ -39,6 +41,8 @@ async function ejecutar<T>(
   // PromiseLike, no Promise: el builder de Supabase es un thenable que solo
   // dispara la consulta cuando se hace await.
   escribir: (datos: T) => PromiseLike<{ error: { message: string } | null }>,
+  // Efectos que no debe esperar quien guarda, como mandar una notificación.
+  despues?: (datos: T) => void,
 ): Promise<Resultado> {
   await requirePersona();
 
@@ -49,6 +53,7 @@ async function ejecutar<T>(
   if (error) return { error: "No se pudo guardar. Inténtalo de nuevo." };
 
   revalidatePath("/", "layout");
+  despues?.(parsed.data);
   return { ok: true };
 }
 
@@ -74,8 +79,20 @@ const gasto = z.object({
 
 export async function crearGasto(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
-  return ejecutar(gasto, campos(formData), (datos) =>
-    supabase.from("gastos").insert(datos),
+  return ejecutar(
+    gasto,
+    campos(formData),
+    (datos) => supabase.from("gastos").insert(datos),
+    // No hace esperar al que guarda: si el push tarda o falla, el gasto ya
+    // quedó guardado igual.
+    (datos) =>
+      after(() =>
+        enviarPush(laOtra(datos.pagado_por), {
+          titulo: "Nuevo gasto",
+          cuerpo: `${NOMBRES[datos.pagado_por]} anotó ${soles(datos.monto)} en ${datos.categoria}`,
+          url: "/movimientos",
+        }),
+      ),
   );
 }
 
@@ -193,8 +210,18 @@ const ingreso = z
 
 export async function guardarIngreso(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
-  return ejecutar(ingreso, campos(formData), (datos) =>
-    supabase.from("ingresos").insert(datos),
+  return ejecutar(
+    ingreso,
+    campos(formData),
+    (datos) => supabase.from("ingresos").insert(datos),
+    (datos) =>
+      after(() =>
+        enviarPush(laOtra(datos.persona), {
+          titulo: "Nuevo ingreso",
+          cuerpo: `${NOMBRES[datos.persona]} registró un ingreso de ${soles(datos.monto)}`,
+          url: "/ingresos",
+        }),
+      ),
   );
 }
 
@@ -331,5 +358,42 @@ export async function borrarReembolso(id: string) {
   const supabase = createClient();
   return ejecutar(uuid, id, (id) =>
     supabase.from("reembolsos").delete().eq("id", id),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Notificaciones push
+// ---------------------------------------------------------------------------
+
+const suscripcionPush = z.object({
+  endpoint: z.url(),
+  p256dh: z.string().min(1),
+  auth: z.string().min(1),
+});
+
+/**
+ * Guarda (o renueva) la suscripción push de este dispositivo. La persona
+ * sale de la sesión, no del formulario: si viniera del cliente, cualquiera
+ * podría suscribirse "como" el otro y leer sus avisos.
+ */
+export async function guardarSuscripcionPush(datosCliente: unknown) {
+  const miPersona = await requirePersona();
+  const supabase = createClient();
+  return ejecutar(suscripcionPush, datosCliente, (datos) =>
+    supabase
+      .from("push_subscriptions")
+      .upsert({ ...datos, persona: miPersona }, { onConflict: "endpoint" }),
+  );
+}
+
+export async function borrarSuscripcionPush(endpoint: string) {
+  const miPersona = await requirePersona();
+  const supabase = createClient();
+  return ejecutar(z.url(), endpoint, (endpoint) =>
+    supabase
+      .from("push_subscriptions")
+      .delete()
+      .eq("endpoint", endpoint)
+      .eq("persona", miPersona),
   );
 }
