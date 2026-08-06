@@ -315,15 +315,18 @@ export type ResumenPresupuesto = {
 /**
  * ¿Cumplimos el presupuesto y, si no, dónde nos estamos pasando?
  *
- * `gastado` suma también lo de categorías sin tope: gastar donde no hay tope
- * sigue siendo gastar, y esconderlo del total daría una sensación falsa de
- * control. En cambio no cuenta para `restante`, que solo mide lo acordado.
+ * `gastado` (y por lo tanto `restante`) solo suma categorías con un tope
+ * puesto: una categoría sin tope —gastos personales, por ejemplo— es gasto
+ * que decidieron no controlar aquí, y sumarlo haría parecer que se pasaron
+ * de un acuerdo que nunca hicieron. Cada línea individual sigue mostrando su
+ * propio gasto real tenga tope o no; esto solo cambia el agregado.
  */
 export function resumenPresupuesto(
   lineas: readonly LineaPresupuesto[],
 ): ResumenPresupuesto {
-  const tope = redondear(lineas.reduce((suma, l) => suma + l.presupuestado, 0));
-  const gastado = redondear(lineas.reduce((suma, l) => suma + l.gastado, 0));
+  const conTope = lineas.filter((l) => l.presupuestado > 0);
+  const tope = redondear(conTope.reduce((suma, l) => suma + l.presupuestado, 0));
+  const gastado = redondear(conTope.reduce((suma, l) => suma + l.gastado, 0));
   const restante = redondear(tope - gastado);
 
   // Peor primero: lo que más se ha pasado es lo primero que hay que ajustar.

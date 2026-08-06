@@ -88,6 +88,26 @@ test("el resumen señala en qué se están pasando, no solo el total", () => {
   assert.ok(r.restante > 0);
 });
 
+test("gastar en una categoría sin tope no cuenta contra el tope acordado", () => {
+  // Caso real del bug: gastos personales sin tope hacían que el total dijera
+  // "te pasaste" aunque las categorías con tope fueran sobradas.
+  const lineas = lineasPresupuesto(
+    [{ categoria: "Mercado", monto: 800 }],
+    [
+      { categoria: "Mercado", monto: 400 }, // dentro del tope
+      { categoria: "Gastos personales", monto: 5000 }, // sin tope puesto
+    ],
+  );
+  const r = resumenPresupuesto(lineas);
+
+  assert.equal(r.tope, 800);
+  // El gasto agregado ignora "Gastos personales": no tiene tope con el que
+  // compararse, así que no puede hacer que el total se pase.
+  assert.equal(r.gastado, 400);
+  assert.equal(r.restante, 400);
+  assert.equal(r.estado, "ok");
+});
+
 test("cumplir el presupuesto se dice sin rodeos", () => {
   const r = resumenPresupuesto(
     lineasPresupuesto(
