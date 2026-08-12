@@ -8,16 +8,20 @@ import {
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, soles } from "@/lib/finanzas";
+import { nombreMes, soles, type LineaPresupuesto } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, presupuesto, fondos } =
+  const { mes, gastos, restante, ahorros, presupuesto, fondos, lineas } =
     await resumenDelMes();
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
+  // Solo las que tienen tope: son las únicas con un límite que graficar. Ya
+  // vienen ordenadas por urgencia (lineasPresupuesto), así que el filtro no
+  // rompe el orden: lo excedido sigue apareciendo primero en la tira.
+  const conTope = lineas.filter((l) => l.presupuestado > 0);
 
   return (
     <>
@@ -116,6 +120,33 @@ export default async function HomePage() {
         </Tarjeta>
       </div>
 
+      {conTope.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-2.5 flex items-baseline justify-between">
+            <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+              Por categoría
+            </h2>
+            <Link
+              href="/presupuesto"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Ver todo
+            </Link>
+          </div>
+
+          {/* Sangra hasta el borde de la pantalla (compensa el padding de
+              (app)/layout.tsx) para que el scroll horizontal se sienta como
+              una tira física y no como una lista cortada a la mitad. */}
+          <ul className="-mx-[22px] flex snap-x gap-2.5 overflow-x-auto px-[22px] pb-1">
+            {conTope.map((linea) => (
+              <li key={linea.categoria} className="shrink-0 snap-start">
+                <AroCategoria linea={linea} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mb-2.5 flex items-baseline justify-between">
         <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Actividad reciente
@@ -183,6 +214,61 @@ function PrimerosPasos({ sinTopes }: { sinTopes: boolean }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+const COLOR_ESTADO: Record<LineaPresupuesto["estado"], string> = {
+  ok: "var(--ok)",
+  ajustado: "var(--warn)",
+  excedido: "var(--over)",
+};
+
+/**
+ * Un aro por categoría: cuánto queda de un vistazo, sin tener que abrir
+ * Presupuesto. El aro es una máscara sobre un `conic-gradient` — un anillo de
+ * verdad, no un disco con un círculo pintado encima, así que el centro deja
+ * ver el cristal de la tarjeta en vez de un color que habría que hacer
+ * coincidir a mano.
+ */
+function AroCategoria({ linea }: { linea: LineaPresupuesto }) {
+  const proporcion = Math.min(linea.proporcion, 1);
+  const color = COLOR_ESTADO[linea.estado];
+
+  return (
+    <div className="glass-accion flex w-[104px] flex-col items-center gap-2.5 rounded-2xl p-3.5 entra">
+      <div className="relative flex size-14 shrink-0 items-center justify-center">
+        <div
+          aria-hidden
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
+            WebkitMask:
+              "radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))",
+            mask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))",
+          }}
+        />
+        <span
+          role="img"
+          aria-label={`${linea.categoria}: ${Math.round(proporcion * 100)} % del tope, ${soles(linea.gastado)} de ${soles(linea.presupuestado)}`}
+          className="relative text-[12px] font-extrabold"
+        >
+          {Math.round(proporcion * 100)}%
+        </span>
+      </div>
+
+      <span className="w-full truncate text-center text-[11px] font-semibold">
+        {linea.categoria}
+      </span>
+
+      <span
+        data-estado={linea.estado}
+        className="text-center text-[10px] font-medium text-muted-foreground data-[estado=excedido]:text-over"
+      >
+        {linea.restante >= 0
+          ? `${soles(linea.restante)} libre`
+          : `${soles(-linea.restante)} de más`}
+      </span>
+    </div>
   );
 }
 
