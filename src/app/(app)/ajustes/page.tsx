@@ -1,10 +1,24 @@
 import Link from "next/link";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Banknote,
+  ChevronDown,
+  ChevronRight,
+  CreditCard,
+  Landmark,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
 import { gastosPorCobrar, listarCuentas, resumenDelMes } from "@/lib/datos";
-import { TIPOS_CUENTA, claseColor, leerSaldo } from "@/lib/cuentas";
+import {
+  TIPOS_CUENTA,
+  claseInsignia,
+  leerSaldo,
+  type CuentaRow,
+  type TipoCuenta,
+} from "@/lib/cuentas";
 import { hoyISO, progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
 import { BotonBorrar } from "@/components/boton-borrar";
@@ -76,55 +90,15 @@ export default async function AjustesPage() {
                   )}
                 </div>
 
-                <ul className="flex flex-col gap-2">
-                  {suyas.map((cuenta) => {
-                    const gastado = gastadoPorCuenta.get(cuenta.id) ?? 0;
-                    const saldo = leerSaldo(cuenta);
-                    return (
-                      <li key={cuenta.id}>
-                        <Link
-                          href={`/cuentas/${cuenta.id}`}
-                          className="glass-accion flex items-center gap-3 rounded-lg px-4 py-3.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        >
-                          <span
-                            aria-hidden
-                            className={`size-2 shrink-0 rounded-full ${claseColor(cuenta.color)}`}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">
-                              {cuenta.nombre}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {TIPOS_CUENTA[cuenta.tipo]}
-                              {saldo.esCredito &&
-                                ` · ${soles(saldo.consumido)} usados`}
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-right">
-                            <span
-                              data-negativo={
-                                !saldo.esCredito && saldo.principal < 0
-                              }
-                              className="block text-sm font-semibold data-[negativo=true]:text-destructive"
-                            >
-                              {soles(saldo.principal)}
-                            </span>
-                            <span className="block text-[11px] text-muted-foreground">
-                              {saldo.esCredito
-                                ? "disponible"
-                                : gastado > 0
-                                  ? `−${soles(redondear(gastado))} este mes`
-                                  : "saldo"}
-                            </span>
-                          </span>
-                          <ChevronRight
-                            aria-hidden
-                            className="size-4 shrink-0 text-muted-foreground"
-                          />
-                        </Link>
-                      </li>
-                    );
-                  })}
+                <ul className="grid grid-cols-2 gap-2.5">
+                  {suyas.map((cuenta) => (
+                    <li key={cuenta.id}>
+                      <TarjetaCuenta
+                        cuenta={cuenta}
+                        gastado={gastadoPorCuenta.get(cuenta.id) ?? 0}
+                      />
+                    </li>
+                  ))}
                 </ul>
               </div>
             );
@@ -263,6 +237,86 @@ export default async function AjustesPage() {
         </form>
       </div>
     </>
+  );
+}
+
+const ICONO_TIPO: Record<TipoCuenta, LucideIcon> = {
+  efectivo: Banknote,
+  debito: Landmark,
+  credito: CreditCard,
+  billetera: Wallet,
+};
+
+/**
+ * Una cuenta en tarjeta: insignia por tipo (así se distingue una tarjeta de
+ * un débito sin leer la letra chica), el saldo en grande y, en una de
+ * crédito, cuánto cupo se ha consumido — antes ese dato solo salía como
+ * texto ("S/ X usados"), y una barra se lee sin hacer la resta uno mismo.
+ */
+function TarjetaCuenta({
+  cuenta,
+  gastado,
+}: {
+  cuenta: CuentaRow;
+  gastado: number;
+}) {
+  const saldo = leerSaldo(cuenta);
+  const Icono = ICONO_TIPO[cuenta.tipo];
+
+  return (
+    <Link
+      href={`/cuentas/${cuenta.id}`}
+      className="glass-accion group flex flex-col gap-3 rounded-xl p-3.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
+      <div className="flex items-center justify-between">
+        <span
+          aria-hidden
+          className={`flex size-9 items-center justify-center rounded-full ${claseInsignia(cuenta.color)}`}
+        >
+          <Icono aria-hidden className="size-4" />
+        </span>
+        <ChevronRight
+          aria-hidden
+          className="size-4 text-muted-foreground opacity-50 transition-opacity group-hover:opacity-100"
+        />
+      </div>
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">{cuenta.nombre}</p>
+        <p className="text-[11px] text-muted-foreground">
+          {TIPOS_CUENTA[cuenta.tipo]}
+        </p>
+      </div>
+
+      <div>
+        <p
+          data-negativo={!saldo.esCredito && saldo.principal < 0}
+          className="truncate text-lg font-extrabold tracking-[-0.3px] data-[negativo=true]:text-destructive"
+        >
+          {soles(saldo.principal)}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          {saldo.esCredito
+            ? "disponible"
+            : gastado > 0
+              ? `−${soles(redondear(gastado))} este mes`
+              : "saldo"}
+        </p>
+      </div>
+
+      {saldo.esCredito && (
+        <div
+          className="glass-hueco h-1.5 overflow-hidden rounded-full"
+          role="img"
+          aria-label={`${soles(saldo.consumido)} usados de ${soles(cuenta.linea ?? 0)}`}
+        >
+          <div
+            className="barra h-full rounded-full bg-secondary"
+            style={{ width: `${saldo.proporcion * 100}%` }}
+          />
+        </div>
+      )}
+    </Link>
   );
 }
 

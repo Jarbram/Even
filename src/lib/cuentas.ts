@@ -88,3 +88,27 @@ export const COLORES_DISPONIBLES = Object.keys(COLORES);
 export function claseColor(color: string | undefined): string {
   return COLORES[color ?? ""] ?? "bg-muted-foreground";
 }
+
+/**
+ * Fondo suave + texto saturado del mismo color, para la insignia de una
+ * cuenta: un tono de categoría a toda opacidad detrás de un ícono blanco no
+ * se lee igual de bien en lima que en índigo, y esto se lee igual en las
+ * nueve. Mismo motivo que `COLORES` para ser un mapa de clases completas y
+ * no interpoladas — Tailwind purga en build lo que no encuentra escrito
+ * entero.
+ */
+export const COLORES_INSIGNIA: Record<string, string> = {
+  "chart-1": "bg-chart-1/15 text-chart-1",
+  "chart-2": "bg-chart-2/15 text-chart-2",
+  "chart-3": "bg-chart-3/15 text-chart-3",
+  "chart-4": "bg-chart-4/15 text-chart-4",
+  "chart-5": "bg-chart-5/15 text-chart-5",
+  "chart-6": "bg-chart-6/15 text-chart-6",
+  "chart-7": "bg-chart-7/15 text-chart-7",
+  "chart-8": "bg-chart-8/15 text-chart-8",
+  "chart-9": "bg-chart-9/15 text-chart-9",
+};
+
+export function claseInsignia(color: string | undefined): string {
+  return COLORES_INSIGNIA[color ?? ""] ?? "bg-muted text-muted-foreground";
+}
