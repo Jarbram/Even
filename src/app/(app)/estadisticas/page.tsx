@@ -29,7 +29,7 @@ export default async function EstadisticasPage({
 
   const vista: Vista = VISTAS.includes(params.vista as Vista)
     ? (params.vista as Vista)
-    : "mensual";
+    : "diario";
   // El mes viene de la URL, así que se valida antes de consultar con él.
   const mes: Mes = ES_MES.test(params.mes ?? "") ? params.mes! : mesActual();
 
@@ -198,7 +198,13 @@ function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
         Máximo {soles(techo)} · {datos[pico].etiqueta}
       </figcaption>
 
-      <div className="flex h-24 items-end gap-[3px]">
+      {/*
+        `max-w` tope + `justify-center`: con 31 días la caja ya está llena y el
+        tope no hace nada, pero con 1-2 meses de historial una barra sola no se
+        estira hasta llenar la tarjeta entera y parecer un bloque sin forma —
+        se queda del ancho de una barra de verdad, centrada.
+      */}
+      <div className="flex h-24 items-end justify-center gap-[3px]">
         {datos.map((dato, i) => (
           <div
             key={dato.etiqueta}
@@ -207,18 +213,19 @@ function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
             // Un mínimo del 4 % para que un periodo sin gasto siga siendo una
             // barra y el eje no aparezca con huecos.
             style={{ height: `${Math.max((dato.total / techo) * 100, 4)}%` }}
-            className="flex-1 rounded-[3px] bg-white/45 data-[pico=true]:bg-white"
+            className="max-w-9 flex-1 rounded-[3px] bg-white/45 data-[pico=true]:bg-white"
           />
         ))}
       </div>
 
-      {/* Primera, media y última: sitúan el eje sin apelotonar 31 etiquetas. */}
+      {/* Primera, media y última: sitúan el eje sin apelotonar 31 etiquetas.
+          Con un solo dato, mostrarlo dos veces (inicio y fin) no dice nada. */}
       <div className="mt-1.5 flex justify-between text-[10px] opacity-60">
         <span>{datos[0].etiqueta}</span>
         {datos.length > 2 && (
           <span>{datos[Math.floor(datos.length / 2)].etiqueta}</span>
         )}
-        <span>{datos[datos.length - 1].etiqueta}</span>
+        {datos.length > 1 && <span>{datos[datos.length - 1].etiqueta}</span>}
       </div>
     </figure>
   );
