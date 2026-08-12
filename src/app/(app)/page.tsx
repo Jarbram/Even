@@ -8,12 +8,12 @@ import {
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, soles, type LineaPresupuesto } from "@/lib/finanzas";
+import { nombreMes, redondear, soles, type LineaPresupuesto } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, presupuesto, fondos, lineas } =
+  const { mes, gastos, restante, ahorros, presupuesto, fondos, lineas, cuentas } =
     await resumenDelMes();
 
   const sinTopes = presupuesto.estado === "sin-topes";
@@ -22,6 +22,15 @@ export default async function HomePage() {
   // vienen ordenadas por urgencia (lineasPresupuesto), así que el filtro no
   // rompe el orden: lo excedido sigue apareciendo primero en la tira.
   const conTope = lineas.filter((l) => l.presupuestado > 0);
+
+  // Plata de verdad, no ahorros ni cupo de tarjeta: lo que hay hoy en
+  // efectivo, débito o billetera. Los fondos son plata ya apartada para otra
+  // cosa, y el "disponible" de una tarjeta es crédito, no dinero propio —
+  // mezclarlos haría parecer que hay más de lo que en realidad se puede gastar.
+  const cuentasLiquidas = cuentas.filter((c) => c.tipo !== "credito");
+  const disponible = redondear(
+    cuentasLiquidas.reduce((suma, c) => suma + c.saldo, 0),
+  );
 
   return (
     <>
@@ -58,25 +67,56 @@ export default async function HomePage() {
       {/*
         Anotar un gasto es lo que se hace a diario; las cifras de abajo son
         para consultar, no para actuar. Por eso los botones van primero, antes
-        de tener que pasar por cuatro tarjetas para llegar a ellos.
+        de tener que pasar por tarjetas para llegar a ellos — y lado a lado,
+        no apilados, porque son la misma clase de acción y no hace falta
+        media pantalla de aire alrededor del ícono para que se entiendan.
       */}
-      <div className="mb-6 flex flex-col gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         <Link
           href="/movimientos/nuevo"
-          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-7 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
+          className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
         >
-          <Plus aria-hidden className="size-6 text-primary" />
+          <Plus aria-hidden className="size-5 text-primary" />
           <span className="text-[13px] font-semibold">Agregar gasto</span>
         </Link>
 
         <Link
           href="/ingresos"
-          className="glass-accion flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="glass-accion flex flex-col items-center justify-center gap-1.5 rounded-xl py-5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          <ArrowDownLeft aria-hidden className="size-4 text-primary" />
+          <ArrowDownLeft aria-hidden className="size-5 text-primary" />
           Registrar ingreso
         </Link>
       </div>
+
+      {/* El primer número que se quiere ver: no lo que queda de un tope ni lo
+          apartado en metas, sino lo que de verdad se puede gastar hoy. */}
+      <Link
+        href="/ajustes"
+        className="glass-accion mb-6 flex items-center justify-between gap-3 rounded-xl p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            Dinero disponible
+          </p>
+          {cuentasLiquidas.length === 0 ? (
+            <p className="mt-1 text-sm font-semibold">
+              Agrega una cuenta en Ajustes
+            </p>
+          ) : (
+            <p
+              data-negativo={disponible < 0}
+              className="mt-1 text-2xl font-extrabold tracking-[-0.5px] text-primary data-[negativo=true]:text-destructive"
+            >
+              {soles(disponible)}
+            </p>
+          )}
+        </div>
+        <ArrowUpRight
+          aria-hidden
+          className="size-4 shrink-0 text-muted-foreground"
+        />
+      </Link>
 
       <div className="mb-8 grid grid-cols-2 gap-3">
         {/* La tarjeta grande del diseño: indigo lleno, no glass. */}
@@ -122,21 +162,14 @@ export default async function HomePage() {
 
       {conTope.length > 0 && (
         <div className="mb-8">
-          <div className="mb-2.5 flex items-baseline justify-between">
-            <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-              Por categoría
-            </h2>
-            <Link
-              href="/presupuesto"
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Ver todo
-            </Link>
-          </div>
+          <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            Por categoría
+          </h2>
 
           {/* Sangra hasta el borde de la pantalla (compensa el padding de
               (app)/layout.tsx) para que el scroll horizontal se sienta como
-              una tira física y no como una lista cortada a la mitad. */}
+              una tira física y no como una lista cortada a la mitad. Sin
+              "Ver todo": ya es un slider, deslizar de largo es "ver todo". */}
           <ul className="-mx-[22px] flex snap-x gap-2.5 overflow-x-auto px-[22px] pb-1">
             {conTope.map((linea) => (
               <li key={linea.categoria} className="shrink-0 snap-start">
