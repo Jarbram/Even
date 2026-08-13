@@ -1,10 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Plus,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { categoriasUsadas, resumenDelMes } from "@/lib/datos";
@@ -77,22 +72,19 @@ export default async function HomePage() {
         Anotar un gasto es lo que se hace a diario; las cifras de abajo son
         para consultar, no para actuar. Por eso los botones van primero, antes
         de tener que pasar por tarjetas para llegar a ellos — y lado a lado,
-        no apilados, porque son la misma clase de acción y no hace falta
-        media pantalla de aire alrededor del ícono para que se entiendan.
+        no apilados, porque son la misma clase de acción.
 
-        "Agregar gasto" es un <details>, no un enlace: abre el formulario
-        rápido ahí mismo, sin salir del Home. `open:col-span-2` es lo que
-        hace que, al abrirse, ocupe el ancho completo y empuje "Registrar
-        ingreso" a su propia fila — puro CSS, sin JavaScript de layout.
+        "Agregar gasto" abre una hoja desde abajo con el formulario completo
+        (cuenta, fecha, quién pagó...), no un enlace a otra pantalla: el Home
+        no se mueve, solo sube un panel encima.
       */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <details className="open:col-span-2 [&[open]_.marca]:rotate-45">
-          <summary className="flex cursor-pointer list-none flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10 [&::-webkit-details-marker]:hidden">
-            <Plus aria-hidden className="marca size-5 text-primary transition-transform duration-200" />
-            <span className="text-[13px] font-semibold">Agregar gasto</span>
-          </summary>
-          <FormularioGastoRapido persona={persona} categorias={categorias} hoy={hoyISO()} />
-        </details>
+      <div className="mb-8 grid grid-cols-2 gap-3">
+        <FormularioGastoRapido
+          persona={persona}
+          categorias={categorias}
+          cuentas={cuentas}
+          hoy={hoyISO()}
+        />
 
         <Link
           href="/ingresos"
@@ -103,76 +95,80 @@ export default async function HomePage() {
         </Link>
       </div>
 
-      {/* El primer número que se quiere ver: no lo que queda de un tope ni lo
-          apartado en metas, sino lo que de verdad se puede gastar hoy. */}
-      <Link
-        href="/ajustes"
-        className="glass-accion mb-6 flex items-center justify-between gap-3 rounded-xl p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-            Dinero disponible
-          </p>
-          {cuentasLiquidas.length === 0 ? (
-            <p className="mt-1 text-sm font-semibold">
-              Agrega una cuenta en Ajustes
-            </p>
-          ) : (
-            <p
-              data-negativo={disponible < 0}
-              className="mt-1 text-2xl font-extrabold tracking-[-0.5px] text-primary data-[negativo=true]:text-destructive"
-            >
-              {soles(disponible)}
-            </p>
-          )}
-        </div>
-        <ArrowUpRight
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground"
-        />
-      </Link>
-
-      <div className="mb-8 grid grid-cols-2 gap-3">
-        {/* La tarjeta grande del diseño: indigo lleno, no glass. */}
-        <Tarjeta
-          href="/presupuesto"
-          titulo="Presupuesto restante"
-          className="bg-secondary text-secondary-foreground"
+      {/*
+        Un solo panel para las tres cifras del dinero, no tres bloques de
+        colores distintos peleando por la atención. El número grande es lo
+        que de verdad se puede gastar hoy; presupuesto y ahorros bajan de
+        peso como cifras secundarias debajo de una línea — se consultan,
+        no son la primera lectura.
+      */}
+      <section className="glass mb-8 rounded-2xl p-5">
+        <Link
+          href="/ajustes"
+          className="flex items-center justify-between gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          {sinTopes ? (
-            // Un "S/ 0.00" aquí sería mentira: no es que no quede nada, es que
-            // todavía no hay topes contra los que medir.
-            <p className="text-[15px] leading-snug font-bold">
-              Pon los topes
-              <span className="mt-1 block text-[11px] font-medium text-white/75">
-                Un máximo por categoría
-              </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+              Dinero disponible
             </p>
-          ) : (
-            <p
-              data-excedido={excedidos}
-              className="text-[26px] leading-none font-extrabold tracking-[-0.5px] data-[excedido=true]:text-destructive"
-            >
-              {soles(restante)}
-            </p>
-          )}
-        </Tarjeta>
+            {cuentasLiquidas.length === 0 ? (
+              <p className="mt-1.5 text-[15px] font-bold">
+                Agrega una cuenta en Ajustes
+              </p>
+            ) : (
+              <p
+                data-negativo={disponible < 0}
+                className="mt-1 text-[32px] leading-none font-extrabold tracking-[-0.5px] data-[negativo=true]:text-destructive"
+              >
+                {soles(disponible)}
+              </p>
+            )}
+          </div>
+          <ArrowUpRight
+            aria-hidden
+            className="size-4 shrink-0 text-muted-foreground"
+          />
+        </Link>
 
-        <Tarjeta href="/ajustes" titulo="Ahorros" className="glass">
-          {fondos.length === 0 ? (
-            <p className="text-[15px] leading-snug font-bold">
-              Crea un fondo
-              <span className="mt-1 block text-[11px] font-medium text-muted-foreground">
-                Viaje, emergencia…
-              </span>
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
+          <Link
+            href="/presupuesto"
+            className="rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <p className="text-[11px] font-semibold text-muted-foreground">
+              Presupuesto
             </p>
-          ) : (
-            <p className="text-[26px] leading-none font-extrabold tracking-[-0.5px] text-primary">
-              {soles(ahorros)}
+            {sinTopes ? (
+              // Un "S/ 0.00" aquí sería mentira: no es que no quede nada, es
+              // que todavía no hay topes contra los que medir.
+              <p className="mt-1 text-sm font-bold">Pon los topes</p>
+            ) : (
+              <p
+                data-excedido={excedidos}
+                className="mt-1 text-lg font-extrabold tracking-[-0.3px] data-[excedido=true]:text-destructive"
+              >
+                {soles(restante)}
+              </p>
+            )}
+          </Link>
+
+          <Link
+            href="/ajustes"
+            className="rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <p className="text-[11px] font-semibold text-muted-foreground">
+              Ahorros
             </p>
-          )}
-        </Tarjeta>
-      </div>
+            {fondos.length === 0 ? (
+              <p className="mt-1 text-sm font-bold">Crea un fondo</p>
+            ) : (
+              <p className="mt-1 text-lg font-extrabold tracking-[-0.3px] text-primary">
+                {soles(ahorros)}
+              </p>
+            )}
+          </Link>
+        </div>
+      </section>
 
       {conTope.length > 0 && (
         <div className="mb-8">
@@ -316,35 +312,5 @@ function AroCategoria({ linea }: { linea: LineaPresupuesto }) {
           : `${soles(-linea.restante)} de más`}
       </span>
     </div>
-  );
-}
-
-function Tarjeta({
-  href,
-  titulo,
-  className,
-  children,
-}: {
-  href: string;
-  titulo: string;
-  className: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      // min-h para que las cuatro tarjetas midan igual aunque el título ocupe
-      // una línea o dos: en la rejilla se notaba el desajuste.
-      className={`group relative flex min-h-[124px] flex-col justify-between gap-4 rounded-xl p-4 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${className}`}
-    >
-      <p className="pr-5 text-[11px] leading-tight font-bold tracking-[0.06em] uppercase opacity-70">
-        {titulo}
-      </p>
-      <ArrowUpRight
-        aria-hidden
-        className="absolute top-3.5 right-3.5 size-3.5 opacity-40 transition-opacity group-hover:opacity-80"
-      />
-      {children}
-    </Link>
   );
 }

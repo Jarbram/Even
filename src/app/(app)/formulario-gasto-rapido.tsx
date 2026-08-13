@@ -1,88 +1,178 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import Link from "next/link";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { Check, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { NOMBRES, type Persona } from "@/lib/persona";
+import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
+import type { CuentaRow } from "@/lib/cuentas";
+import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
+import { SelectorCuenta } from "@/components/selector-cuenta";
 import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { crearGasto, type Resultado } from "./acciones";
 
 /**
- * Lo mínimo para anotar un gasto sin salir del Home: monto, en qué y
- * categoría. Sin cuenta, sin elegir fecha, sin "a reembolsar" — eso vive en
- * el formulario completo, para cuando hace falta ese detalle.
+ * Todo el detalle del formulario largo —cuenta, fecha, quién pagó, a
+ * reembolsar—, pero en una hoja que sube desde abajo sin dejar el Home:
+ * antes, anotar un gasto de S/8 significaba navegar a otra pantalla y volver.
  */
 export function FormularioGastoRapido({
   persona,
   categorias,
+  cuentas,
   hoy,
 }: {
   persona: Persona;
   categorias: string[];
+  cuentas: CuentaRow[];
   hoy: string;
 }) {
+  const [abierto, setAbierto] = useState(false);
   const [estado, action] = useActionState<Resultado, FormData>(crearGasto, {});
   const formRef = useRef<HTMLFormElement>(null);
+  // Para que el check de "a reembolsar" diga la persona correcta sin
+  // recargar: sigue a "¿Quién pagó?" en vivo.
+  const [pagadoPor, setPagadoPor] = useState<Persona>(persona);
 
   useEffect(() => {
     if (!estado.ok) return;
     toast.success("Gasto registrado");
     formRef.current?.reset();
-    // Ya cumplió lo que vino a hacer: no hay que dejarlo abierto ocupando
-    // sitio en el Home. Se busca el <details> más cercano en vez de recibir
-    // su ref por prop, para no acoplar este formulario a dónde lo pongan.
-    formRef.current?.closest("details")?.removeAttribute("open");
-  }, [estado]);
+    setPagadoPor(persona);
+    setAbierto(false);
+  }, [estado, persona]);
 
   return (
-    <form
-      ref={formRef}
-      action={action}
-      className="glass mt-3 flex flex-col gap-4 rounded-xl p-4"
-    >
-      <input type="hidden" name="fecha" value={hoy} />
-      <input type="hidden" name="pagado_por" value={persona} />
-      <input type="hidden" name="cuenta_id" value="" />
+    <Sheet open={abierto} onOpenChange={setAbierto}>
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        aria-haspopup="dialog"
+        className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 text-[13px] font-semibold transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
+      >
+        <Plus aria-hidden className="size-5 text-primary" />
+        Agregar gasto
+      </button>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="monto-rapido">¿Cuánto fue? (S/)</Label>
-        <Input
-          id="monto-rapido"
-          name="monto"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0.01"
-          placeholder="0.00"
-          required
-        />
-      </div>
+      {/* SheetContent queda transparente a propósito: el material glass va en
+          el div de adentro, para no pelear con el bg-popover que trae por
+          defecto — dos superficies compitiendo por el mismo rectángulo. */}
+      <SheetContent
+        side="bottom"
+        className="mx-auto flex max-h-[88vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
+      >
+        <div className="glass-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
+          <div aria-hidden className="flex justify-center pt-3 pb-1">
+            <span className="h-1.5 w-10 rounded-full bg-white/15" />
+          </div>
+          <SheetTitle className="sr-only">Nuevo gasto</SheetTitle>
+          <SheetDescription className="sr-only">
+            Registra un gasto con todo el detalle sin salir del inicio.
+          </SheetDescription>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="descripcion-rapido">¿En qué?</Label>
-        <Input
-          id="descripcion-rapido"
-          name="descripcion"
-          placeholder="Plaza Vea, taxi, luz…"
-          maxLength={80}
-          required
-        />
-      </div>
+          <form
+            ref={formRef}
+            action={action}
+            className="flex flex-col gap-6 px-5 pt-3 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+          >
+            {/* El monto es lo único que se escribe de verdad. */}
+            <div className="glass rounded-2xl px-5 py-5 text-center">
+              <Label
+                htmlFor="monto-rapido"
+                className="justify-center text-xs font-medium text-muted-foreground"
+              >
+                ¿Cuánto fue?
+              </Label>
+              <div className="mt-2 flex items-baseline justify-center gap-1.5">
+                <span className="text-xl font-bold text-muted-foreground">
+                  S/
+                </span>
+                <Input
+                  id="monto-rapido"
+                  name="monto"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.00"
+                  required
+                  autoFocus
+                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center text-[36px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[36px]"
+                />
+              </div>
+            </div>
 
-      <SelectorCategoria categorias={categorias} />
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="descripcion-rapido">¿En qué?</Label>
+              <Input
+                id="descripcion-rapido"
+                name="descripcion"
+                placeholder="Plaza Vea, taxi, luz…"
+                maxLength={80}
+                required
+              />
+            </div>
 
-      <ErrorForm estado={estado} />
-      <BotonGuardar>Guardar</BotonGuardar>
+            <SelectorCategoria categorias={categorias} />
 
-      <p className="text-center text-xs text-muted-foreground">
-        Sin cuenta, a nombre de {NOMBRES[persona]}.{" "}
-        <Link href="/movimientos/nuevo" className="text-primary hover:underline">
-          Agregar con más detalle
-        </Link>
-      </p>
-    </form>
+            <SelectorCuenta cuentas={cuentas} />
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="fecha-rapida">¿Cuándo?</Label>
+              <Input
+                id="fecha-rapida"
+                name="fecha"
+                type="date"
+                defaultValue={hoy}
+                required
+              />
+            </div>
+
+            <Chips
+              name="pagado_por"
+              label="¿Quién pagó?"
+              defaultValue={persona}
+              onChange={(v) => setPagadoPor(v as Persona)}
+              opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
+            />
+
+            {/* Un caso puntual, no un reparto: solo se marca cuando alguien de
+                verdad tiene que devolver este gasto en concreto. */}
+            <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-3.5">
+              <input
+                type="checkbox"
+                name="a_reembolsar"
+                className="peer sr-only"
+              />
+              <span
+                aria-hidden
+                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
+              >
+                <Check className="hidden size-3.5 text-primary-foreground" />
+              </span>
+              <span className="text-[13px]">
+                <span className="block font-semibold">
+                  {NOMBRES[laOtra(pagadoPor)]} le debe esto a {NOMBRES[pagadoPor]}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                  Queda pendiente en Ajustes hasta que se marque como devuelto
+                </span>
+              </span>
+            </label>
+
+            <ErrorForm estado={estado} />
+            <BotonGuardar>Registrar gasto</BotonGuardar>
+          </form>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
