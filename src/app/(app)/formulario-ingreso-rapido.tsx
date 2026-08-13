@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { ArrowDownLeft } from "lucide-react";
+import { ArrowDownLeft, X } from "lucide-react";
 import { Link } from "next-view-transitions";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetTitle,
@@ -67,15 +68,30 @@ export function FormularioIngresoRapido({
         Registrar ingreso
       </button>
 
-      {/* Sin manija de arrastre: solo Radix cierra por toque afuera, Escape
-          o la X — no hay swipe-to-dismiss real todavía. Una manija que no
-          arrastra nada es peor que no tener ninguna. */}
+      {/* Sin la X por defecto de Sheet (`showCloseButton={false}`): esa
+          venía suelta encima del contenido, sin caja ni contraste propios.
+          Va la misma pastilla circular (glass-accion) que BotonCerrar usa
+          en el resto de la app, en una cabecera propia con el título. */}
       <SheetContent
         side="bottom"
+        showCloseButton={false}
         className="mx-auto flex max-h-[88vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
       >
         <div className="glass-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
-          <SheetTitle className="sr-only">Nuevo ingreso</SheetTitle>
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+            <SheetTitle className="text-[15px] font-bold">
+              Nuevo ingreso
+            </SheetTitle>
+            <SheetClose asChild>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <X aria-hidden className="size-[18px]" />
+              </button>
+            </SheetClose>
+          </div>
           <SheetDescription className="sr-only">
             Registra un ingreso con todo el detalle sin salir del inicio.
           </SheetDescription>
@@ -83,7 +99,7 @@ export function FormularioIngresoRapido({
           <form
             ref={formRef}
             action={action}
-            className="flex flex-col gap-5 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            className="flex flex-col gap-5 px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
             <input type="hidden" name="mes" value={mes} />
 

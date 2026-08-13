@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetTitle,
@@ -69,16 +70,31 @@ export function FormularioGastoRapido({
       {/* SheetContent queda transparente a propósito: el material glass va en
           el div de adentro, para no pelear con el bg-popover que trae por
           defecto — dos superficies compitiendo por el mismo rectángulo.
-
-          Sin manija de arrastre: solo Radix cierra por toque afuera, Escape
-          o la X — no hay swipe-to-dismiss real todavía. Una manija que no
-          arrastra nada es peor que no tener ninguna. */}
+          Y sin su X por defecto (`showCloseButton={false}`): esa venía
+          suelta encima del contenido, sin caja ni contraste propios — un
+          ghost-button genérico de shadcn, no algo hecho para esta app. Va
+          la de siempre (glass-accion, la misma que BotonCerrar en el resto
+          de la app), en una cabecera propia con el título al lado. */}
       <SheetContent
         side="bottom"
+        showCloseButton={false}
         className="mx-auto flex max-h-[88vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
       >
         <div className="glass-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
-          <SheetTitle className="sr-only">Nuevo gasto</SheetTitle>
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+            <SheetTitle className="text-[15px] font-bold">
+              Nuevo gasto
+            </SheetTitle>
+            <SheetClose asChild>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <X aria-hidden className="size-[18px]" />
+              </button>
+            </SheetClose>
+          </div>
           <SheetDescription className="sr-only">
             Registra un gasto con todo el detalle sin salir del inicio.
           </SheetDescription>
@@ -86,7 +102,7 @@ export function FormularioGastoRapido({
           <form
             ref={formRef}
             action={action}
-            className="flex flex-col gap-5 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            className="flex flex-col gap-5 px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
             {/* El monto es lo único que se escribe de verdad. */}
             <div className="glass rounded-2xl px-5 py-5 text-center">
