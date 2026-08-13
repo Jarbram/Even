@@ -10,7 +10,6 @@ import {
   soles,
   type LineaPresupuesto,
 } from "@/lib/finanzas";
-import { FilaGasto } from "@/components/fila-gasto";
 import { FormularioGastoRapido } from "./formulario-gasto-rapido";
 import { FormularioIngresoRapido } from "./formulario-ingreso-rapido";
 
@@ -178,45 +177,20 @@ export default async function HomePage() {
             Por categoría
           </h2>
 
-          {/* Sangra hasta el borde de la pantalla (compensa el padding de
-              (app)/layout.tsx) para que el scroll horizontal se sienta como
-              una tira física y no como una lista cortada a la mitad. Sin
-              "Ver todo": ya es un slider, deslizar de largo es "ver todo". */}
-          <ul className="-mx-[22px] flex snap-x gap-2.5 overflow-x-auto px-[22px] pb-1">
+          {/* Cards apiladas, no una tira que hay que deslizar: con dos o tres
+              categorías el slider dejaba media pantalla vacía a la derecha, y
+              exigía un gesto extra solo para ver la de al lado. */}
+          <ul className="flex flex-col gap-2.5">
             {conTope.map((linea) => (
-              <li key={linea.categoria} className="shrink-0 snap-start">
-                <AroCategoria linea={linea} />
+              <li key={linea.categoria}>
+                <FilaCategoria linea={linea} />
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="mb-2.5 flex items-baseline justify-between">
-        <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-          Actividad reciente
-        </h2>
-        {gastos.length > 6 && (
-          <Link
-            href="/movimientos"
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Ver todo
-          </Link>
-        )}
-      </div>
-
-      {gastos.length === 0 ? (
-        <PrimerosPasos sinTopes={sinTopes} />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {gastos.slice(0, 6).map((gasto) => (
-            <li key={gasto.id}>
-              <FilaGasto gasto={gasto} />
-            </li>
-          ))}
-        </ul>
-      )}
+      {gastos.length === 0 && <PrimerosPasos sinTopes={sinTopes} />}
     </>
   );
 }
@@ -269,45 +243,48 @@ const COLOR_ESTADO: Record<LineaPresupuesto["estado"], string> = {
 };
 
 /**
- * Un aro por categoría: cuánto queda de un vistazo, sin tener que abrir
+ * Una fila por categoría: cuánto queda de un vistazo, sin tener que abrir
  * Presupuesto. El aro es una máscara sobre un `conic-gradient` — un anillo de
  * verdad, no un disco con un círculo pintado encima, así que el centro deja
  * ver el cristal de la tarjeta en vez de un color que habría que hacer
  * coincidir a mano.
  */
-function AroCategoria({ linea }: { linea: LineaPresupuesto }) {
+function FilaCategoria({ linea }: { linea: LineaPresupuesto }) {
   const proporcion = Math.min(linea.proporcion, 1);
   const color = COLOR_ESTADO[linea.estado];
 
   return (
-    <div className="glass-accion flex w-[104px] flex-col items-center gap-2.5 rounded-2xl p-3.5 entra">
-      <div className="relative flex size-14 shrink-0 items-center justify-center">
+    <div className="glass-accion flex items-center gap-3.5 rounded-xl p-3.5 entra">
+      <div className="relative flex size-12 shrink-0 items-center justify-center">
         <div
           aria-hidden
           className="absolute inset-0 rounded-full"
           style={{
             background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
             WebkitMask:
-              "radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))",
-            mask: "radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px))",
+              "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
+            mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
           }}
         />
         <span
           role="img"
-          aria-label={`${linea.categoria}: ${Math.round(proporcion * 100)} % del tope, ${soles(linea.gastado)} de ${soles(linea.presupuestado)}`}
-          className="relative text-[12px] font-extrabold"
+          aria-label={`${Math.round(proporcion * 100)} % del tope`}
+          className="relative text-[11px] font-extrabold"
         >
           {Math.round(proporcion * 100)}%
         </span>
       </div>
 
-      <span className="w-full truncate text-center text-[11px] font-semibold">
-        {linea.categoria}
-      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{linea.categoria}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {soles(linea.gastado)} de {soles(linea.presupuestado)}
+        </p>
+      </div>
 
       <span
         data-estado={linea.estado}
-        className="text-center text-[10px] font-medium text-muted-foreground data-[estado=excedido]:text-over"
+        className="shrink-0 text-right text-xs font-semibold text-muted-foreground data-[estado=excedido]:text-over"
       >
         {linea.restante >= 0
           ? `${soles(linea.restante)} libre`
