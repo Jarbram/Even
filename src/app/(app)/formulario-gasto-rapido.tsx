@@ -1,13 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import { Chips } from "@/components/chips";
-import { SelectorCategoria } from "@/components/selector-categoria";
-import { SelectorCuenta } from "@/components/selector-cuenta";
 import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +15,18 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { PildorasCategoria, PildorasCuenta } from "./pildoras-selector";
 import { crearGasto, type Resultado } from "./acciones";
 
 /**
  * Todo el detalle del formulario largo —cuenta, fecha, quién pagó, a
  * reembolsar—, pero en una hoja que sube desde abajo sin dejar el Home:
  * antes, anotar un gasto de S/8 significaba navegar a otra pantalla y volver.
+ *
+ * Comprimido en pastillas en vez de grillas y tarjetas: lo que se usa
+ * siempre (monto, en qué, categoría, cuenta, quién) queda a la vista sin
+ * desplazarse; lo que casi nunca cambia (la fecha, marcar a reembolsar)
+ * vive detrás de "Más opciones", un toque más lejos pero fuera del camino.
  */
 export function FormularioGastoRapido({
   persona,
@@ -82,7 +86,7 @@ export function FormularioGastoRapido({
           <form
             ref={formRef}
             action={action}
-            className="flex flex-col gap-6 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            className="flex flex-col gap-5 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
             {/* El monto es lo único que se escribe de verdad. */}
             <div className="glass rounded-2xl px-5 py-5 text-center">
@@ -122,20 +126,9 @@ export function FormularioGastoRapido({
               />
             </div>
 
-            <SelectorCategoria categorias={categorias} />
+            <PildorasCategoria categorias={categorias} />
 
-            <SelectorCuenta cuentas={cuentas} />
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="fecha-rapida">¿Cuándo?</Label>
-              <Input
-                id="fecha-rapida"
-                name="fecha"
-                type="date"
-                defaultValue={hoy}
-                required
-              />
-            </div>
+            <PildorasCuenta cuentas={cuentas} />
 
             <Chips
               name="pagado_por"
@@ -145,29 +138,56 @@ export function FormularioGastoRapido({
               opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
             />
 
-            {/* Un caso puntual, no un reparto: solo se marca cuando alguien de
-                verdad tiene que devolver este gasto en concreto. */}
-            <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-3.5">
-              <input
-                type="checkbox"
-                name="a_reembolsar"
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden
-                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
-              >
-                <Check className="hidden size-3.5 text-primary-foreground" />
-              </span>
-              <span className="text-[13px]">
-                <span className="block font-semibold">
-                  {NOMBRES[laOtra(pagadoPor)]} le debe esto a {NOMBRES[pagadoPor]}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                  Queda pendiente en Ajustes hasta que se marque como devuelto
-                </span>
-              </span>
-            </label>
+            {/* La fecha (por defecto hoy) y "a reembolsar" son la excepción,
+                no la regla: fuera de la vista pero a un toque, no borradas. */}
+            <details className="[&[open]_.marca]:rotate-180">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-semibold text-primary [&::-webkit-details-marker]:hidden">
+                Más opciones
+                <ChevronDown
+                  aria-hidden
+                  className="marca size-3.5 transition-transform duration-200"
+                />
+              </summary>
+
+              <div className="mt-4 flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="fecha-rapida">¿Cuándo?</Label>
+                  <Input
+                    id="fecha-rapida"
+                    name="fecha"
+                    type="date"
+                    defaultValue={hoy}
+                    required
+                  />
+                </div>
+
+                {/* Un caso puntual, no un reparto: solo se marca cuando
+                    alguien de verdad tiene que devolver este gasto. */}
+                <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-3.5">
+                  <input
+                    type="checkbox"
+                    name="a_reembolsar"
+                    className="peer sr-only"
+                  />
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
+                  >
+                    <Check className="hidden size-3.5 text-primary-foreground" />
+                  </span>
+                  <span className="text-[13px]">
+                    <span className="block font-semibold">
+                      {NOMBRES[laOtra(pagadoPor)]} le debe esto a{" "}
+                      {NOMBRES[pagadoPor]}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      Queda pendiente en Ajustes hasta que se marque como
+                      devuelto
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </details>
 
             <ErrorForm estado={estado} />
             <BotonGuardar>Registrar gasto</BotonGuardar>

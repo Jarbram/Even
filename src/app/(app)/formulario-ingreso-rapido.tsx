@@ -9,8 +9,6 @@ import type { CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
 import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
-import { SelectorCategoria } from "@/components/selector-categoria";
-import { SelectorDestino } from "@/components/selector-destino";
 import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,11 +18,15 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { PildorasCategoria, PildorasDestino } from "./pildoras-selector";
 import { guardarIngreso, type Resultado } from "./acciones";
 
 /**
  * El mismo gesto que "Agregar gasto": todo el detalle —de quién, concepto, a
- * dónde entra— en una hoja que sube desde abajo, sin dejar el Home.
+ * dónde entra— en una hoja que sube desde abajo, sin dejar el Home. Y las
+ * mismas pastillas comprimidas en vez de grillas y tarjetas, porque un
+ * ingreso tiene menos campos que un gasto pero no hay razón para que ocupen
+ * más alto que los del gasto.
  */
 export function FormularioIngresoRapido({
   persona,
@@ -81,7 +83,7 @@ export function FormularioIngresoRapido({
           <form
             ref={formRef}
             action={action}
-            className="flex flex-col gap-6 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            className="flex flex-col gap-5 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
             <input type="hidden" name="mes" value={mes} />
 
@@ -118,14 +120,14 @@ export function FormularioIngresoRapido({
               opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
             />
 
-            <SelectorCategoria
+            <PildorasCategoria
               categorias={conceptos}
               name="descripcion"
               label="Concepto"
               nuevaEtiqueta="Escribe el concepto"
             />
 
-            <SelectorDestino cuentas={cuentas} fondos={fondos} />
+            <PildorasDestino cuentas={cuentas} fondos={fondos} />
 
             <ErrorForm estado={estado} />
             <BotonGuardar>Registrar ingreso</BotonGuardar>
