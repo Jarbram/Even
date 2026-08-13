@@ -6,7 +6,7 @@ import { TIPOS_CUENTA, claseColor, leerSaldo } from "@/lib/cuentas";
 import { redondear, soles } from "@/lib/finanzas";
 import { BotonCerrar } from "@/components/navegacion";
 import { BotonBorrar } from "@/components/boton-borrar";
-import { borrarCuenta, borrarPagoTarjeta } from "../../acciones";
+import { borrarCuenta, borrarPagoTarjeta, borrarReembolso } from "../../acciones";
 import { PagarTarjeta } from "./formulario";
 
 const DIA_MES = new Intl.DateTimeFormat("es-PE", {
@@ -23,7 +23,7 @@ export default async function CuentaPage({
   await requirePersona();
   const { id } = await params;
 
-  const [{ cuenta, gastos, pagos }, todas] = await Promise.all([
+  const [{ cuenta, gastos, pagos, traspasos }, todas] = await Promise.all([
     detalleCuenta(id),
     listarCuentas(),
   ]);
@@ -164,6 +164,48 @@ export default async function CuentaPage({
                 />
               </li>
             ))}
+          </ul>
+        </section>
+      )}
+
+      {traspasos.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            Traspasos
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {traspasos.map((traspaso) => {
+              const esSalida = traspaso.desde_cuenta_id === cuenta.id;
+              return (
+                <li
+                  key={traspaso.id}
+                  className="glass flex items-center gap-3 rounded-lg px-4 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {esSalida
+                        ? `hacia ${traspaso.hacia?.nombre ?? "otra cuenta"}`
+                        : `desde ${traspaso.desde?.nombre ?? "otra cuenta"}`}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {DIA_MES.format(new Date(`${traspaso.fecha}T00:00:00Z`))}
+                    </p>
+                  </div>
+                  <span
+                    data-negativo={esSalida}
+                    className="shrink-0 text-sm font-semibold text-primary data-[negativo=true]:text-destructive"
+                  >
+                    {esSalida ? "−" : "+"}
+                    {soles(traspaso.monto)}
+                  </span>
+                  <BotonBorrar
+                    accion={borrarReembolso.bind(null, traspaso.id)}
+                    que="el traspaso"
+                    etiqueta={`de ${soles(traspaso.monto)}`}
+                  />
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

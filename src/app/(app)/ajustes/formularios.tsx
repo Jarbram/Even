@@ -20,6 +20,7 @@ import {
   crearCuenta,
   crearFondo,
   crearReembolso,
+  moverDinero,
   moverEnFondo,
   type Resultado,
 } from "../acciones";
@@ -328,5 +329,98 @@ export function SaldarReembolso({
       <ErrorForm estado={estado} />
       <BotonGuardar>{`Registrar devolución de ${soles(monto)}`}</BotonGuardar>
     </form>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Sacar efectivo, recargar el Yape desde el banco: mover plata entre dos
+ * cuentas cualquiera, sin que eso salde una devolución ni sea un gasto de
+ * la casa. Cualquier cuenta puede ser el origen o el destino de cualquier
+ * otra — a diferencia de Saldar, aquí no importa de quién es cada una.
+ */
+export function MoverDinero({
+  cuentas,
+  hoy,
+}: {
+  cuentas: CuentaRow[];
+  /** La fecha de hoy en Lima, calculada en el servidor. */
+  hoy: string;
+}) {
+  const [estado, action] = useActionState<Resultado, FormData>(
+    moverDinero,
+    {},
+  );
+  const ref = useAlGuardar(estado, "Dinero movido");
+
+  if (cuentas.length < 2) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Hace falta al menos dos cuentas para mover dinero entre ellas.
+      </p>
+    );
+  }
+
+  return (
+    <Plegable titulo="Mover dinero entre cuentas">
+      <form ref={ref} action={action} className="flex flex-col gap-6">
+        <input type="hidden" name="fecha" value={hoy} />
+
+        <fieldset className="flex flex-col gap-2.5">
+          <Label asChild>
+            <legend>Sale de</legend>
+          </Label>
+          <div className="grid grid-cols-2 gap-2.5">
+            {cuentas.map((cuenta) => (
+              <TarjetaOpcion
+                key={cuenta.id}
+                name="desde_cuenta_id"
+                value={cuenta.id}
+                titulo={cuenta.nombre}
+                pie={`${NOMBRES[cuenta.persona]} · ${TIPOS_CUENTA[cuenta.tipo]}`}
+                punto={claseColor(cuenta.color)}
+                required
+              />
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-2.5">
+          <Label asChild>
+            <legend>Entra a</legend>
+          </Label>
+          <div className="grid grid-cols-2 gap-2.5">
+            {cuentas.map((cuenta) => (
+              <TarjetaOpcion
+                key={cuenta.id}
+                name="hacia_cuenta_id"
+                value={cuenta.id}
+                titulo={cuenta.nombre}
+                pie={`${NOMBRES[cuenta.persona]} · ${TIPOS_CUENTA[cuenta.tipo]}`}
+                punto={claseColor(cuenta.color)}
+                required
+              />
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="monto-mover">Monto (S/)</Label>
+          <Input
+            id="monto-mover"
+            name="monto"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0.01"
+            required
+          />
+        </div>
+
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Mover</BotonGuardar>
+      </form>
+    </Plegable>
   );
 }

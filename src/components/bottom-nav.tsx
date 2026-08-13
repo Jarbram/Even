@@ -11,7 +11,6 @@ const TABS = [
   { href: "/", label: "Inicio" },
   { href: "/movimientos", label: "Movimientos" },
   { href: "/presupuesto", label: "Presupuesto" },
-  { href: "/estadisticas", label: "Estadísticas" },
   { href: "/ajustes", label: "Ajustes" },
 ] as const;
 
@@ -65,21 +64,11 @@ function TabIcon({ href, active }: { href: string; active: boolean }) {
     );
   }
   if (href === "/presupuesto") {
-    // Barras de distinto largo: lo repartido a cada categoría. Se distingue de
-    // estadísticas, que son barras verticales de distinto alto.
+    // Barras de distinto largo: lo repartido a cada categoría.
     return (
       <div className="flex w-4 flex-col gap-[3px]">
         {["w-full", "w-2/3", "w-1/3"].map((ancho) => (
           <div key={ancho} className={`h-1 rounded-[2px] ${ancho} ${fill}`} />
-        ))}
-      </div>
-    );
-  }
-  if (href === "/estadisticas") {
-    return (
-      <div className="flex h-4 items-end gap-[3px]">
-        {["h-[55%]", "h-full", "h-[35%]"].map((h) => (
-          <div key={h} className={`w-1 rounded-[2px] ${h} ${fill}`} />
         ))}
       </div>
     );

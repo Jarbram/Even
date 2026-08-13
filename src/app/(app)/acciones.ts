@@ -333,3 +333,28 @@ export async function borrarReembolso(id: string) {
     supabase.from("reembolsos").delete().eq("id", id),
   );
 }
+
+const movimientoCuenta = z
+  .object({
+    fecha: z.iso.date(),
+    desde_cuenta_id: uuid,
+    hacia_cuenta_id: uuid,
+    monto,
+  })
+  .refine((datos) => datos.desde_cuenta_id !== datos.hacia_cuenta_id, {
+    message: "Las dos cuentas tienen que ser distintas",
+    path: ["hacia_cuenta_id"],
+  });
+
+/**
+ * Sacar efectivo, recargar el Yape desde el banco: plata que se mueve entre
+ * dos cuentas propias sin que nadie le deba nada a nadie. Reusa la tabla de
+ * reembolsos —el movimiento es idéntico, sale de una cuenta y entra a
+ * otra— pero sin `gasto_id`: no salda ningún gasto marcado, solo mueve.
+ */
+export async function moverDinero(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(movimientoCuenta, campos(formData), (datos) =>
+    supabase.from("reembolsos").insert(datos),
+  );
+}

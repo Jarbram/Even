@@ -7,14 +7,23 @@ import {
 } from "lucide-react";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
-import { resumenDelMes } from "@/lib/datos";
-import { nombreMes, redondear, soles, type LineaPresupuesto } from "@/lib/finanzas";
+import { categoriasUsadas, resumenDelMes } from "@/lib/datos";
+import {
+  hoyISO,
+  nombreMes,
+  redondear,
+  soles,
+  type LineaPresupuesto,
+} from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
+import { FormularioGastoRapido } from "./formulario-gasto-rapido";
 
 export default async function HomePage() {
   const persona = await requirePersona();
-  const { mes, gastos, restante, ahorros, presupuesto, fondos, lineas, cuentas } =
-    await resumenDelMes();
+  const [
+    { mes, gastos, restante, ahorros, presupuesto, fondos, lineas, cuentas },
+    categorias,
+  ] = await Promise.all([resumenDelMes(), categoriasUsadas()]);
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
@@ -70,15 +79,20 @@ export default async function HomePage() {
         de tener que pasar por tarjetas para llegar a ellos — y lado a lado,
         no apilados, porque son la misma clase de acción y no hace falta
         media pantalla de aire alrededor del ícono para que se entiendan.
+
+        "Agregar gasto" es un <details>, no un enlace: abre el formulario
+        rápido ahí mismo, sin salir del Home. `open:col-span-2` es lo que
+        hace que, al abrirse, ocupe el ancho completo y empuje "Registrar
+        ingreso" a su propia fila — puro CSS, sin JavaScript de layout.
       */}
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <Link
-          href="/movimientos/nuevo"
-          className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
-        >
-          <Plus aria-hidden className="size-5 text-primary" />
-          <span className="text-[13px] font-semibold">Agregar gasto</span>
-        </Link>
+        <details className="open:col-span-2 [&[open]_.marca]:rotate-45">
+          <summary className="flex cursor-pointer list-none flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10 [&::-webkit-details-marker]:hidden">
+            <Plus aria-hidden className="marca size-5 text-primary transition-transform duration-200" />
+            <span className="text-[13px] font-semibold">Agregar gasto</span>
+          </summary>
+          <FormularioGastoRapido persona={persona} categorias={categorias} hoy={hoyISO()} />
+        </details>
 
         <Link
           href="/ingresos"

@@ -11,7 +11,12 @@ import {
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
-import { gastosPorCobrar, listarCuentas, resumenDelMes } from "@/lib/datos";
+import {
+  gastosPorCobrar,
+  listarCuentas,
+  resumenDelMes,
+  type GastoRow,
+} from "@/lib/datos";
 import {
   TIPOS_CUENTA,
   claseInsignia,
@@ -24,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { BotonBorrar } from "@/components/boton-borrar";
 import { borrarFondo } from "../acciones";
 import {
+  MoverDinero,
   MoverEnFondo,
   NuevaCuenta,
   NuevoFondo,
@@ -38,15 +44,22 @@ export default async function AjustesPage() {
     gastosPorCobrar(),
   ]);
 
-  // Cuánto ha salido por cada cuenta este mes. Una billetera sin una cifra al
-  // lado no dice nada; con ella, la lista contesta "¿por dónde se nos va?".
+  // Cuánto ha salido por cada cuenta este mes, y con qué. Una billetera sin
+  // una cifra al lado no dice nada; con ella, la lista contesta "¿por dónde
+  // se nos va?" — y con los gastos, "¿en qué exactamente?" sin tener que
+  // entrar a la cuenta a mirar.
   const gastadoPorCuenta = new Map<string, number>();
+  const gastosPorCuenta = new Map<string, GastoRow[]>();
   for (const gasto of gastos) {
     if (!gasto.cuenta_id) continue;
     gastadoPorCuenta.set(
       gasto.cuenta_id,
       (gastadoPorCuenta.get(gasto.cuenta_id) ?? 0) + gasto.monto,
     );
+    gastosPorCuenta.set(gasto.cuenta_id, [
+      ...(gastosPorCuenta.get(gasto.cuenta_id) ?? []),
+      gasto,
+    ]);
   }
 
   async function salir() {
@@ -92,10 +105,14 @@ export default async function AjustesPage() {
 
                 <ul className="grid grid-cols-2 gap-2.5">
                   {suyas.map((cuenta) => (
-                    <li key={cuenta.id}>
+                    // has-[…[open]]: cuando su <details> se abre, esta celda
+                    // pasa a ocupar las dos columnas — el mismo truco que
+                    // "Agregar gasto" en el Home, sin JavaScript de layout.
+                    <li key={cuenta.id} className="has-[details[open]]:col-span-2">
                       <TarjetaCuenta
                         cuenta={cuenta}
                         gastado={gastadoPorCuenta.get(cuenta.id) ?? 0}
+                        gastosRecientes={gastosPorCuenta.get(cuenta.id) ?? []}
                       />
                     </li>
                   ))}
@@ -105,8 +122,9 @@ export default async function AjustesPage() {
           })
         )}
 
-        <div className="mt-2.5">
+        <div className="mt-2.5 flex flex-col gap-2.5">
           <NuevaCuenta persona={persona} />
+          <MoverDinero cuentas={cuentas} hoy={hoyISO()} />
         </div>
       </Seccion>
 
@@ -252,71 +270,101 @@ const ICONO_TIPO: Record<TipoCuenta, LucideIcon> = {
  * un débito sin leer la letra chica), el saldo en grande y, en una de
  * crédito, cuánto cupo se ha consumido — antes ese dato solo salía como
  * texto ("S/ X usados"), y una barra se lee sin hacer la resta uno mismo.
+ *
+ * Es un <details>, no un enlace directo: al tocarla se despliegan los
+ * últimos gastos ahí mismo, sin salir de Ajustes. Pagar la tarjeta, ver el
+ * historial completo o borrar la cuenta siguen viviendo en su propia
+ * pantalla — eso es para cuando hace falta, no para el vistazo de todos
+ * los días.
  */
 function TarjetaCuenta({
   cuenta,
   gastado,
+  gastosRecientes,
 }: {
   cuenta: CuentaRow;
   gastado: number;
+  gastosRecientes: GastoRow[];
 }) {
   const saldo = leerSaldo(cuenta);
   const Icono = ICONO_TIPO[cuenta.tipo];
 
   return (
-    <Link
-      href={`/cuentas/${cuenta.id}`}
-      className="glass-accion group flex flex-col gap-3 rounded-xl p-3.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      <div className="flex items-center justify-between">
-        <span
-          aria-hidden
-          className={`flex size-9 items-center justify-center rounded-full ${claseInsignia(cuenta.color)}`}
-        >
-          <Icono aria-hidden className="size-4" />
-        </span>
-        <ChevronRight
-          aria-hidden
-          className="size-4 text-muted-foreground opacity-50 transition-opacity group-hover:opacity-100"
-        />
-      </div>
-
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold">{cuenta.nombre}</p>
-        <p className="text-[11px] text-muted-foreground">
-          {TIPOS_CUENTA[cuenta.tipo]}
-        </p>
-      </div>
-
-      <div>
-        <p
-          data-negativo={!saldo.esCredito && saldo.principal < 0}
-          className="truncate text-lg font-extrabold tracking-[-0.3px] data-[negativo=true]:text-destructive"
-        >
-          {soles(saldo.principal)}
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          {saldo.esCredito
-            ? "disponible"
-            : gastado > 0
-              ? `−${soles(redondear(gastado))} este mes`
-              : "saldo"}
-        </p>
-      </div>
-
-      {saldo.esCredito && (
-        <div
-          className="glass-hueco h-1.5 overflow-hidden rounded-full"
-          role="img"
-          aria-label={`${soles(saldo.consumido)} usados de ${soles(cuenta.linea ?? 0)}`}
-        >
-          <div
-            className="barra h-full rounded-full bg-secondary"
-            style={{ width: `${saldo.proporcion * 100}%` }}
+    <details className="glass-accion rounded-xl [&[open]_.marca]:rotate-90">
+      <summary className="flex cursor-pointer list-none flex-col gap-3 p-3.5 [&::-webkit-details-marker]:hidden">
+        <div className="flex items-center justify-between">
+          <span
+            aria-hidden
+            className={`flex size-9 items-center justify-center rounded-full ${claseInsignia(cuenta.color)}`}
+          >
+            <Icono aria-hidden className="size-4" />
+          </span>
+          <ChevronRight
+            aria-hidden
+            className="marca size-4 text-muted-foreground opacity-60 transition-transform duration-200"
           />
         </div>
-      )}
-    </Link>
+
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{cuenta.nombre}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {TIPOS_CUENTA[cuenta.tipo]}
+          </p>
+        </div>
+
+        <div>
+          <p
+            data-negativo={!saldo.esCredito && saldo.principal < 0}
+            className="truncate text-lg font-extrabold tracking-[-0.3px] data-[negativo=true]:text-destructive"
+          >
+            {soles(saldo.principal)}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {saldo.esCredito
+              ? "disponible"
+              : gastado > 0
+                ? `−${soles(redondear(gastado))} este mes`
+                : "saldo"}
+          </p>
+        </div>
+
+        {saldo.esCredito && (
+          <div
+            className="glass-hueco h-1.5 overflow-hidden rounded-full"
+            role="img"
+            aria-label={`${soles(saldo.consumido)} usados de ${soles(cuenta.linea ?? 0)}`}
+          >
+            <div
+              className="barra h-full rounded-full bg-secondary"
+              style={{ width: `${saldo.proporcion * 100}%` }}
+            />
+          </div>
+        )}
+      </summary>
+
+      <div className="border-t border-border p-3.5">
+        {gastosRecientes.length === 0 ? (
+          <p className="text-center text-[11px] text-muted-foreground">
+            Sin gastos este mes
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {gastosRecientes.slice(0, 3).map((g) => (
+              <li key={g.id} className="flex items-center gap-2 text-[11px]">
+                <span className="min-w-0 flex-1 truncate">{g.descripcion}</span>
+                <span className="shrink-0 font-semibold">{soles(g.monto)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link
+          href={`/cuentas/${cuenta.id}`}
+          className="mt-2.5 block rounded-lg py-2 text-center text-[11px] font-semibold text-primary hover:underline"
+        >
+          Ver todo, pagar o borrar →
+        </Link>
+      </div>
+    </details>
   );
 }
 

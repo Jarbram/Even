@@ -265,8 +265,19 @@ export type PagoTarjetaRow = {
   desde: { nombre: string } | null;
 };
 
+export type TraspasoRow = {
+  id: string;
+  fecha: string;
+  monto: number;
+  gasto_id: string | null;
+  desde_cuenta_id: string;
+  hacia_cuenta_id: string;
+  desde: { nombre: string } | null;
+  hacia: { nombre: string } | null;
+};
+
 /**
- * Una cuenta con todo lo suyo: sus gastos, sus pagos y su saldo.
+ * Una cuenta con todo lo suyo: sus gastos, sus pagos, sus traspasos y su saldo.
  *
  * Los gastos van sin límite de mes a propósito — al abrir una tarjeta lo que se
  * quiere ver es en qué se fue el cupo, y eso cruza meses.
@@ -274,7 +285,7 @@ export type PagoTarjetaRow = {
 export async function detalleCuenta(id: string) {
   const supabase = createClient();
 
-  const [cuenta, gastos, pagos] = await Promise.all([
+  const [cuenta, gastos, pagos, traspasos] = await Promise.all([
     supabase
       .from("cuentas_saldo")
       .select("id, nombre, tipo, persona, color, activa, saldo_base, saldo, linea")
@@ -303,11 +314,23 @@ export async function detalleCuenta(id: string) {
       .eq("tarjeta_id", id)
       .order("fecha", { ascending: false })
       .overrideTypes<PagoTarjetaRow[]>(),
+    // Sin `gasto_id`: solo los movimientos entre cuentas propias, no las
+    // devoluciones de un gasto (esas ya se ven como parte del gasto mismo).
+    supabase
+      .from("reembolsos")
+      .select(
+        "id, fecha, monto, gasto_id, desde_cuenta_id, hacia_cuenta_id, desde:cuentas!reembolsos_desde_cuenta_id_fkey(nombre), hacia:cuentas!reembolsos_hacia_cuenta_id_fkey(nombre)",
+      )
+      .is("gasto_id", null)
+      .or(`desde_cuenta_id.eq.${id},hacia_cuenta_id.eq.${id}`)
+      .order("fecha", { ascending: false })
+      .overrideTypes<TraspasoRow[]>(),
   ]);
 
   return {
     cuenta: cuenta.data ?? null,
     gastos: gastos.data ?? [],
     pagos: pagos.data ?? [],
+    traspasos: traspasos.data ?? [],
   };
 }
