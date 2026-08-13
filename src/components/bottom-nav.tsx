@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { usePathname } from "next/navigation";
 
 /**
@@ -20,6 +20,12 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación principal"
+      // Nombre propio para la transición de vista: sin esto, la navegación
+      // la mete en la misma foto que el resto de la pantalla, y si dos
+      // páginas miden distinto (una lista larga contra una corta) el grupo
+      // raíz se estira entre esas dos alturas — y la barra fija se estira
+      // con él, aunque ella no cambió nada.
+      style={{ viewTransitionName: "bottom-nav" }}
       className="fixed inset-x-0 bottom-[max(1.375rem,env(safe-area-inset-bottom))] z-40 flex justify-center"
     >
       <ul className="glass-nav flex gap-1.5 rounded-[30px] p-2">

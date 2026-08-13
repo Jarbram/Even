@@ -349,3 +349,41 @@
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Transición entre pantallas
+------------------------------------------------------------------------------
+   Cambiar de pestaña era un corte seco: la pantalla vieja desaparecía y la
+   nueva aparecía ya completa, sin nada en medio. La View Transitions API deja
+   que el navegador mismo disuelva una en la otra — un cross-fade, no un
+   deslizamiento: dos pantallas de este tamaño (Home, Presupuesto, Ajustes)
+   no comparten un eje de "adelante/atrás" claro, y forzar uno se sentiría
+   arbitrario.
+
+   `::view-transition-*` vive en un árbol propio, fuera de la cascada normal
+   —por eso este bloque no entra en `@layer base` ni el `*` del bloque de
+   arriba lo alcanza— y necesita su propia guarda de movimiento reducido.
+--------------------------------------------------------------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-salida);
+}
+
+/* La navegación inferior es fija: no cambia entre pantallas. Sin nombre
+   propio, entra en la misma foto que el resto de la pantalla, y si dos
+   páginas miden distinto (una lista larga contra una corta) el grupo raíz
+   se estira entre esas dos alturas — la barra se estiraría con él, aunque
+   ella no cambió nada. */
+::view-transition-group(bottom-nav) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

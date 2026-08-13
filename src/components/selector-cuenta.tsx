@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { Banknote, Wallet } from "lucide-react";
 import { TIPOS_CUENTA, claseColor, type CuentaRow } from "@/lib/cuentas";
 import { soles } from "@/lib/finanzas";

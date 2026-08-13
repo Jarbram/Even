@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { ViewTransitions } from "next-view-transitions";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/query-provider";
 import "./globals.css";
@@ -30,11 +31,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="dark">
-      <body className={`${spaceGrotesk.variable} font-sans`}>
-        <QueryProvider>{children}</QueryProvider>
-        <Toaster position="top-center" />
-      </body>
-    </html>
+    <ViewTransitions>
+      <html lang="es" className="dark">
+        <body className={`${spaceGrotesk.variable} font-sans`}>
+          <QueryProvider>{children}</QueryProvider>
+          <Toaster position="top-center" />
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }

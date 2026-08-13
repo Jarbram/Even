@@ -1,5 +1,5 @@
 import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
 import { categoriasUsadas, conceptosUsados, resumenDelMes } from "@/lib/datos";
