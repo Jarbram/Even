@@ -180,13 +180,13 @@ export default async function HomePage() {
             Por categoría
           </h2>
 
-          {/* Cards apiladas, no una tira que hay que deslizar: con dos o tres
-              categorías el slider dejaba media pantalla vacía a la derecha, y
-              exigía un gesto extra solo para ver la de al lado. */}
-          <ul className="flex flex-col gap-2.5">
+          {/* Dos columnas de cards, no una tira que hay que deslizar ni una
+              lista de filas larguísima: con seis u ocho categorías esto cabe
+              en la mitad de scroll y se lee de a pares, no una por una. */}
+          <ul className="grid grid-cols-2 gap-2.5">
             {conTope.map((linea) => (
               <li key={linea.categoria}>
-                <FilaCategoria linea={linea} />
+                <TarjetaCategoria linea={linea} />
               </li>
             ))}
           </ul>
@@ -246,48 +246,67 @@ const COLOR_ESTADO: Record<LineaPresupuesto["estado"], string> = {
 };
 
 /**
- * Una fila por categoría: cuánto queda de un vistazo, sin tener que abrir
- * Presupuesto. El aro es una máscara sobre un `conic-gradient` — un anillo de
- * verdad, no un disco con un círculo pintado encima, así que el centro deja
- * ver el cristal de la tarjeta en vez de un color que habría que hacer
- * coincidir a mano.
+ * Una card por categoría, dos por fila: cuánto queda de un vistazo, sin
+ * tener que abrir Presupuesto. El aro es una máscara sobre un
+ * `conic-gradient` — un anillo de verdad, no un disco con un círculo
+ * pintado encima, así que el centro deja ver el cristal de la tarjeta en
+ * vez de un color que habría que hacer coincidir a mano.
+ *
+ * La barra de abajo repite el mismo dato que el aro, pero como longitud en
+ * vez de ángulo: dos formas de leer la misma proporción, así que da igual
+ * si se mira la card entera o solo se le pasa el ojo por encima.
  */
-function FilaCategoria({ linea }: { linea: LineaPresupuesto }) {
+function TarjetaCategoria({ linea }: { linea: LineaPresupuesto }) {
   const proporcion = Math.min(linea.proporcion, 1);
   const color = COLOR_ESTADO[linea.estado];
 
   return (
-    <div className="glass-accion flex items-center gap-3.5 rounded-xl p-3.5 entra">
-      <div className="relative flex size-12 shrink-0 items-center justify-center">
-        <div
-          aria-hidden
-          className="absolute inset-0 rounded-full"
-          style={{
-            background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
-            WebkitMask:
-              "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
-            mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
-          }}
-        />
-        <span
-          role="img"
-          aria-label={`${Math.round(proporcion * 100)} % del tope`}
-          className="relative text-[11px] font-extrabold"
-        >
-          {Math.round(proporcion * 100)}%
-        </span>
+    <div className="glass-accion flex flex-col gap-3.5 rounded-2xl p-3.5 entra">
+      <div className="flex items-center gap-3">
+        <div className="relative flex size-11 shrink-0 items-center justify-center">
+          <div
+            aria-hidden
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
+              WebkitMask:
+                "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
+              mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
+            }}
+          />
+          <span
+            role="img"
+            aria-label={`${Math.round(proporcion * 100)} % del tope`}
+            className="relative text-[10px] font-extrabold"
+          >
+            {Math.round(proporcion * 100)}%
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold">
+            {linea.categoria}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            {soles(linea.gastado)} de {soles(linea.presupuestado)}
+          </p>
+        </div>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{linea.categoria}</p>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          {soles(linea.gastado)} de {soles(linea.presupuestado)}
-        </p>
+      <div
+        className="glass-hueco h-1.5 overflow-hidden rounded-full"
+        role="img"
+        aria-label={`${soles(linea.gastado)} de ${soles(linea.presupuestado)} en ${linea.categoria}`}
+      >
+        <div
+          className="barra h-full rounded-full"
+          style={{ width: `${proporcion * 100}%`, backgroundColor: color }}
+        />
       </div>
 
       <span
         data-estado={linea.estado}
-        className="shrink-0 text-right text-xs font-semibold text-muted-foreground data-[estado=excedido]:text-over"
+        className="truncate text-[11px] font-semibold text-muted-foreground data-[estado=excedido]:text-over"
       >
         {linea.restante >= 0
           ? `${soles(linea.restante)} libre`
