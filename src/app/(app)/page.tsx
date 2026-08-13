@@ -39,35 +39,38 @@ export default async function HomePage() {
 
   return (
     <>
-      <header className="mb-6 flex items-center gap-3">
-        <div className="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-[17px] font-bold text-foreground">
+      {/*
+        Antes: fila de avatar + "Hogar Abraham & Isabel", y debajo un h1 de
+        dos líneas ("¿Listos para este mes?") con el mes en una tercera. Tres
+        bloques de texto para decir cuatro datos (quién eres, con quién, qué
+        mes es) antes de llegar a lo que de verdad se usa a diario.
+
+        Ahora es una sola fila: el saludo hace de h1 (es el único título real
+        de la pantalla), el mes y la pareja bajan de peso como subtítulo, y
+        el ícono de Ajustes sube a 44 px —el mínimo táctil— para pesar lo
+        mismo que el avatar y cerrar la fila con una simetría intencional en
+        vez de un botón chico perdido a la derecha.
+      */}
+      <header className="mb-8 flex items-center gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-[17px] font-bold text-foreground">
           {NOMBRES[persona][0]}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-muted-foreground">
+          <h1 className="truncate text-[19px] font-extrabold tracking-[-0.3px]">
             Hola, {NOMBRES[persona]}
-          </p>
-          <p className="truncate text-[13px] font-semibold">
-            Hogar {NOMBRES[persona]} &amp; {NOMBRES[laOtra(persona)]}
+          </h1>
+          <p className="mt-0.5 truncate text-[13px] font-medium text-muted-foreground">
+            {nombreMes(mes)} · con {NOMBRES[laOtra(persona)]}
           </p>
         </div>
         <Link
           href="/ajustes"
           aria-label="Ajustes"
-          className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="glass-accion flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <SlidersHorizontal aria-hidden className="size-[18px]" />
         </Link>
       </header>
-
-      <h1 className="text-[30px] leading-[1.15] font-extrabold tracking-[-0.5px]">
-        ¿Listos para
-        <br />
-        este mes?
-      </h1>
-      <p className="mt-2 mb-6 text-[13px] font-medium text-muted-foreground">
-        {nombreMes(mes)}
-      </p>
 
       {/*
         Anotar un gasto o un ingreso es lo que se hace a diario; las cifras
