@@ -1,8 +1,8 @@
+import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
-import { categoriasUsadas, resumenDelMes } from "@/lib/datos";
+import { categoriasUsadas, conceptosUsados, resumenDelMes } from "@/lib/datos";
 import {
   hoyISO,
   nombreMes,
@@ -12,13 +12,15 @@ import {
 } from "@/lib/finanzas";
 import { FilaGasto } from "@/components/fila-gasto";
 import { FormularioGastoRapido } from "./formulario-gasto-rapido";
+import { FormularioIngresoRapido } from "./formulario-ingreso-rapido";
 
 export default async function HomePage() {
   const persona = await requirePersona();
   const [
     { mes, gastos, restante, ahorros, presupuesto, fondos, lineas, cuentas },
     categorias,
-  ] = await Promise.all([resumenDelMes(), categoriasUsadas()]);
+    conceptos,
+  ] = await Promise.all([resumenDelMes(), categoriasUsadas(), conceptosUsados()]);
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
@@ -69,14 +71,14 @@ export default async function HomePage() {
       </p>
 
       {/*
-        Anotar un gasto es lo que se hace a diario; las cifras de abajo son
-        para consultar, no para actuar. Por eso los botones van primero, antes
-        de tener que pasar por tarjetas para llegar a ellos — y lado a lado,
-        no apilados, porque son la misma clase de acción.
+        Anotar un gasto o un ingreso es lo que se hace a diario; las cifras
+        de abajo son para consultar, no para actuar. Por eso los botones van
+        primero, antes de tener que pasar por tarjetas para llegar a ellos —
+        y lado a lado, porque son la misma clase de acción.
 
-        "Agregar gasto" abre una hoja desde abajo con el formulario completo
-        (cuenta, fecha, quién pagó...), no un enlace a otra pantalla: el Home
-        no se mueve, solo sube un panel encima.
+        Los dos abren una hoja desde abajo con el formulario completo, no un
+        enlace a otra pantalla: el Home no se mueve, solo sube un panel
+        encima y se cierra solo al guardar.
       */}
       <div className="mb-8 grid grid-cols-2 gap-3">
         <FormularioGastoRapido
@@ -86,13 +88,13 @@ export default async function HomePage() {
           hoy={hoyISO()}
         />
 
-        <Link
-          href="/ingresos"
-          className="glass-accion flex flex-col items-center justify-center gap-1.5 rounded-xl py-5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <ArrowDownLeft aria-hidden className="size-5 text-primary" />
-          Registrar ingreso
-        </Link>
+        <FormularioIngresoRapido
+          persona={persona}
+          mes={mes}
+          cuentas={cuentas}
+          fondos={fondos}
+          conceptos={conceptos}
+        />
       </div>
 
       {/*
