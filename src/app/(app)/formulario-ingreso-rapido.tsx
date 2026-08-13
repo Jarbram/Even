@@ -65,14 +65,14 @@ export function FormularioIngresoRapido({
         Registrar ingreso
       </button>
 
+      {/* Sin manija de arrastre: solo Radix cierra por toque afuera, Escape
+          o la X — no hay swipe-to-dismiss real todavía. Una manija que no
+          arrastra nada es peor que no tener ninguna. */}
       <SheetContent
         side="bottom"
         className="mx-auto flex max-h-[88vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
       >
         <div className="glass-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
-          <div aria-hidden className="flex justify-center pt-3 pb-1">
-            <span className="h-1.5 w-10 rounded-full bg-white/15" />
-          </div>
           <SheetTitle className="sr-only">Nuevo ingreso</SheetTitle>
           <SheetDescription className="sr-only">
             Registra un ingreso con todo el detalle sin salir del inicio.
@@ -81,7 +81,7 @@ export function FormularioIngresoRapido({
           <form
             ref={formRef}
             action={action}
-            className="flex flex-col gap-6 px-5 pt-3 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            className="flex flex-col gap-6 px-5 pt-8 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
             <input type="hidden" name="mes" value={mes} />
 
