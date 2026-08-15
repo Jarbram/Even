@@ -167,6 +167,24 @@ export async function borrarCuenta(id: string) {
   );
 }
 
+const cuentaEditada = z.object({
+  id: uuid,
+  nombre: z.string().trim().min(1, "Ponle nombre a la cuenta").max(40),
+  persona,
+});
+
+/**
+ * Solo nombre y de quién es: el tipo y el saldo de partida quedan fijos
+ * después de creada, porque cambiarlos ahí sí reescribiría la historia de la
+ * cuenta (a qué tipo de saldo se refieren sus gastos ya cargados).
+ */
+export async function editarCuenta(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(cuentaEditada, campos(formData), ({ id, ...datos }) =>
+    supabase.from("cuentas").update(datos).eq("id", id),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Ingresos y presupuesto
 // ---------------------------------------------------------------------------

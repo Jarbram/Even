@@ -7,7 +7,7 @@ import { redondear, soles } from "@/lib/finanzas";
 import { BotonCerrar } from "@/components/navegacion";
 import { BotonBorrar } from "@/components/boton-borrar";
 import { borrarCuenta, borrarPagoTarjeta, borrarReembolso } from "../../acciones";
-import { PagarTarjeta } from "./formulario";
+import { EditarCuenta, PagarTarjeta } from "./formulario";
 
 const DIA_MES = new Intl.DateTimeFormat("es-PE", {
   day: "numeric",
@@ -127,13 +127,16 @@ export default async function CuentaPage({
         )}
       </section>
 
-      {saldo.esCredito && (
-        <PagarTarjeta
-          tarjetaId={cuenta.id}
-          consumido={saldo.consumido}
-          origenes={origenes}
-        />
-      )}
+      <div className="flex flex-col gap-2.5">
+        {saldo.esCredito && (
+          <PagarTarjeta
+            tarjetaId={cuenta.id}
+            consumido={saldo.consumido}
+            origenes={origenes}
+          />
+        )}
+        <EditarCuenta cuenta={cuenta} />
+      </div>
 
       {pagos.length > 0 && (
         <section className="mt-8">

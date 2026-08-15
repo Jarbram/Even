@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { NOMBRES } from "@/lib/persona";
+import { NOMBRES, PERSONAS } from "@/lib/persona";
 import { TIPOS_CUENTA, type CuentaRow } from "@/lib/cuentas";
 import { hoyISO, soles } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
@@ -9,7 +9,7 @@ import { Plegable } from "@/components/plegable";
 import { BotonGuardar, ErrorForm, useAlGuardar } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { pagarTarjeta, type Resultado } from "../../acciones";
+import { editarCuenta, pagarTarjeta, type Resultado } from "../../acciones";
 
 /**
  * Pagar la tarjeta: baja el saldo de la cuenta de origen y le devuelve línea a
@@ -86,6 +86,48 @@ export function PagarTarjeta({
 
         <ErrorForm estado={estado} />
         <BotonGuardar>Registrar pago</BotonGuardar>
+      </form>
+    </Plegable>
+  );
+}
+
+/**
+ * Nombre y de quién es, lo único que tiene sentido cambiar después de
+ * creada: el tipo y el saldo de partida quedan fijos, cambiarlos ahí sí
+ * reescribiría a qué se refieren los gastos que ya tiene cargados.
+ */
+export function EditarCuenta({ cuenta }: { cuenta: CuentaRow }) {
+  const [estado, action] = useActionState<Resultado, FormData>(
+    editarCuenta,
+    {},
+  );
+  const ref = useAlGuardar(estado, "Cuenta actualizada");
+
+  return (
+    <Plegable titulo="Editar nombre y de quién es">
+      <form ref={ref} action={action} className="flex flex-col gap-7">
+        <input type="hidden" name="id" value={cuenta.id} />
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="nombre-cuenta">Nombre</Label>
+          <Input
+            id="nombre-cuenta"
+            name="nombre"
+            defaultValue={cuenta.nombre}
+            maxLength={40}
+            required
+          />
+        </div>
+
+        <Chips
+          name="persona"
+          label="¿De quién es?"
+          defaultValue={cuenta.persona}
+          opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
+        />
+
+        <ErrorForm estado={estado} />
+        <BotonGuardar>Guardar cambios</BotonGuardar>
       </form>
     </Plegable>
   );
