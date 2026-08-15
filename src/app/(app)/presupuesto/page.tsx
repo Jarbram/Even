@@ -146,6 +146,13 @@ function VistaResumen({
         <NuevoPresupuesto mes={mes} categorias={categorias} />
       </div>
 
+      {/* "Hay que ajustar" se queda grande y en una sola columna: son pocas
+          —normalmente una o dos— y son las que de verdad piden atención, así
+          que se ganan el peso visual. "El resto" es la lista larga, y una
+          lista larga de cards anchas se sentía como un formulario sin fin
+          más que como un tablero: pasa a la misma grilla de dos columnas
+          que el Home, con las mismas cards compactas — se lee de a pares,
+          no una tras otra. */}
       {presupuesto.excedidas.length > 0 && (
         <section className="mt-6">
           <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-over uppercase">
@@ -178,14 +185,17 @@ function VistaResumen({
           <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
             {presupuesto.excedidas.length > 0 ? "El resto" : "Por categoría"}
           </h2>
-          <ul className="flex flex-col gap-2.5">
+          <ul className="grid grid-cols-2 gap-2.5">
             {lineas
               .filter((l) => !presupuesto.excedidas.includes(l))
               .map((linea) => (
-                <li key={linea.categoria}>
+                <li
+                  key={linea.categoria}
+                  className="has-[details[open]]:col-span-2"
+                >
                   <TarjetaCategoria
                     linea={linea}
-                    tamano="grande"
+                    tamano="compacta"
                     gastosRecientes={(
                       gastosPorCategoria.get(linea.categoria) ?? []
                     ).slice(0, 4)}
