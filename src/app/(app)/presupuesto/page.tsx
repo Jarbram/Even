@@ -1,10 +1,10 @@
 import { Link } from "next-view-transitions";
-import { ChevronDown } from "lucide-react";
 import { requirePersona } from "@/lib/sesion";
 import {
   categoriasUsadas,
   historicoMensual,
   resumenDelMes,
+  type GastoRow,
 } from "@/lib/datos";
 import {
   diasTranscurridos,
@@ -20,6 +20,7 @@ import {
   type ResumenPresupuesto,
 } from "@/lib/finanzas";
 import { NavegadorMes } from "@/components/navegacion";
+import { TarjetaCategoria } from "@/components/tarjeta-categoria";
 import { EditarPresupuesto, NuevoPresupuesto } from "./formularios";
 
 /**
@@ -99,6 +100,7 @@ export default async function PresupuestoPage({
           presupuesto={resumen.presupuesto}
           lineas={resumen.lineas}
           categorias={categorias}
+          gastos={resumen.gastos}
         />
       ) : (
         <VistaActividad mes={mes} vista={vista} resumen={resumen} historico={historico} />
@@ -117,13 +119,25 @@ function VistaResumen({
   presupuesto,
   lineas,
   categorias,
+  gastos,
 }: {
   mes: Mes;
   sinTopes: boolean;
   presupuesto: ResumenPresupuesto;
   lineas: LineaPresupuesto[];
   categorias: string[];
+  gastos: GastoRow[];
 }) {
+  // Para el detalle de cada card: sus últimos gastos, sin consultar de
+  // nuevo — ya vienen cargados en `gastos`.
+  const gastosPorCategoria = new Map<string, GastoRow[]>();
+  for (const gasto of gastos) {
+    gastosPorCategoria.set(gasto.categoria, [
+      ...(gastosPorCategoria.get(gasto.categoria) ?? []),
+      gasto,
+    ]);
+  }
+
   return (
     <>
       {sinTopes ? <SinTopes /> : <Titular presupuesto={presupuesto} />}
@@ -140,7 +154,19 @@ function VistaResumen({
           <ul className="flex flex-col gap-2.5">
             {presupuesto.excedidas.map((linea) => (
               <li key={linea.categoria}>
-                <Linea mes={mes} linea={linea} />
+                <TarjetaCategoria
+                  linea={linea}
+                  tamano="grande"
+                  gastosRecientes={(
+                    gastosPorCategoria.get(linea.categoria) ?? []
+                  ).slice(0, 4)}
+                >
+                  <EditarPresupuesto
+                    mes={mes}
+                    categoria={linea.categoria}
+                    monto={linea.presupuestado}
+                  />
+                </TarjetaCategoria>
               </li>
             ))}
           </ul>
@@ -157,7 +183,19 @@ function VistaResumen({
               .filter((l) => !presupuesto.excedidas.includes(l))
               .map((linea) => (
                 <li key={linea.categoria}>
-                  <Linea mes={mes} linea={linea} />
+                  <TarjetaCategoria
+                    linea={linea}
+                    tamano="grande"
+                    gastosRecientes={(
+                      gastosPorCategoria.get(linea.categoria) ?? []
+                    ).slice(0, 4)}
+                  >
+                    <EditarPresupuesto
+                      mes={mes}
+                      categoria={linea.categoria}
+                      monto={linea.presupuestado}
+                    />
+                  </TarjetaCategoria>
                 </li>
               ))}
           </ul>
@@ -225,83 +263,6 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
         </div>
       </dl>
     </section>
-  );
-}
-
-/**
- * Una categoría con su tope: cuánto va, cuánto queda y si hay que frenar.
- * Desplegable: adentro va el mismo formulario de asignar, con el monto ya
- * puesto, para subirlo o bajarlo sin tener que volver a elegir la categoría.
- */
-function Linea({ mes, linea }: { mes: Mes; linea: LineaPresupuesto }) {
-  const sinTope = linea.presupuestado === 0;
-
-  return (
-    <details className="glass rounded-xl [&[open]_.marca]:rotate-180">
-      <summary className="cursor-pointer list-none p-4 [&::-webkit-details-marker]:hidden">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-            {linea.categoria}
-          </span>
-          <span className="flex shrink-0 items-center gap-1 text-sm">
-            <span>
-              <span className="font-semibold">{soles(linea.gastado)}</span>
-              {!sinTope && (
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {soles(linea.presupuestado)}
-                </span>
-              )}
-            </span>
-            <ChevronDown
-              aria-hidden
-              className="marca size-3.5 shrink-0 text-muted-foreground transition-transform duration-200"
-            />
-          </span>
-        </div>
-
-        {sinTope ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Sin tope: no entra en la cuenta. Ponle uno para controlarlo.
-          </p>
-        ) : (
-          <>
-            <div
-              className="glass-hueco mt-2.5 h-1.5 overflow-hidden rounded-full"
-              role="progressbar"
-              aria-label={`${linea.categoria}: gastado ${linea.gastado} de ${linea.presupuestado} soles`}
-              aria-valuenow={Math.round(linea.proporcion * 100)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                data-estado={linea.estado}
-                className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
-                style={{ width: `${Math.min(linea.proporcion, 1) * 100}%` }}
-              />
-            </div>
-
-            <p className="mt-2 flex items-baseline justify-between text-xs">
-              <span className="text-muted-foreground">
-                {linea.restante >= 0
-                  ? `Quedan ${soles(linea.restante)}`
-                  : `${soles(-linea.restante)} de más`}
-              </span>
-              <span
-                data-estado={linea.estado}
-                className="font-semibold text-ok data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
-              >
-                {Math.round(linea.proporcion * 100)} %
-              </span>
-            </p>
-          </>
-        )}
-      </summary>
-
-      <div className="border-t border-border p-4">
-        <EditarPresupuesto mes={mes} categoria={linea.categoria} monto={linea.presupuestado} />
-      </div>
-    </details>
   );
 }
 

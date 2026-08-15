@@ -2,14 +2,14 @@ import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { Link } from "next-view-transitions";
 import { NOMBRES, laOtra } from "@/lib/persona";
 import { requirePersona } from "@/lib/sesion";
-import { categoriasUsadas, conceptosUsados, resumenDelMes } from "@/lib/datos";
 import {
-  hoyISO,
-  nombreMes,
-  redondear,
-  soles,
-  type LineaPresupuesto,
-} from "@/lib/finanzas";
+  categoriasUsadas,
+  conceptosUsados,
+  resumenDelMes,
+  type GastoRow,
+} from "@/lib/datos";
+import { hoyISO, nombreMes, redondear, soles } from "@/lib/finanzas";
+import { TarjetaCategoria } from "@/components/tarjeta-categoria";
 import { FormularioGastoRapido } from "./formulario-gasto-rapido";
 import { FormularioIngresoRapido } from "./formulario-ingreso-rapido";
 
@@ -36,6 +36,16 @@ export default async function HomePage() {
   const disponible = redondear(
     cuentasLiquidas.reduce((suma, c) => suma + c.saldo, 0),
   );
+
+  // Para el detalle de cada card de categoría: sus últimos gastos, sin
+  // consultar de nuevo — ya vienen cargados en `gastos`.
+  const gastosPorCategoria = new Map<string, GastoRow[]>();
+  for (const gasto of gastos) {
+    gastosPorCategoria.set(gasto.categoria, [
+      ...(gastosPorCategoria.get(gasto.categoria) ?? []),
+      gasto,
+    ]);
+  }
 
   return (
     <>
@@ -182,11 +192,22 @@ export default async function HomePage() {
 
           {/* Dos columnas de cards, no una tira que hay que deslizar ni una
               lista de filas larguísima: con seis u ocho categorías esto cabe
-              en la mitad de scroll y se lee de a pares, no una por una. */}
+              en la mitad de scroll y se lee de a pares, no una por una.
+              Tocar una la abre con sus últimos gastos; has-[…[open]]: le da
+              las dos columnas mientras está abierta, el mismo truco que las
+              billeteras de Ajustes, para que la lista no quede aplastada. */}
           <ul className="grid grid-cols-2 gap-2.5">
             {conTope.map((linea) => (
-              <li key={linea.categoria}>
-                <TarjetaCategoria linea={linea} />
+              <li
+                key={linea.categoria}
+                className="has-[details[open]]:col-span-2"
+              >
+                <TarjetaCategoria
+                  linea={linea}
+                  gastosRecientes={(
+                    gastosPorCategoria.get(linea.categoria) ?? []
+                  ).slice(0, 3)}
+                />
               </li>
             ))}
           </ul>
@@ -239,79 +260,3 @@ function PrimerosPasos({ sinTopes }: { sinTopes: boolean }) {
   );
 }
 
-const COLOR_ESTADO: Record<LineaPresupuesto["estado"], string> = {
-  ok: "var(--ok)",
-  ajustado: "var(--warn)",
-  excedido: "var(--over)",
-};
-
-/**
- * Una card por categoría, dos por fila: cuánto queda de un vistazo, sin
- * tener que abrir Presupuesto. El aro es una máscara sobre un
- * `conic-gradient` — un anillo de verdad, no un disco con un círculo
- * pintado encima, así que el centro deja ver el cristal de la tarjeta en
- * vez de un color que habría que hacer coincidir a mano.
- *
- * La barra de abajo repite el mismo dato que el aro, pero como longitud en
- * vez de ángulo: dos formas de leer la misma proporción, así que da igual
- * si se mira la card entera o solo se le pasa el ojo por encima.
- */
-function TarjetaCategoria({ linea }: { linea: LineaPresupuesto }) {
-  const proporcion = Math.min(linea.proporcion, 1);
-  const color = COLOR_ESTADO[linea.estado];
-
-  return (
-    <div className="glass-accion flex flex-col gap-3.5 rounded-2xl p-3.5 entra">
-      <div className="flex items-center gap-3">
-        <div className="relative flex size-11 shrink-0 items-center justify-center">
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
-              WebkitMask:
-                "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
-              mask: "radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))",
-            }}
-          />
-          <span
-            role="img"
-            aria-label={`${Math.round(proporcion * 100)} % del tope`}
-            className="relative text-[10px] font-extrabold"
-          >
-            {Math.round(proporcion * 100)}%
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold">
-            {linea.categoria}
-          </p>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-            {soles(linea.gastado)} de {soles(linea.presupuestado)}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="glass-hueco h-1.5 overflow-hidden rounded-full"
-        role="img"
-        aria-label={`${soles(linea.gastado)} de ${soles(linea.presupuestado)} en ${linea.categoria}`}
-      >
-        <div
-          className="barra h-full rounded-full"
-          style={{ width: `${proporcion * 100}%`, backgroundColor: color }}
-        />
-      </div>
-
-      <span
-        data-estado={linea.estado}
-        className="truncate text-[11px] font-semibold text-muted-foreground data-[estado=excedido]:text-over"
-      >
-        {linea.restante >= 0
-          ? `${soles(linea.restante)} libre`
-          : `${soles(-linea.restante)} de más`}
-      </span>
-    </div>
-  );
-}
