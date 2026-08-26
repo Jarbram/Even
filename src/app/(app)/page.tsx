@@ -102,7 +102,7 @@ export default async function HomePage() {
 
         <FormularioIngresoRapido
           persona={persona}
-          mes={mes}
+          fecha={hoyISO()}
           cuentas={cuentas}
           fondos={fondos}
           conceptos={conceptos}
@@ -187,7 +187,7 @@ export default async function HomePage() {
       {conTope.length > 0 && (
         <div className="mb-8">
           <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-            Por categoría
+            Contra los topes
           </h2>
 
           {/* Dos columnas de cards, no una tira que hay que deslizar ni una

@@ -42,7 +42,7 @@ export function TarjetaCategoria({
   return (
     <details className="glass-accion rounded-2xl entra [&[open]_.marca]:rotate-180">
       <summary
-        className={`flex cursor-pointer list-none flex-col gap-3.5 [&::-webkit-details-marker]:hidden ${grande ? "p-4" : "p-3.5"}`}
+        className={`flex cursor-pointer list-none flex-col gap-2.5 [&::-webkit-details-marker]:hidden ${grande ? "p-4" : "p-3.5"}`}
       >
         <div className="flex items-center gap-3">
           <div
@@ -52,32 +52,36 @@ export function TarjetaCategoria({
               aria-hidden
               className="absolute inset-0 rounded-full"
               style={{
-                background: `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
+                background: sinTope
+                  ? "rgb(255 255 255 / 0.12)"
+                  : `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
                 WebkitMask: `radial-gradient(farthest-side, transparent calc(100% - ${grosorAro}px), #000 calc(100% - ${grosorAro}px))`,
                 mask: `radial-gradient(farthest-side, transparent calc(100% - ${grosorAro}px), #000 calc(100% - ${grosorAro}px))`,
               }}
             />
+            {/* Sin tope no hay porcentaje que enseñar: un aro al 100 % decía
+                "100 % del tope" de una categoría que no tiene ninguno, y en
+                rojo — el peor error posible, porque marcaba como excedidas
+                justo las dos líneas de gasto más grandes del mes. */}
             <span
               role="img"
-              aria-label={`${Math.round(proporcion * 100)} % del tope`}
-              className={`relative font-extrabold ${grande ? "text-[13px]" : "text-[10px]"}`}
+              aria-label={
+                sinTope
+                  ? `${linea.categoria}, sin tope`
+                  : `${Math.round(proporcion * 100)}% del tope`
+              }
+              data-sin-tope={sinTope}
+              className={`relative font-extrabold data-[sin-tope=true]:text-muted-foreground ${grande ? "text-[13px]" : "text-[10px]"}`}
             >
-              {Math.round(proporcion * 100)}%
+              {sinTope ? "—" : `${Math.round(proporcion * 100)}%`}
             </span>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p
-              className={`truncate font-semibold ${grande ? "text-[15px]" : "text-[13px]"}`}
-            >
-              {linea.categoria}
-            </p>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {sinTope
-                ? soles(linea.gastado)
-                : `${soles(linea.gastado)} de ${soles(linea.presupuestado)}`}
-            </p>
-          </div>
+          <p
+            className={`min-w-0 flex-1 truncate font-semibold ${grande ? "text-[15px]" : "text-[13px]"}`}
+          >
+            {linea.categoria}
+          </p>
 
           <ChevronDown
             aria-hidden
@@ -85,12 +89,26 @@ export function TarjetaCategoria({
           />
         </div>
 
+        {/* Las cifras van a lo ancho de la tarjeta y no en la columna de al
+            lado del aro: ahí tenían 74 px y "S/ 1,262.70 de S/ 1,310.00"
+            salía recortado, que en una app de dinero es el único dato que no
+            puede quedar a medias. */}
         {sinTope ? (
-          <p className="text-[11px] text-muted-foreground">
-            Sin tope: no entra en la cuenta. Ponle uno para controlarlo.
-          </p>
+          <>
+            <p className="text-[11px] font-semibold">{soles(linea.gastado)}</p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Sin tope: no entra en la cuenta. Ponle uno para controlarlo.
+            </p>
+          </>
         ) : (
           <>
+            <p className="text-[11px] text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                {soles(linea.gastado)}
+              </span>{" "}
+              de {soles(linea.presupuestado)}
+            </p>
+
             <div
               className={`glass-hueco overflow-hidden rounded-full ${grande ? "h-2" : "h-1.5"}`}
               role="img"

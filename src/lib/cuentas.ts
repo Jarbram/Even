@@ -1,3 +1,4 @@
+import { Banknote, CreditCard, Landmark, Wallet, type LucideIcon } from "lucide-react";
 import type { Persona } from "./persona";
 
 /** De dónde sale la plata. */
@@ -9,6 +10,15 @@ export const TIPOS_CUENTA = {
 } as const;
 
 export type TipoCuenta = keyof typeof TIPOS_CUENTA;
+
+/** El ícono de cada tipo. Compartido: una tarjeta se dibuja igual en Ajustes
+ *  que en el selector del formulario, o dejan de ser el mismo objeto. */
+export const ICONO_TIPO: Record<TipoCuenta, LucideIcon> = {
+  efectivo: Banknote,
+  debito: Landmark,
+  credito: CreditCard,
+  billetera: Wallet,
+};
 
 export type CuentaRow = {
   id: string;
@@ -111,4 +121,24 @@ export const COLORES_INSIGNIA: Record<string, string> = {
 
 export function claseInsignia(color: string | undefined): string {
   return COLORES_INSIGNIA[color ?? ""] ?? "bg-muted text-muted-foreground";
+}
+
+/**
+ * Qué `saldo_base` hay que guardar para que la cuenta muestre `deseado`.
+ *
+ * El saldo de hoy es la base más todo lo que se movió después, y eso último no
+ * se toca: corregir "tengo 300, no 512" no puede borrar un gasto. Así que la
+ * diferencia se le carga a la base, que es justo lo que representa —lo que
+ * había antes de que la app existiera—.
+ *
+ * En una tarjeta `deseado` es lo consumido, que es un saldo negativo: mismo
+ * criterio que al crearla.
+ */
+export function baseParaSaldo(
+  cuenta: { tipo: TipoCuenta; saldo: number; saldo_base: number },
+  deseado: number,
+): number {
+  const objetivo = cuenta.tipo === "credito" ? -Math.abs(deseado) : deseado;
+  const movido = cuenta.saldo - cuenta.saldo_base;
+  return Math.round((objetivo - movido + Number.EPSILON) * 100) / 100;
 }

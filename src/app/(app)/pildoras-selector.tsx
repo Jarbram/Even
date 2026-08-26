@@ -54,7 +54,7 @@ export function PildorasCategoria({
           <button
             type="button"
             onClick={() => setVerTodas((v) => !v)}
-            className="text-xs font-medium text-primary"
+            className="-my-3.5 py-3.5 text-xs font-medium text-primary"
           >
             {verTodas ? "Ver menos" : `Ver todas (${categorias.length})`}
           </button>
@@ -110,7 +110,7 @@ export function PildorasCategoria({
               setModoNueva(false);
               setNueva("");
             }}
-            className="self-start text-xs text-muted-foreground"
+            className="-my-2.5 self-start py-2.5 text-xs text-muted-foreground"
           >
             Cancelar y elegir una de la lista
           </button>

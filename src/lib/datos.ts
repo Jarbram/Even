@@ -38,6 +38,7 @@ export type FondoRow = {
 
 export type IngresoRow = {
   id: string;
+  fecha: string;
   persona: Persona;
   descripcion: string;
   monto: number;
@@ -69,9 +70,10 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
       supabase
         .from("ingresos")
         .select(
-          "id, persona, descripcion, monto, cuenta_id, fondo_id, cuentas(nombre, color), fondos(nombre)",
+          "id, fecha, persona, descripcion, monto, cuenta_id, fondo_id, cuentas(nombre, color), fondos(nombre)",
         )
         .eq("mes", mes)
+        .order("fecha", { ascending: false })
         .order("created_at", { ascending: false })
         .overrideTypes<IngresoRow[]>(),
       supabase

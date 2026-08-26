@@ -5,8 +5,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requirePersona } from "@/lib/sesion";
 import { PERSONAS } from "@/lib/persona";
-import { COLORES_DISPONIBLES, TIPOS_CUENTA } from "@/lib/cuentas";
-import { mesActual, normalizarCategoria } from "@/lib/finanzas";
+import {
+  COLORES_DISPONIBLES,
+  TIPOS_CUENTA,
+  baseParaSaldo,
+  type TipoCuenta,
+} from "@/lib/cuentas";
+import { mesActual, mesDe, normalizarCategoria } from "@/lib/finanzas";
 
 /**
  * Escrituras. Todo lo que entra por aquí viene de un formulario del navegador,
@@ -171,18 +176,38 @@ const cuentaEditada = z.object({
   id: uuid,
   nombre: z.string().trim().min(1, "Ponle nombre a la cuenta").max(40),
   persona,
+  // Lo que la cuenta tiene HOY (o, en una tarjeta, lo que lleva consumido):
+  // es el número que se sabe de memoria, no el punto de partida.
+  saldo: z.coerce.number().catch(0),
 });
 
 /**
- * Solo nombre y de quién es: el tipo y el saldo de partida quedan fijos
- * después de creada, porque cambiarlos ahí sí reescribiría la historia de la
- * cuenta (a qué tipo de saldo se refieren sus gastos ya cargados).
+ * Nombre, de quién es y cuánto tiene. El tipo sigue fijo: cambiarlo sí
+ * reescribiría a qué se refieren los gastos que la cuenta ya tiene cargados.
+ *
+ * El monto no se guarda tal cual. El saldo que se ve es `saldo_base` más todo
+ * lo que se movió después, así que para dejarlo en la cifra que acaban de
+ * teclear se corrige la base con la diferencia — el histórico no se toca.
  */
 export async function editarCuenta(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
-  return ejecutar(cuentaEditada, campos(formData), ({ id, ...datos }) =>
-    supabase.from("cuentas").update(datos).eq("id", id),
-  );
+  return ejecutar(cuentaEditada, campos(formData), async ({ id, saldo, ...datos }) => {
+    // Se relee aquí y no se manda desde el formulario: si alguien cargó un
+    // gasto entretanto, la corrección tiene que partir del saldo de ahora.
+    const { data: actual } = await supabase
+      .from("cuentas_saldo")
+      .select("tipo, saldo, saldo_base")
+      .eq("id", id)
+      .maybeSingle()
+      .overrideTypes<{ tipo: TipoCuenta; saldo: number; saldo_base: number }>();
+
+    if (!actual) return { error: { message: "La cuenta ya no existe" } };
+
+    return supabase
+      .from("cuentas")
+      .update({ ...datos, saldo_base: baseParaSaldo(actual, saldo) })
+      .eq("id", id);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -191,7 +216,9 @@ export async function editarCuenta(_prev: Resultado, formData: FormData) {
 
 const ingreso = z
   .object({
-    mes: mes.default(mesActual()),
+    // El mes no se manda: se deriva de la fecha. Mandando los dos podían
+    // discrepar, y un ingreso del 3 de agosto acababa contado en julio.
+    fecha: z.iso.date(),
     persona,
     descripcion: z.string().trim().min(1).max(60).default("Sueldo"),
     monto,
@@ -204,6 +231,7 @@ const ingreso = z
     const [tipo, id] = destino.split(":");
     return {
       ...resto,
+      mes: mesDe(resto.fecha),
       cuenta_id: tipo === "cuenta" && id ? id : null,
       fondo_id: tipo === "fondo" && id ? id : null,
     };

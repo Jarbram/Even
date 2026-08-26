@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
-import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
 import { SelectorCategoria } from "@/components/selector-categoria";
 import { SelectorDestino } from "@/components/selector-destino";
@@ -19,13 +18,14 @@ import { guardarIngreso, type Resultado } from "../acciones";
 
 export function FormularioIngreso({
   persona,
-  mes,
+  fecha,
   cuentas,
   fondos,
   conceptos,
 }: {
   persona: Persona;
-  mes: Mes;
+  /** Con qué día viene puesto el calendario: hoy, o el mes que se mira. */
+  fecha: string;
   cuentas: CuentaRow[];
   fondos: FondoRow[];
   conceptos: string[];
@@ -45,8 +45,6 @@ export function FormularioIngreso({
 
   return (
     <form ref={ref} action={action} className="flex flex-col gap-9">
-      <input type="hidden" name="mes" value={mes} />
-
       {/* Mismo gesto que el gasto: el monto manda y ocupa la pantalla. */}
       <div className="glass rounded-2xl px-5 py-7 text-center">
         <Label
@@ -67,7 +65,7 @@ export function FormularioIngreso({
             placeholder="0.00"
             required
             autoFocus
-            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center text-[44px] leading-none font-extrabold tracking-[-1px] text-primary shadow-none focus-visible:ring-0 md:text-[44px]"
+            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[44px] leading-none font-extrabold tracking-[-1px] text-primary shadow-none focus-visible:ring-0 md:text-[44px]"
           />
         </div>
       </div>
@@ -90,6 +88,11 @@ export function FormularioIngreso({
       />
 
       <SelectorDestino cuentas={cuentas} fondos={fondos} />
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="fecha">¿Qué día entró?</Label>
+        <Input id="fecha" name="fecha" type="date" defaultValue={fecha} required />
+      </div>
 
       <ErrorForm estado={estado} />
 

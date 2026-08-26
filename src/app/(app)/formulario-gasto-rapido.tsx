@@ -61,7 +61,11 @@ export function FormularioGastoRapido({
         type="button"
         onClick={() => setAbierto(true)}
         aria-haspopup="dialog"
-        className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-5 text-[13px] font-semibold transition-colors hover:border-primary hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/10"
+        // El mismo material que "Registrar ingreso": son la misma clase de
+        // acción y estaban en dos superficies distintas —esta con borde
+        // punteado, que se lee como hueco por rellenar—, así que la acción
+        // más frecuente de la app parecía la menos importante de las dos.
+        className="glass-accion flex w-full flex-col items-center justify-center gap-1.5 rounded-xl py-5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <Plus aria-hidden className="size-5 text-primary" />
         Agregar gasto
@@ -126,7 +130,7 @@ export function FormularioGastoRapido({
                   placeholder="0.00"
                   required
                   autoFocus
-                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center text-[36px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[36px]"
+                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[36px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[36px]"
                 />
               </div>
             </div>

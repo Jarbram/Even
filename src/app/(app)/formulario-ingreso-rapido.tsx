@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
-import type { Mes } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
 import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
@@ -31,13 +30,14 @@ import { guardarIngreso, type Resultado } from "./acciones";
  */
 export function FormularioIngresoRapido({
   persona,
-  mes,
+  fecha,
   cuentas,
   fondos,
   conceptos,
 }: {
   persona: Persona;
-  mes: Mes;
+  /** Hoy, ya en hora de Lima. */
+  fecha: string;
   cuentas: CuentaRow[];
   fondos: FondoRow[];
   conceptos: string[];
@@ -101,8 +101,6 @@ export function FormularioIngresoRapido({
             action={action}
             className="flex flex-col gap-5 px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
           >
-            <input type="hidden" name="mes" value={mes} />
-
             <div className="glass rounded-2xl px-5 py-5 text-center">
               <Label
                 htmlFor="monto-ingreso-rapido"
@@ -124,7 +122,7 @@ export function FormularioIngresoRapido({
                   placeholder="0.00"
                   required
                   autoFocus
-                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center text-[36px] leading-none font-extrabold tracking-[-1px] text-primary shadow-none focus-visible:ring-0 md:text-[36px]"
+                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[36px] leading-none font-extrabold tracking-[-1px] text-primary shadow-none focus-visible:ring-0 md:text-[36px]"
                 />
               </div>
             </div>
@@ -144,6 +142,17 @@ export function FormularioIngresoRapido({
             />
 
             <PildorasDestino cuentas={cuentas} fondos={fondos} />
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fecha-ingreso-rapido">¿Qué día entró?</Label>
+              <Input
+                id="fecha-ingreso-rapido"
+                name="fecha"
+                type="date"
+                defaultValue={fecha}
+                required
+              />
+            </div>
 
             <ErrorForm estado={estado} />
             <BotonGuardar>Registrar ingreso</BotonGuardar>

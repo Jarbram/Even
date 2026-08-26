@@ -28,6 +28,7 @@
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-panel: var(--secondary-panel);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
@@ -87,6 +88,11 @@
   --primary-foreground: #111214;
   --secondary: #5b5bf5;
   --secondary-foreground: #ffffff;
+  /* El indigo de marca es demasiado claro para llevar texto encima: un blanco
+     al 70 % sobre él se queda en 3.2:1, por debajo del mínimo legible. Este
+     tono —el mismo azul, más hondo— sube ese mismo texto a 5.6:1. Se usa solo
+     donde el indigo es superficie y no acento. */
+  --secondary-panel: #3d3dc8;
 
   --muted: rgb(52 53 59 / 0.5);
   --muted-foreground: #9ca3af;

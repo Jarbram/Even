@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { NOMBRES, PERSONAS } from "@/lib/persona";
-import { TIPOS_CUENTA, type CuentaRow } from "@/lib/cuentas";
+import { TIPOS_CUENTA, leerSaldo, type CuentaRow } from "@/lib/cuentas";
 import { hoyISO, soles } from "@/lib/finanzas";
 import { Chips } from "@/components/chips";
 import { Plegable } from "@/components/plegable";
@@ -92,9 +92,13 @@ export function PagarTarjeta({
 }
 
 /**
- * Nombre y de quién es, lo único que tiene sentido cambiar después de
- * creada: el tipo y el saldo de partida quedan fijos, cambiarlos ahí sí
- * reescribiría a qué se refieren los gastos que ya tiene cargados.
+ * Nombre, de quién es y cuánto tiene. El tipo sí queda fijo: cambiarlo
+ * reescribiría a qué se refieren los gastos que la cuenta ya tiene cargados.
+ *
+ * El monto se pregunta como saldo de HOY, no como punto de partida: nadie
+ * recuerda con cuánto abrió el Yape, pero todos ven en la app del banco lo que
+ * tiene ahora. La acción corrige la base con la diferencia; los gastos y los
+ * ingresos ya cargados se quedan como están.
  */
 export function EditarCuenta({ cuenta }: { cuenta: CuentaRow }) {
   const [estado, action] = useActionState<Resultado, FormData>(
@@ -102,9 +106,10 @@ export function EditarCuenta({ cuenta }: { cuenta: CuentaRow }) {
     {},
   );
   const ref = useAlGuardar(estado, "Cuenta actualizada");
+  const saldo = leerSaldo(cuenta);
 
   return (
-    <Plegable titulo="Editar nombre y de quién es">
+    <Plegable titulo="Editar la cuenta">
       <form ref={ref} action={action} className="flex flex-col gap-7">
         <input type="hidden" name="id" value={cuenta.id} />
 
@@ -125,6 +130,26 @@ export function EditarCuenta({ cuenta }: { cuenta: CuentaRow }) {
           defaultValue={cuenta.persona}
           opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
         />
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="saldo-cuenta">
+            {saldo.esCredito ? "Consumido ahora (S/)" : "Saldo de hoy (S/)"}
+          </Label>
+          <Input
+            id="saldo-cuenta"
+            name="saldo"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            defaultValue={saldo.esCredito ? saldo.consumido : cuenta.saldo}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            {saldo.esCredito
+              ? "Lo que la tarjeta lleva consumido de verdad. Se ajusta el arrastre para cuadrar; los gastos cargados aquí no se tocan."
+              : "Lo que la cuenta tiene de verdad ahora mismo. Se ajusta el punto de partida para cuadrar; los gastos e ingresos cargados no se tocan."}
+          </p>
+        </div>
 
         <ErrorForm estado={estado} />
         <BotonGuardar>Guardar cambios</BotonGuardar>

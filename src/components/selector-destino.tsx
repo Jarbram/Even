@@ -1,5 +1,11 @@
-import { CircleDashed, PiggyBank, Wallet } from "lucide-react";
-import { TIPOS_CUENTA, claseColor, type CuentaRow } from "@/lib/cuentas";
+import { CircleDashed, PiggyBank } from "lucide-react";
+import {
+  ICONO_TIPO,
+  TIPOS_CUENTA,
+  claseColor,
+  leerSaldo,
+  type CuentaRow,
+} from "@/lib/cuentas";
 import { soles } from "@/lib/finanzas";
 import type { FondoRow } from "@/lib/datos";
 import { Label } from "@/components/ui/label";
@@ -26,17 +32,24 @@ export function SelectorDestino({
       </Label>
 
       <div className="grid grid-cols-2 gap-2.5">
-        {cuentas.map((cuenta) => (
-          <TarjetaOpcion
-            key={cuenta.id}
-            name="destino"
-            value={`cuenta:${cuenta.id}`}
-            titulo={cuenta.nombre}
-            pie={`${TIPOS_CUENTA[cuenta.tipo]} · ${soles(cuenta.saldo)}`}
-            punto={claseColor(cuenta.color)}
-            icono={Wallet}
-          />
-        ))}
+        {cuentas.map((cuenta) => {
+          const saldo = leerSaldo(cuenta);
+          return (
+            <TarjetaOpcion
+              key={cuenta.id}
+              name="destino"
+              value={`cuenta:${cuenta.id}`}
+              titulo={cuenta.nombre}
+              pie={
+                saldo.esCredito
+                  ? `Disponible ${soles(saldo.principal)}`
+                  : `${TIPOS_CUENTA[cuenta.tipo]} · ${soles(saldo.principal)}`
+              }
+              punto={claseColor(cuenta.color)}
+              icono={ICONO_TIPO[cuenta.tipo]}
+            />
+          );
+        })}
 
         {fondos.map((fondo) => (
           <TarjetaOpcion

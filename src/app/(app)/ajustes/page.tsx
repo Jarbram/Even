@@ -1,13 +1,5 @@
 import { Link } from "next-view-transitions";
-import {
-  Banknote,
-  ChevronDown,
-  ChevronRight,
-  CreditCard,
-  Landmark,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
@@ -18,11 +10,11 @@ import {
   type GastoRow,
 } from "@/lib/datos";
 import {
+  ICONO_TIPO,
   TIPOS_CUENTA,
   claseInsignia,
   leerSaldo,
   type CuentaRow,
-  type TipoCuenta,
 } from "@/lib/cuentas";
 import { hoyISO, progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
@@ -217,7 +209,7 @@ export default async function AjustesPage() {
                       <p className="mt-2 text-[11px] text-muted-foreground">
                         {progreso.completado
                           ? progreso.resumen
-                          : `${Math.round(progreso.proporcion * 100)} % de ${soles(fondo.meta)} · ${progreso.resumen}`}
+                          : `${Math.round(progreso.proporcion * 100)}% de ${soles(fondo.meta)} · ${progreso.resumen}`}
                       </p>
                     </>
                   )}
@@ -257,13 +249,6 @@ export default async function AjustesPage() {
     </>
   );
 }
-
-const ICONO_TIPO: Record<TipoCuenta, LucideIcon> = {
-  efectivo: Banknote,
-  debito: Landmark,
-  credito: CreditCard,
-  billetera: Wallet,
-};
 
 /**
  * Una cuenta en tarjeta: insignia por tipo (así se distingue una tarjeta de
@@ -359,7 +344,7 @@ function TarjetaCuenta({
         )}
         <Link
           href={`/cuentas/${cuenta.id}`}
-          className="mt-2.5 block rounded-lg py-2 text-center text-[11px] font-semibold text-primary hover:underline"
+          className="mt-2.5 flex min-h-11 items-center justify-center rounded-lg text-center text-[11px] font-semibold text-primary hover:underline"
         >
           Ver todo, pagar o borrar →
         </Link>

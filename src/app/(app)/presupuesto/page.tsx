@@ -333,8 +333,8 @@ function VistaActividad({
         />
       )}
 
-      <section className="mb-6 rounded-xl bg-secondary p-5 text-secondary-foreground">
-        <p className="text-[11px] font-bold tracking-[0.06em] uppercase opacity-70">
+      <section className="mb-6 rounded-xl bg-secondary-panel p-5 text-secondary-foreground">
+        <p className="text-[11px] font-bold tracking-[0.06em] text-white/80 uppercase">
           Actividad {vista === "mensual" ? "por mes" : "del mes"}
         </p>
         <Barras datos={barras} />
@@ -372,7 +372,7 @@ function VistaActividad({
                     data-estado={linea.estado}
                     className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] font-bold text-ok data-[estado=ajustado]:bg-warn/15 data-[estado=ajustado]:text-warn data-[estado=excedido]:bg-over/15 data-[estado=excedido]:text-over"
                   >
-                    {Math.round(linea.proporcion * 100)} %
+                    {Math.round(linea.proporcion * 100)}%
                   </span>
                 )}
               </div>
@@ -407,7 +407,7 @@ function Dato({
 }) {
   return (
     <div>
-      <dt className="text-[10px] font-bold tracking-[0.06em] uppercase opacity-70">
+      <dt className="text-[10px] font-bold tracking-[0.06em] text-white/80 uppercase">
         {titulo}
       </dt>
       <dd className={`mt-0.5 text-sm font-bold ${destacado ? "text-primary" : ""}`}>
@@ -433,7 +433,7 @@ function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
 
   if (!hayGastos) {
     return (
-      <p className="mt-4 flex h-24 items-center justify-center text-sm opacity-70">
+      <p className="mt-4 flex h-24 items-center justify-center text-sm text-white/80">
         Sin gastos en este periodo
       </p>
     );
@@ -441,7 +441,7 @@ function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
 
   return (
     <figure className="mt-4">
-      <figcaption className="mb-1.5 text-[11px] opacity-70">
+      <figcaption className="mb-1.5 text-[11px] text-white/80">
         Máximo {soles(techo)} · {datos[pico].etiqueta}
       </figcaption>
 
@@ -460,14 +460,14 @@ function Barras({ datos }: { datos: { etiqueta: string; total: number }[] }) {
             // Un mínimo del 4 % para que un periodo sin gasto siga siendo una
             // barra y el eje no aparezca con huecos.
             style={{ height: `${Math.max((dato.total / techo) * 100, 4)}%` }}
-            className="max-w-9 flex-1 rounded-[3px] bg-white/45 data-[pico=true]:bg-white"
+            className="max-w-9 flex-1 rounded-[3px] bg-white/55 data-[pico=true]:bg-white"
           />
         ))}
       </div>
 
       {/* Primera, media y última: sitúan el eje sin apelotonar 31 etiquetas.
           Con un solo dato, mostrarlo dos veces (inicio y fin) no dice nada. */}
-      <div className="mt-1.5 flex justify-between text-[10px] opacity-60">
+      <div className="mt-1.5 flex justify-between text-[10px] text-white/80">
         <span>{datos[0].etiqueta}</span>
         {datos.length > 2 && (
           <span>{datos[Math.floor(datos.length / 2)].etiqueta}</span>

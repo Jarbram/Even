@@ -10,12 +10,15 @@ import { Plus } from "lucide-react";
 export function Plegable({
   titulo,
   children,
+  abierto,
 }: {
   titulo: string;
   children: React.ReactNode;
+  /** Abierto de entrada, para cuando no hay nada más que hacer en la pantalla. */
+  abierto?: boolean;
 }) {
   return (
-    <details className="glass rounded-xl [&[open]_.marca]:rotate-45">
+    <details open={abierto} className="glass rounded-xl [&[open]_.marca]:rotate-45">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 p-5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         <Plus
           aria-hidden

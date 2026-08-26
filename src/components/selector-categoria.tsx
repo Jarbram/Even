@@ -50,7 +50,7 @@ export function SelectorCategoria({
           <button
             type="button"
             onClick={() => setVerTodas((v) => !v)}
-            className="text-xs font-medium text-primary"
+            className="-my-3.5 py-3.5 text-xs font-medium text-primary"
           >
             {verTodas ? "Ver menos" : `Ver todas (${categorias.length})`}
           </button>
@@ -59,7 +59,7 @@ export function SelectorCategoria({
 
       <input type="hidden" name={name} value={valor} />
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-2">
         {visibles.map((categoria) => {
           const activa = !modoNueva && categoria === elegida;
           return (
@@ -72,7 +72,7 @@ export function SelectorCategoria({
                 setModoNueva(false);
               }}
               data-activa={activa}
-              className="rounded-full border border-border px-3 py-2.5 text-[13px] font-semibold transition-colors data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+              className="rounded-full border border-border px-3.5 py-2.5 text-[13px] font-semibold transition active:scale-[0.97] data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
             >
               {categoria}
             </button>
@@ -84,7 +84,7 @@ export function SelectorCategoria({
           aria-pressed={modoNueva}
           onClick={() => setModoNueva(true)}
           data-activa={modoNueva}
-          className="rounded-full border border-dashed border-border px-3 py-2.5 text-[13px] font-semibold text-primary transition-colors data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+          className="rounded-full border border-dashed border-border px-3.5 py-2.5 text-[13px] font-semibold text-primary transition active:scale-[0.97] data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
         >
           + Otra
         </button>
@@ -106,7 +106,7 @@ export function SelectorCategoria({
               setModoNueva(false);
               setNueva("");
             }}
-            className="self-start text-xs text-muted-foreground"
+            className="-my-2.5 self-start py-2.5 text-xs text-muted-foreground"
           >
             Cancelar y elegir una de la lista
           </button>

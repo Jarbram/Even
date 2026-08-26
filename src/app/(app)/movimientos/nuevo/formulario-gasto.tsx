@@ -65,7 +65,7 @@ export function FormularioGasto({
             placeholder="0.00"
             required
             autoFocus
-            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center text-[44px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[44px]"
+            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[44px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[44px]"
           />
         </div>
       </div>

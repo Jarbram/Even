@@ -360,7 +360,7 @@ export function resumenPresupuesto(
       : estado === "excedido"
         ? `Te pasaste ${soles(Math.abs(restante))} del tope`
         : enRiesgo.length > 0
-          ? `Ojo con ${enRiesgo[0].categoria}, va al ${Math.round(enRiesgo[0].proporcion * 100)} %`
+          ? `Ojo con ${enRiesgo[0].categoria}, va al ${Math.round(enRiesgo[0].proporcion * 100)}%`
           : "Vas dentro de lo acordado";
 
   return { tope, gastado, restante, estado, resumen, excedidas, enRiesgo };

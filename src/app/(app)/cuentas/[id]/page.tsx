@@ -62,11 +62,14 @@ export default async function CuentaPage({
       <section
         className={`mb-8 rounded-xl p-5 ${
           saldo.esCredito
-            ? "bg-secondary text-secondary-foreground"
+            ? "bg-secondary-panel text-secondary-foreground"
             : "glass text-foreground"
         }`}
       >
-        <p className="text-[11px] font-bold tracking-[0.06em] uppercase opacity-70">
+        <p
+          data-sobre-indigo={saldo.esCredito}
+          className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase data-[sobre-indigo=true]:text-white/80"
+        >
           {saldo.etiqueta}
         </p>
         <p
@@ -90,11 +93,11 @@ export default async function CuentaPage({
             </div>
             <dl className="mt-4 flex gap-8 text-xs">
               <div>
-                <dt className="opacity-70">Consumido</dt>
+                <dt className="text-white/80">Consumido</dt>
                 <dd className="mt-1 font-semibold">{soles(saldo.consumido)}</dd>
               </div>
               <div>
-                <dt className="opacity-70">Línea</dt>
+                <dt className="text-white/80">Línea</dt>
                 <dd className="mt-1 font-semibold">{soles(cuenta.linea)}</dd>
               </div>
             </dl>
@@ -102,7 +105,7 @@ export default async function CuentaPage({
             {/* De dónde sale el consumo, para que un arrastre sin gastos
                 detrás no parezca que la app perdió algo. */}
             {arrastre > 0 && (
-              <ul className="mt-4 space-y-1 border-t border-white/15 pt-3 text-[11px] opacity-80">
+              <ul className="mt-4 space-y-1 border-t border-white/20 pt-3 text-[11px] text-white/80">
                 <li className="flex justify-between gap-3">
                   <span>Ya venía consumido</span>
                   <span className="font-semibold">{soles(arrastre)}</span>

@@ -1,5 +1,5 @@
 import { Link } from "next-view-transitions";
-import { Plus } from "lucide-react";
+import { ArrowDownLeft, Plus } from "lucide-react";
 import { requirePersona } from "@/lib/sesion";
 import { resumenDelMes, type GastoRow } from "@/lib/datos";
 import {
@@ -13,6 +13,7 @@ import {
   soles,
   type Mes,
 } from "@/lib/finanzas";
+import { CabeceraDia } from "@/components/cabecera-dia";
 import { FilaGasto } from "@/components/fila-gasto";
 import { NavegadorMes } from "@/components/navegacion";
 
@@ -50,15 +51,29 @@ export default async function MovimientosPage({
 
   return (
     <>
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="text-2xl font-extrabold">Movimientos</h1>
-        <Link
-          href="/movimientos/nuevo"
-          aria-label="Agregar gasto"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <Plus aria-hidden className="size-5" />
-        </Link>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Los ingresos son la otra mitad del libro y no tenían puerta
+              propia: se llegaba a ellos solo desde la hoja de "Registrar
+              ingreso" del inicio. Aquí es donde se los va a buscar. */}
+          <Link
+            href="/ingresos"
+            className="glass-accion flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <ArrowDownLeft aria-hidden className="size-4 text-primary" />
+            Ingresos
+          </Link>
+
+          <Link
+            href="/movimientos/nuevo"
+            aria-label="Agregar gasto"
+            className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <Plus aria-hidden className="size-5" />
+          </Link>
+        </div>
       </div>
 
       <Calendario mes={mes} gastos={gastos} diaActivo={hayDia ? diaActivo : 0} />
@@ -72,7 +87,7 @@ export default async function MovimientosPage({
           {conTope && (
             <span className="text-base font-semibold text-muted-foreground">
               {" "}
-              / {soles(presupuesto.tope)}
+              de {soles(presupuesto.tope).replace("S/", "").trim()}
             </span>
           )}
         </p>
@@ -202,11 +217,15 @@ function Calendario({
                 data-gastado={gastado}
                 // El punto crece con el gasto del día, entre 3 y 7 px: se ve de
                 // un vistazo dónde se fue la plata sin leer un solo número.
+                // Raíz cuadrada y no proporción directa: con un día pico de
+                // S/ 2,685 los otros treinta se aplastaban todos contra el
+                // mínimo y el tamaño dejaba de distinguir nada. La raíz
+                // reparte el rango donde están los datos de verdad.
                 style={
                   gastado
                     ? {
-                        width: 3 + (dia.total / techo) * 4,
-                        height: 3 + (dia.total / techo) * 4,
+                        width: 3 + Math.sqrt(dia.total / techo) * 5,
+                        height: 3 + Math.sqrt(dia.total / techo) * 5,
                       }
                     : undefined
                 }
@@ -250,18 +269,17 @@ function ListaPorDia({
 
   return [...porDia.entries()].map(([fecha, delDia]) => (
     <section key={fecha} className="mb-5">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h2 className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-          {DIA_LARGO.format(new Date(`${fecha}T00:00:00Z`))}
-        </h2>
-        <span className="text-[11px] text-muted-foreground">
-          {soles(redondear(delDia.reduce((suma, g) => suma + g.monto, 0)))}
-        </span>
-      </div>
+      <CabeceraDia
+        total={soles(redondear(delDia.reduce((suma, g) => suma + g.monto, 0)))}
+      >
+        {DIA_LARGO.format(new Date(`${fecha}T00:00:00Z`))}
+      </CabeceraDia>
       <ul className="flex flex-col gap-2">
         {delDia.map((gasto) => (
           <li key={gasto.id}>
-            <FilaGasto gasto={gasto} borrable />
+            {/* La fecha ya la dice la cabecera del grupo: repetirla en cada
+                fila se comía el nombre de la cuenta. */}
+            <FilaGasto gasto={gasto} borrable conFecha={false} />
           </li>
         ))}
       </ul>
