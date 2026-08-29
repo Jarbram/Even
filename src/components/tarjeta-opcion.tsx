@@ -2,11 +2,11 @@ import { Check, type LucideIcon } from "lucide-react";
 
 /**
  * Una opción en tarjeta, del tamaño del pulgar y con el estado elegido dicho de
- * dos maneras: el borde en lima y una marca de verificación.
+ * dos maneras: el contorno en el naranja de marca y una marca de verificación.
  *
- * Solo el fondo teñido no bastaba — sobre una superficie glass translúcida un
- * 10 % de lima casi no se distingue, y el estado seleccionado es justo lo que
- * no puede quedar en duda antes de guardar dinero.
+ * Solo el fondo teñido no bastaba — un 10 % de opacidad casi no se distingue
+ * sobre una tarjeta ya oscura, y el estado seleccionado es justo lo que no
+ * puede quedar en duda antes de guardar dinero.
  *
  * ponytail: radio nativo con `peer-checked`. Sin estado de React, la tarjeta
  * entera es el área tocable y funciona antes de que hidrate el JavaScript.
@@ -18,7 +18,6 @@ export function TarjetaOpcion({
   pie,
   punto,
   icono: Icono,
-  acento,
   predeterminada,
   required,
 }: {
@@ -29,8 +28,6 @@ export function TarjetaOpcion({
   /** Clase de color del puntito identificador. */
   punto: string;
   icono?: LucideIcon;
-  /** Tiñe el icono de lima: lo usa el ahorro, que es la opción con carácter. */
-  acento?: boolean;
   predeterminada?: boolean;
   /** Para grupos sin opción por defecto, donde elegir no es opcional. */
   required?: boolean;
@@ -52,19 +49,14 @@ export function TarjetaOpcion({
       */}
       {/*
         El grosor de la selección va por `outline` y no por `ring`: `ring` es
-        `box-shadow` por dentro, y le quitaría a la tarjeta elegida el filo y la
-        sombra del cristal justo mientras está elegida, que es cuando más se
-        mira. `outline` es otra propiedad y convive con las dos.
+        `box-shadow` por dentro, y le quitaría a la tarjeta elegida su sombra
+        propia justo mientras está elegida, que es cuando más se mira.
+        `outline` es otra propiedad y convive con las dos.
       */}
-      <span className="glass relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition active:scale-[0.98] peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:outline-1 peer-checked:-outline-offset-1 peer-checked:outline-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+      <span className="panel relative flex h-full flex-col gap-2 rounded-xl p-3.5 transition active:scale-[0.98] peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:outline-1 peer-checked:-outline-offset-1 peer-checked:outline-primary peer-checked:[&>[data-check]]:block peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
         <span className="flex items-center justify-between">
           <span aria-hidden className={`size-2 rounded-full ${punto}`} />
-          {Icono && (
-            <Icono
-              aria-hidden
-              className={`size-4 ${acento ? "text-primary" : "text-muted-foreground"}`}
-            />
-          )}
+          {Icono && <Icono aria-hidden className="size-4 text-muted-foreground" />}
         </span>
 
         <span className="truncate text-sm font-semibold">{titulo}</span>

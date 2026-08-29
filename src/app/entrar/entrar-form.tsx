@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
-import { Button } from "@/components/ui/button";
+import { AvatarPersona } from "@/components/avatar-persona";
+import { BotonGuardar } from "@/components/formulario";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { entrar, type EntrarState } from "./actions";
@@ -20,7 +20,7 @@ export function EntrarForm() {
           <label
             key={p}
             data-activa={p === persona}
-            className="glass flex-1 cursor-pointer rounded-xl p-4 text-center text-sm font-semibold transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+            className="panel flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl p-4 text-center text-sm font-semibold transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring data-[activa=true]:outline-2 data-[activa=true]:outline-primary"
           >
             <input
               type="radio"
@@ -30,6 +30,7 @@ export function EntrarForm() {
               onChange={() => setPersona(p)}
               className="sr-only"
             />
+            <AvatarPersona persona={p} />
             {NOMBRES[p]}
           </label>
         ))}
@@ -54,16 +55,7 @@ export function EntrarForm() {
         </p>
       )}
 
-      <Enviar />
+      <BotonGuardar>Entrar</BotonGuardar>
     </form>
-  );
-}
-
-function Enviar() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" size="lg" disabled={pending} className="rounded-xl">
-      {pending ? "Entrando…" : "Entrar"}
-    </Button>
   );
 }

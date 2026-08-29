@@ -55,3 +55,4 @@ public/swe-worker-*.js.map
 # Hooks que otras herramientas de IA dejan en el proyecto. No son del producto.
 .codex/
 .cursor/
+.impeccable/

@@ -14,7 +14,8 @@ import { marcarReembolsar } from "@/app/(app)/acciones";
  * una de las ciento y pico filas del mes cargaba un botón de "Marcar a
  * reembolsar" que casi nunca se usa, y la lista se leía como una pared de
  * botones. Que un gasto esté marcado se dice con palabras en su subtítulo —el
- * color solo no basta—; aquí el ícono en lima es la segunda señal.
+ * color solo no basta—; aquí el ícono en azul —el mismo de "pendiente" en
+ * toda la app— es la segunda señal.
  */
 export function ToggleReembolsar({
   id,
@@ -48,7 +49,7 @@ export function ToggleReembolsar({
       }
       title={activo ? "Ya no está por cobrar" : "Marcar a reembolsar"}
       data-activo={activo}
-      className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60 data-[activo=true]:bg-primary/10 data-[activo=true]:text-primary"
+      className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-chart-4/10 hover:text-chart-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60 data-[activo=true]:bg-chart-4/10 data-[activo=true]:text-chart-4"
     >
       {pendiente ? "…" : <Undo2 aria-hidden className="size-4" />}
     </button>

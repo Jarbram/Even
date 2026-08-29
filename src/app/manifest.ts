@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gastos, ahorros y presupuesto de la casa, en un solo lugar.",
     start_url: "/",
     display: "standalone",
-    background_color: "#111214",
-    theme_color: "#111214",
+    background_color: "#0a0a0e",
+    theme_color: "#0a0a0e",
     lang: "es-PE",
     orientation: "portrait",
     icons: [

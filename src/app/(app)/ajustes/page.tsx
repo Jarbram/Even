@@ -1,11 +1,12 @@
 import { Link } from "next-view-transitions";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { NOMBRES, PERSONAS, laOtra } from "@/lib/persona";
 import { cerrarSesion, requirePersona } from "@/lib/sesion";
 import {
   gastosPorCobrar,
   listarCuentas,
+  reembolsosSaldados,
   resumenDelMes,
   type GastoRow,
 } from "@/lib/datos";
@@ -18,7 +19,9 @@ import {
 } from "@/lib/cuentas";
 import { hoyISO, progresoFondo, redondear, soles } from "@/lib/finanzas";
 import { Button } from "@/components/ui/button";
+import { AvatarPersona } from "@/components/avatar-persona";
 import { BotonBorrar } from "@/components/boton-borrar";
+import { Plegable } from "@/components/plegable";
 import { borrarFondo } from "../acciones";
 import {
   MoverDinero,
@@ -28,12 +31,19 @@ import {
   SaldarReembolso,
 } from "./formularios";
 
+const DIA_MES = new Intl.DateTimeFormat("es-PE", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
 export default async function AjustesPage() {
   const persona = await requirePersona();
-  const [cuentas, { fondos, gastos }, porCobrar] = await Promise.all([
+  const [cuentas, { fondos, gastos }, porCobrar, saldados] = await Promise.all([
     listarCuentas(),
     resumenDelMes(),
     gastosPorCobrar(),
+    reembolsosSaldados(),
   ]);
 
   // Cuánto ha salido por cada cuenta este mes, y con qué. Una billetera sin
@@ -69,7 +79,7 @@ export default async function AjustesPage() {
           // Un único vacío para la sección. Antes salía la misma frase repetida
           // una vez por persona, que es ruido diciendo dos veces "aquí no hay
           // nada".
-          <p className="glass rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
+          <p className="panel rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
             Sin cuentas todavía. Añade el efectivo, las tarjetas y el Yape de
             cada uno para saber por dónde se va la plata.
           </p>
@@ -81,12 +91,7 @@ export default async function AjustesPage() {
             return (
               <div key={quien} className="mb-4 last:mb-0">
                 <div className="mb-2 flex items-center gap-2">
-                  <span
-                    data-persona={quien}
-                    className="flex size-6 items-center justify-center rounded-full text-[11px] font-bold data-[persona=abraham]:bg-secondary data-[persona=isabel]:bg-chart-6"
-                  >
-                    {NOMBRES[quien][0]}
-                  </span>
+                  <AvatarPersona persona={quien} tamano="sm" />
                   <span className="text-sm font-semibold">{NOMBRES[quien]}</span>
                   {quien === persona && (
                     <span className="text-[11px] text-muted-foreground">
@@ -122,31 +127,49 @@ export default async function AjustesPage() {
 
       {porCobrar.length > 0 && (
         <Seccion titulo="Por cobrar">
-          <ul className="flex flex-col gap-2">
+          {/* La tarjeta de confirmación entre los dos: azul sólido —el
+              color de "pendiente" en toda la app—, un avatar a cada lado de
+              una flecha diciendo quién le debe a quién, y el monto en
+              grande. Es la pantalla que ya conocen de pagarse por Yape o
+              Plin, aplicada a la deuda que la app calcula sola. */}
+          <ul className="flex flex-col gap-2.5">
             {porCobrar.map((gasto) => {
               const deudor = laOtra(gasto.pagado_por);
               return (
                 <li key={gasto.id}>
-                  <details className="glass rounded-xl [&[open]_.marca]:rotate-180">
+                  <details className="group rounded-2xl bg-fill-pendiente text-fill-pendiente-foreground [&[open]_.marca]:rotate-180">
                     <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+                      <div className="flex shrink-0 items-center">
+                        <AvatarPersona
+                          persona={deudor}
+                          className="ring-2 ring-fill-pendiente"
+                        />
+                        <ArrowRight
+                          aria-hidden
+                          className="-mx-1 size-4 shrink-0 text-white/70"
+                        />
+                        <AvatarPersona
+                          persona={gasto.pagado_por}
+                          className="ring-2 ring-fill-pendiente"
+                        />
+                      </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">
-                          {gasto.descripcion}
+                        <p className="truncate text-[11px] font-semibold text-white/75">
+                          {NOMBRES[deudor]} le debe a {NOMBRES[gasto.pagado_por]}
                         </p>
-                        <p className="truncate text-[11px] text-muted-foreground">
-                          {NOMBRES[deudor]} le debe a {NOMBRES[gasto.pagado_por]}{" "}
-                          · {gasto.categoria}
+                        <p className="truncate text-[17px] font-extrabold tracking-[-0.3px]">
+                          {soles(gasto.monto)}
+                        </p>
+                        <p className="truncate text-[11px] text-white/75">
+                          {gasto.descripcion} · {gasto.categoria}
                         </p>
                       </div>
-                      <span className="shrink-0 text-sm font-semibold">
-                        {soles(gasto.monto)}
-                      </span>
                       <ChevronDown
                         aria-hidden
-                        className="marca size-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                        className="marca size-4 shrink-0 text-white/75 transition-transform duration-200"
                       />
                     </summary>
-                    <div className="border-t border-border p-4">
+                    <div className="border-t border-white/20 p-4">
                       <SaldarReembolso
                         gastoId={gasto.id}
                         monto={gasto.monto}
@@ -165,9 +188,49 @@ export default async function AjustesPage() {
         </Seccion>
       )}
 
+      {saldados.length > 0 && (
+        <Seccion titulo="Ya saldado">
+          {/* Plegado por defecto: saldar una deuda la sacaba de "Por cobrar"
+              sin dejar rastro visible en ningún lado —solo quedaba enterrada
+              en los traspasos de cada cuenta, uno por uno. Acá tiene su
+              propio historial, pero fuera de la vista de todos los días: es
+              para cuando hace falta confirmar "esto ya se pagó", no algo
+              que se revisa a diario. */}
+          <Plegable titulo={`Historial (${saldados.length})`}>
+            <ul className="flex flex-col gap-2">
+              {saldados.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-center gap-3 rounded-lg px-1 py-1"
+                >
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ok/15 text-ok"
+                  >
+                    <Check aria-hidden className="size-4" strokeWidth={3} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {r.gasto?.descripcion ?? "Gasto ya borrado"}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {r.desde?.nombre ?? "…"} → {r.hacia?.nombre ?? "…"} ·{" "}
+                      {DIA_MES.format(new Date(`${r.fecha}T00:00:00Z`))}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-ok">
+                    {soles(r.monto)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Plegable>
+        </Seccion>
+      )}
+
       <Seccion titulo="Metas compartidas">
         {fondos.length === 0 ? (
-          <p className="glass rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
+          <p className="panel rounded-lg px-4 py-3.5 text-sm text-muted-foreground">
             Sin fondos de ahorro. Crea el primero: un viaje, el colchón de
             emergencia.
           </p>
@@ -176,12 +239,12 @@ export default async function AjustesPage() {
             {fondos.map((fondo) => {
               const progreso = progresoFondo(fondo);
               return (
-                <li key={fondo.id} className="glass rounded-lg p-4">
+                <li key={fondo.id} className="panel rounded-lg p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                       {fondo.nombre}
                     </span>
-                    <span className="shrink-0 text-lg font-bold text-primary">
+                    <span className="shrink-0 text-lg font-bold text-ok">
                       {soles(fondo.saldo)}
                     </span>
                     <BotonBorrar
@@ -194,7 +257,7 @@ export default async function AjustesPage() {
                   {fondo.meta && (
                     <>
                       <div
-                        className="glass-hueco mt-2.5 h-1.5 overflow-hidden rounded-full"
+                        className="panel-hueco mt-2.5 h-1.5 overflow-hidden rounded-full"
                         role="progressbar"
                         aria-label={`${fondo.nombre}: ${soles(fondo.saldo)} de ${soles(fondo.meta)}`}
                         aria-valuenow={Math.round(progreso.proporcion * 100)}
@@ -202,7 +265,7 @@ export default async function AjustesPage() {
                         aria-valuemax={100}
                       >
                         <div
-                          className="barra h-full rounded-full bg-primary"
+                          className="barra h-full rounded-full bg-ok"
                           style={{ width: `${progreso.proporcion * 100}%` }}
                         />
                       </div>
@@ -275,7 +338,7 @@ function TarjetaCuenta({
   const Icono = ICONO_TIPO[cuenta.tipo];
 
   return (
-    <details className="glass-accion rounded-xl [&[open]_.marca]:rotate-90">
+    <details className="panel-accion rounded-xl [&[open]_.marca]:rotate-90">
       <summary className="flex cursor-pointer list-none flex-col gap-3 p-3.5 [&::-webkit-details-marker]:hidden">
         <div className="flex items-center justify-between">
           <span
@@ -300,7 +363,7 @@ function TarjetaCuenta({
         <div>
           <p
             data-negativo={!saldo.esCredito && saldo.principal < 0}
-            className="truncate text-lg font-extrabold tracking-[-0.3px] data-[negativo=true]:text-destructive"
+            className="truncate text-lg font-extrabold tracking-[-0.3px] data-[negativo=true]:text-over"
           >
             {soles(saldo.principal)}
           </p>
@@ -315,7 +378,7 @@ function TarjetaCuenta({
 
         {saldo.esCredito && (
           <div
-            className="glass-hueco h-1.5 overflow-hidden rounded-full"
+            className="panel-hueco h-1.5 overflow-hidden rounded-full"
             role="img"
             aria-label={`${soles(saldo.consumido)} usados de ${soles(cuenta.linea ?? 0)}`}
           >

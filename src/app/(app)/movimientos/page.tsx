@@ -1,7 +1,12 @@
 import { Link } from "next-view-transitions";
 import { ArrowDownLeft, Plus } from "lucide-react";
 import { requirePersona } from "@/lib/sesion";
-import { resumenDelMes, type GastoRow } from "@/lib/datos";
+import {
+  categoriasUsadas,
+  descripcionesUsadas,
+  resumenDelMes,
+  type GastoRow,
+} from "@/lib/datos";
 import {
   diasDelMes,
   hoyISO,
@@ -13,16 +18,8 @@ import {
   soles,
   type Mes,
 } from "@/lib/finanzas";
-import { CabeceraDia } from "@/components/cabecera-dia";
-import { FilaGasto } from "@/components/fila-gasto";
+import { BuscadorMovimientos } from "@/components/buscador-movimientos";
 import { NavegadorMes } from "@/components/navegacion";
-
-const DIA_LARGO = new Intl.DateTimeFormat("es-PE", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
-});
 
 const SEMANA = ["L", "M", "X", "J", "V", "S", "D"];
 const ES_MES = /^\d{4}-\d{2}-01$/;
@@ -30,24 +27,43 @@ const ES_MES = /^\d{4}-\d{2}-01$/;
 export default async function MovimientosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; dia?: string }>;
+  searchParams: Promise<{ mes?: string; dia?: string; categoria?: string }>;
 }) {
   await requirePersona();
   const params = await searchParams;
 
-  // Los dos vienen de la URL, así que se validan antes de consultar con ellos.
+  // Los tres vienen de la URL, así que se validan antes de consultar con ellos.
   const mes: Mes = ES_MES.test(params.mes ?? "") ? params.mes! : mesActual();
   const diaActivo = Number(params.dia);
   const hayDia = diaActivo >= 1 && diaActivo <= diasDelMes(mes);
+  const categoriaActiva = params.categoria ?? "";
 
-  const { gastos, totalGastado, presupuesto } = await resumenDelMes(mes);
+  const [{ gastos, cuentas, totalGastado, presupuesto }, categorias, descripciones] =
+    await Promise.all([resumenDelMes(mes), categoriasUsadas(), descripcionesUsadas()]);
 
-  const visibles = hayDia
-    ? gastos.filter((g) => Number(g.fecha.slice(8, 10)) === diaActivo)
+  // Día y categoría son dos filtros independientes sobre la misma lista: se
+  // pueden combinar (revisar solo "Mercado" un día puntual) o usarse solos.
+  const gastosCategoria = categoriaActiva
+    ? gastos.filter((g) => g.categoria === categoriaActiva)
     : gastos;
+  const visibles = gastosCategoria.filter(
+    (g) => !hayDia || Number(g.fecha.slice(8, 10)) === diaActivo,
+  );
 
   const totalDia = redondear(visibles.reduce((suma, g) => suma + g.monto, 0));
   const conTope = presupuesto.estado !== "sin-topes";
+
+  // Arma el enlace de un filtro conservando el otro: tocar un día no debe
+  // perder la categoría elegida, ni al revés.
+  function enlace(cambios: { dia?: number | null; categoria?: string | null }) {
+    const q = new URLSearchParams({ mes });
+    const dia = cambios.dia !== undefined ? cambios.dia : hayDia ? diaActivo : null;
+    const categoria =
+      cambios.categoria !== undefined ? cambios.categoria : categoriaActiva || null;
+    if (dia) q.set("dia", String(dia));
+    if (categoria) q.set("categoria", categoria);
+    return `/movimientos?${q.toString()}`;
+  }
 
   return (
     <>
@@ -60,25 +76,59 @@ export default async function MovimientosPage({
               ingreso" del inicio. Aquí es donde se los va a buscar. */}
           <Link
             href="/ingresos"
-            className="glass-accion flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="panel-accion flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <ArrowDownLeft aria-hidden className="size-4 text-primary" />
+            <ArrowDownLeft aria-hidden className="size-4 text-ok" />
             Ingresos
           </Link>
 
           <Link
             href="/movimientos/nuevo"
             aria-label="Agregar gasto"
-            className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="flex size-11 items-center justify-center rounded-full bg-fill-gasto text-fill-gasto-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <Plus aria-hidden className="size-5" />
           </Link>
         </div>
       </div>
 
-      <Calendario mes={mes} gastos={gastos} diaActivo={hayDia ? diaActivo : 0} />
+      <Calendario
+        mes={mes}
+        gastos={gastosCategoria}
+        diaActivo={hayDia ? diaActivo : 0}
+        enlace={enlace}
+      />
 
-      <div className="glass mb-6 rounded-xl p-5">
+      {/* Filtro por categoría: la misma pregunta que el calendario contesta
+          por día ("¿cuándo?"), pero por "¿en qué?" — sin esto, revisar
+          solo lo gastado en Mercado significaba leer la lista entera a
+          ojo. Son enlaces con `?categoria=`, no estado de React: se
+          combinan con el día ya elegido y el botón de atrás funciona. */}
+      {categorias.length > 0 && (
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <Link
+            href={enlace({ categoria: null })}
+            data-activa={!categoriaActiva}
+            className="shrink-0 rounded-full border border-border px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap transition data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+          >
+            Todas
+          </Link>
+          {categorias.map((categoria) => (
+            <Link
+              key={categoria}
+              href={enlace({
+                categoria: categoria === categoriaActiva ? null : categoria,
+              })}
+              data-activa={categoria === categoriaActiva}
+              className="shrink-0 rounded-full border border-border px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap transition data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+            >
+              {categoria}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div className="panel mb-6 rounded-xl p-5">
         <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Gastado en el mes
         </p>
@@ -94,7 +144,7 @@ export default async function MovimientosPage({
 
         {conTope && (
           <div
-            className="glass-hueco mt-4 h-1.5 overflow-hidden rounded-full"
+            className="panel-hueco mt-4 h-1.5 overflow-hidden rounded-full"
             role="img"
             aria-label={`${soles(totalGastado)} gastados de ${soles(presupuesto.tope)} presupuestados`}
           >
@@ -118,7 +168,7 @@ export default async function MovimientosPage({
             </span>
           </p>
           <Link
-            href={`/movimientos?mes=${mes}`}
+            href={enlace({ dia: null })}
             className="text-xs font-medium text-primary hover:underline"
           >
             Ver el mes
@@ -126,15 +176,22 @@ export default async function MovimientosPage({
         </div>
       )}
 
-      {visibles.length === 0 ? (
-        <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
-          {hayDia
-            ? "Ese día no gastaron nada."
-            : "Sin gastos este mes. Toca el + para registrar el primero."}
-        </p>
-      ) : (
-        <ListaPorDia gastos={visibles} agrupar={!hayDia} />
-      )}
+      <BuscadorMovimientos
+        gastos={visibles}
+        agrupar={!hayDia}
+        categorias={categorias}
+        cuentas={cuentas}
+        descripciones={descripciones}
+        vacioMensaje={
+          hayDia && categoriaActiva
+            ? `Ese día no hay gastos de ${categoriaActiva}.`
+            : hayDia
+              ? "Ese día no gastaron nada."
+              : categoriaActiva
+                ? `Sin gastos de ${categoriaActiva} este mes.`
+                : "Sin gastos este mes. Toca el + para registrar el primero."
+        }
+      />
     </>
   );
 }
@@ -150,10 +207,13 @@ function Calendario({
   mes,
   gastos,
   diaActivo,
+  enlace,
 }: {
   mes: Mes;
   gastos: GastoRow[];
   diaActivo: number;
+  /** Arma el enlace de un día conservando la categoría ya elegida. */
+  enlace: (cambios: { dia?: number | null; categoria?: string | null }) => string;
 }) {
   const porDia = porDiaDelMes(mes, gastos);
   const techo = Math.max(...porDia.map((d) => d.total), 1);
@@ -164,7 +224,7 @@ function Calendario({
   const diaHoy = mesDe(hoy) === mes ? Number(hoy.slice(8, 10)) : 0;
 
   return (
-    <section className="glass mb-6 rounded-xl p-4">
+    <section className="panel mb-6 rounded-xl p-4">
       <NavegadorMes mes={mes} href={(m) => `/movimientos?mes=${m}`} />
 
       <div className="grid grid-cols-7 gap-1 text-center">
@@ -194,11 +254,7 @@ function Calendario({
           return (
             <Link
               key={numero}
-              href={
-                activo
-                  ? `/movimientos?mes=${mes}`
-                  : `/movimientos?mes=${mes}&dia=${numero}`
-              }
+              href={enlace({ dia: activo ? null : numero })}
               // Sin gastos no se lee "S/ 0.00" treinta veces seguidas.
               aria-label={
                 gastado
@@ -229,7 +285,7 @@ function Calendario({
                       }
                     : undefined
                 }
-                className="rounded-full bg-primary group-data-[activo=true]:bg-primary-foreground data-[gastado=false]:size-[3px] data-[gastado=false]:bg-transparent"
+                className="rounded-full bg-chart-1 group-data-[activo=true]:bg-primary-foreground data-[gastado=false]:size-[3px] data-[gastado=false]:bg-transparent"
               />
             </Link>
           );
@@ -237,52 +293,4 @@ function Calendario({
       </div>
     </section>
   );
-}
-
-/** Los gastos agrupados por día: es como se recuerda un gasto. */
-function ListaPorDia({
-  gastos,
-  agrupar,
-}: {
-  gastos: GastoRow[];
-  /** Con un día ya filtrado, la cabecera de fecha sobra: está justo arriba. */
-  agrupar: boolean;
-}) {
-  if (!agrupar) {
-    return (
-      <ul className="flex flex-col gap-2">
-        {gastos.map((gasto) => (
-          <li key={gasto.id}>
-            <FilaGasto gasto={gasto} borrable />
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  // Ya vienen ordenados por fecha descendente, así que el Map conserva ese
-  // orden sin volver a ordenar nada.
-  const porDia = new Map<string, GastoRow[]>();
-  for (const gasto of gastos) {
-    porDia.set(gasto.fecha, [...(porDia.get(gasto.fecha) ?? []), gasto]);
-  }
-
-  return [...porDia.entries()].map(([fecha, delDia]) => (
-    <section key={fecha} className="mb-5">
-      <CabeceraDia
-        total={soles(redondear(delDia.reduce((suma, g) => suma + g.monto, 0)))}
-      >
-        {DIA_LARGO.format(new Date(`${fecha}T00:00:00Z`))}
-      </CabeceraDia>
-      <ul className="flex flex-col gap-2">
-        {delDia.map((gasto) => (
-          <li key={gasto.id}>
-            {/* La fecha ya la dice la cabecera del grupo: repetirla en cada
-                fila se comía el nombre de la cuenta. */}
-            <FilaGasto gasto={gasto} borrable conFecha={false} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  ));
 }

@@ -84,6 +84,20 @@ export async function crearGasto(_prev: Resultado, formData: FormData) {
   );
 }
 
+const gastoEditado = gasto.extend({ id: uuid });
+
+/**
+ * Corrige un gasto ya guardado. Antes la única forma de arreglar un monto
+ * mal tecleado era borrarlo y anotarlo de nuevo desde cero — con prisa, en
+ * la cola del súper, eso significaba perder cada elección ya hecha.
+ */
+export async function editarGasto(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(gastoEditado, campos(formData), ({ id, ...datos }) =>
+    supabase.from("gastos").update(datos).eq("id", id),
+  );
+}
+
 export async function borrarGasto(id: string) {
   const supabase = createClient();
   return ejecutar(uuid, id, (id) =>
@@ -214,33 +228,47 @@ export async function editarCuenta(_prev: Resultado, formData: FormData) {
 // Ingresos y presupuesto
 // ---------------------------------------------------------------------------
 
-const ingreso = z
-  .object({
-    // El mes no se manda: se deriva de la fecha. Mandando los dos podían
-    // discrepar, y un ingreso del 3 de agosto acababa contado en julio.
-    fecha: z.iso.date(),
-    persona,
-    descripcion: z.string().trim().min(1).max(60).default("Sueldo"),
-    monto,
-    // El formulario manda un solo campo `destino`: "cuenta:<id>", "fondo:<id>"
-    // o vacío. Se parte aquí para que la base reciba las dos columnas que
-    // entiende, y nunca las dos llenas a la vez.
-    destino: z.string().default(""),
-  })
-  .transform(({ destino, ...resto }) => {
-    const [tipo, id] = destino.split(":");
-    return {
-      ...resto,
-      mes: mesDe(resto.fecha),
-      cuenta_id: tipo === "cuenta" && id ? id : null,
-      fondo_id: tipo === "fondo" && id ? id : null,
-    };
-  });
+const ingresoBase = z.object({
+  // El mes no se manda: se deriva de la fecha. Mandando los dos podían
+  // discrepar, y un ingreso del 3 de agosto acababa contado en julio.
+  fecha: z.iso.date(),
+  persona,
+  descripcion: z.string().trim().min(1).max(60).default("Sueldo"),
+  monto,
+  // El formulario manda un solo campo `destino`: "cuenta:<id>", "fondo:<id>"
+  // o vacío. Se parte aquí para que la base reciba las dos columnas que
+  // entiende, y nunca las dos llenas a la vez.
+  destino: z.string().default(""),
+});
+
+function partirDestino({ destino, ...resto }: z.infer<typeof ingresoBase>) {
+  const [tipo, id] = destino.split(":");
+  return {
+    ...resto,
+    mes: mesDe(resto.fecha),
+    cuenta_id: tipo === "cuenta" && id ? id : null,
+    fondo_id: tipo === "fondo" && id ? id : null,
+  };
+}
+
+const ingreso = ingresoBase.transform(partirDestino);
 
 export async function guardarIngreso(_prev: Resultado, formData: FormData) {
   const supabase = createClient();
   return ejecutar(ingreso, campos(formData), (datos) =>
     supabase.from("ingresos").insert(datos),
+  );
+}
+
+const ingresoEditado = ingresoBase
+  .extend({ id: uuid })
+  .transform(({ id, ...resto }) => ({ id, ...partirDestino(resto) }));
+
+/** Corrige un ingreso ya guardado, en vez de borrarlo y volver a cargarlo. */
+export async function editarIngreso(_prev: Resultado, formData: FormData) {
+  const supabase = createClient();
+  return ejecutar(ingresoEditado, campos(formData), ({ id, ...datos }) =>
+    supabase.from("ingresos").update(datos).eq("id", id),
   );
 }
 

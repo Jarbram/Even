@@ -28,7 +28,7 @@ export function BottomNav() {
       style={{ viewTransitionName: "bottom-nav" }}
       className="fixed inset-x-0 bottom-[max(1.375rem,env(safe-area-inset-bottom))] z-40 flex justify-center"
     >
-      <ul className="glass-nav flex gap-1.5 rounded-[30px] p-2">
+      <ul className="panel-nav flex gap-1 rounded-[26px] p-2">
         {TABS.map((tab) => {
           const active =
             tab.href === "/"
@@ -38,12 +38,21 @@ export function BottomNav() {
             <li key={tab.href}>
               <Link
                 href={tab.href}
-                aria-label={tab.label}
                 aria-current={active ? "page" : undefined}
-                className="flex h-11 w-[52px] items-center justify-center rounded-[22px] transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[active=true]:bg-primary data-[active=true]:shadow-[0_4px_16px_rgb(199_249_78/0.45)]"
+                // Antes solo llevaba `aria-label`: un rombo, una grilla y un
+                // círculo con puntos no dicen nada a nadie que no se los
+                // haya memorizado. La etiqueta ahora está en pantalla, no
+                // solo para el lector de pantalla.
+                className="flex h-12 flex-col items-center justify-center gap-1 rounded-[20px] px-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[active=true]:bg-primary data-[active=true]:shadow-[0_4px_16px_rgb(255_138_76/0.45)]"
                 data-active={active}
               >
                 <TabIcon href={tab.href} active={active} />
+                <span
+                  className="text-[10px] leading-none font-semibold whitespace-nowrap text-muted-foreground data-[active=true]:text-primary-foreground"
+                  data-active={active}
+                >
+                  {tab.label}
+                </span>
               </Link>
             </li>
           );

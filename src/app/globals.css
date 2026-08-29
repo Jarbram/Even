@@ -5,10 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ---------------------------------------------------------------------------
-   Design tokens — extraídos de "Finanzas Pareja.dc.html" (Claude Design).
-   Toda la capa visual vive aquí. Los componentes solo usan clases de Tailwind
-   que apuntan a estas variables, así reemplazar el sistema visual es cambiar
-   este bloque y nada más.
+   Design tokens — mundo "Confirmación": el lenguaje de una billetera P2P
+   (Yape/Plin, el gesto que ya usan a diario para pagarse entre ustedes),
+   no el de un panel de vidrio. Tarjetas sólidas, avatar por persona, un
+   color por dirección del dinero. Toda la capa visual vive aquí; los
+   componentes solo usan clases de Tailwind que apuntan a estas variables.
    --------------------------------------------------------------------------- */
 
 @theme inline {
@@ -36,17 +37,27 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Superficies de cristal propias del diseño */
-  --color-glass: var(--glass);
-  --color-glass-strong: var(--glass-strong);
+  /* Tarjetas sólidas propias del diseño */
+  --color-panel: var(--panel);
+  --color-panel-alto: var(--panel-alto);
   --color-shell: var(--shell);
+
+  /* Tarjetas de confirmación por dirección del dinero */
+  --color-fill-gasto: var(--fill-gasto);
+  --color-fill-gasto-foreground: var(--fill-gasto-foreground);
+  --color-fill-ingreso: var(--fill-ingreso);
+  --color-fill-ingreso-foreground: var(--fill-ingreso-foreground);
+  --color-fill-pendiente: var(--fill-pendiente);
+  --color-fill-pendiente-foreground: var(--fill-pendiente-foreground);
+  --color-fill-saldo: var(--fill-saldo);
+  --color-fill-saldo-foreground: var(--fill-saldo-foreground);
 
   /* Semáforo de presupuesto */
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-over: var(--over);
 
-  /* Paleta de categorías (misma del diseño) */
+  /* Paleta de categorías (cuentas) */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -69,56 +80,84 @@
    sigan resolviendo igual. ponytail: sin tema claro, se añade si alguien lo pide. */
 :root,
 .dark {
-  --shell: #0a0a0b;
-  --background: #111214;
-  --foreground: #ffffff;
+  --shell: #0a0a0e;
+  --background: #121218;
+  --foreground: #f5f5f8;
 
-  --card: var(--glass);
-  --card-foreground: #ffffff;
-  --popover: #1a1b1e;
-  --popover-foreground: #ffffff;
+  --card: var(--panel);
+  --card-foreground: #f5f5f8;
+  --popover: #1e1e26;
+  --popover-foreground: #f5f5f8;
 
-  /* Cristal: cuatro rellenos, uno por profundidad. Ver el bloque «Cristal». */
-  --glass: rgb(45 46 51 / 0.55);
-  --glass-strong: rgb(52 53 59 / 0.5);
-  --glass-alto: rgb(62 63 70 / 0.62);
-  --glass-hueco: rgb(8 8 10 / 0.4);
+  /* Tarjetas sólidas, sin transparencia: la superficie de una billetera es
+     opaca, no un cristal esmerilado. Dos profundidades bastan — el resto de
+     jerarquía la da el color de rol (gasto/ingreso/pendiente), no el fondo. */
+  --panel: #1b1b23;
+  --panel-alto: #24242e;
 
-  --primary: #c7f94e;
-  --primary-foreground: #111214;
-  --secondary: #5b5bf5;
+  /* Naranja: el color que es de Even y de nadie más — CTA, foco, nav activa,
+     enlaces. Ningún estado de dinero lo usa, así que nunca se confunde con
+     "esto es un gasto" o "esto es un ingreso". */
+  --primary: #ff8a4c;
+  --primary-foreground: #200c02;
+
+  /* Abraham. Isabel reusa --chart-6 más abajo — mismo patrón que ya existía
+     en Ajustes para el avatar de cada quien, solo con colores nuevos. */
+  --secondary: #4c8cff;
   --secondary-foreground: #ffffff;
-  /* El indigo de marca es demasiado claro para llevar texto encima: un blanco
-     al 70 % sobre él se queda en 3.2:1, por debajo del mínimo legible. Este
-     tono —el mismo azul, más hondo— sube ese mismo texto a 5.6:1. Se usa solo
-     donde el indigo es superficie y no acento. */
-  --secondary-panel: #3d3dc8;
+  /* Panel de "Actividad" en Presupuesto: violeta hondo, no el índigo de antes.
+     Con texto blanco encima sube a contraste seguro (a diferencia del acento
+     cuando es solo un detalle, aquí el color ES la superficie). */
+  --secondary-panel: #4a32c7;
 
-  --muted: rgb(52 53 59 / 0.5);
-  --muted-foreground: #9ca3af;
-  --accent: rgb(91 91 245 / 0.6);
+  --muted: #2a2a34;
+  --muted-foreground: #9a9aa8;
+  --accent: rgb(255 138 76 / 0.55);
   --accent-foreground: #ffffff;
 
-  --destructive: #f87171;
-  --ok: #4ade80;
-  --warn: #fbbf24;
-  --over: #f87171;
+  /* Distinto de "excedido": borrar algo no es lo mismo que pasarse del tope,
+     y antes compartían el mismo rojo — dos alarmas indistinguibles. */
+  --destructive: #ef4444;
+  --ok: #22c55e;
+  --warn: #f5a623;
+  --over: #ff5470;
 
-  --border: rgb(255 255 255 / 0.09);
-  --input: rgb(255 255 255 / 0.09);
-  --ring: #c7f94e;
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.08);
+  --ring: var(--primary);
 
-  --radius: 1.125rem;
+  /* Más redondo que el sistema anterior: una billetera P2P se lee amigable,
+     no angulosa. */
+  --radius: 1.25rem;
 
-  --chart-1: #5b5bf5;
-  --chart-2: #f87171;
-  --chart-3: #c7f94e;
-  --chart-4: #38bdf8;
-  --chart-5: #fbbf24;
-  --chart-6: #f472b6;
-  --chart-7: #34d399;
+  /* Cuentas y su punto en la lista de movimientos. */
+  --chart-1: #7b5cfa;
+  --chart-2: #ff6b6b;
+  --chart-3: #ffb020;
+  --chart-4: #34c3eb;
+  --chart-5: #22c55e;
+  /* Isabel. */
+  --chart-6: #f2559c;
+  --chart-7: #2dd4bf;
   --chart-8: #a78bfa;
   --chart-9: #94a3b8;
+
+  /* Las tres tarjetas de "confirmación": un color por dirección del dinero,
+     lo bastante hondo para que texto blanco encima siga siendo legible —
+     esto no es un acento sobre una superficie neutra, el color ES la
+     tarjeta entera, como en Yape o Plin al confirmar un movimiento. */
+  --fill-gasto: #5b3de0;
+  --fill-gasto-foreground: #ffffff;
+  --fill-ingreso: #0e9f63;
+  --fill-ingreso-foreground: #ffffff;
+  --fill-pendiente: #2554c7;
+  --fill-pendiente-foreground: #ffffff;
+
+  /* La tarjeta de saldo del Home: no es un gasto ni un ingreso, es el
+     resumen — así que lleva el naranja de marca, hondo, y no uno de los
+     tres colores de dirección de arriba. */
+  --fill-saldo: #b5480f;
+  --fill-saldo-foreground: #ffffff;
 }
 
 @layer base {
@@ -131,13 +170,17 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    /* Halos ambientales del diseño: indigo arriba-izquierda, lima abajo-derecha */
-    background-image:
-      radial-gradient(circle at 15% 8%, rgb(91 91 245 / 0.18), transparent 40%),
-      radial-gradient(circle at 90% 75%, rgb(199 249 78 / 0.1), transparent 45%);
+    /* Un solo halo, tenue, del naranja de marca — vivo pero sin pretender
+       ser cristal. Antes eran dos (índigo y lima) heredados del sistema
+       anterior. */
+    background-image: radial-gradient(
+      circle at 20% 0%,
+      rgb(255 138 76 / 0.1),
+      transparent 45%
+    );
     background-attachment: fixed;
   }
-  /* El diseño oculta las barras de scroll (mobile-first, sin chrome de escritorio) */
+  /* Mobile-first, sin chrome de escritorio: las barras de scroll se ocultan. */
   ::-webkit-scrollbar {
     display: none;
   }
@@ -147,66 +190,35 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Cristal
+   Tarjetas
 ------------------------------------------------------------------------------
-   Cuatro profundidades, no una. Antes todo —tarjeta, fila, campo y navegación—
-   llevaba la misma superficie plana, así que nada parecía estar delante ni
-   detrás de nada:
+   Dos profundidades, no cuatro: sin cristal no hace falta simular un canto
+   biselado ni dejar pasar el color de detrás. Una tarjeta se separa del
+   fondo con relleno sólido y una sombra suave, como una tarjeta de verdad
+   sobre una mesa — no con un filo de luz fingiendo vidrio.
 
-   · `glass`        apoyado sobre el fondo: tarjetas, filas, paneles.
-   · `glass-accion` lo mismo, pero se toca: se levanta al pasar y se hunde al
-                    pulsar.
-   · `glass-nav`    flota por encima de todo: la navegación.
-   · `glass-hueco`  hundido en la superficie: campos y canales de barra. Un
-                    input no se apoya encima de la página, se abre dentro.
-
-   Lo que hace que se lea como cristal —y no como un gris translúcido— son tres
-   cosas, y ninguna es el desenfoque:
-
-   1. El filo: una línea de luz de 1 px arriba y una de sombra abajo. Es como
-      se ve un canto biselado cuando la luz viene de arriba.
-   2. La saturación: `blur()` a secas lava el color de lo que hay detrás. Con
-      `saturate()` los halos indigo y lima del `body` atraviesan el cristal y
-      lo tiñen, que es justo lo que hace un vidrio de verdad.
-   3. La sombra con desplazamiento: separa la superficie del fondo. Un halo
-      centrado no separa nada, solo decora.
+   · `panel`         apoyada sobre el fondo: filas, listas, paneles.
+   · `panel-accion`  lo mismo, pero se toca: se levanta al pasar y se hunde
+                      al pulsar.
+   · `panel-nav`     flota por encima de todo: la navegación.
+   · `panel-hueco`   hundido en la superficie: campos y canales de barra.
 --------------------------------------------------------------------------- */
 
 :root,
 .dark {
-  --filo: inset 0 1px 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 rgb(0 0 0 / 0.16);
-  --filo-alto: inset 0 1px 0 rgb(255 255 255 / 0.16),
-    inset 0 -1px 0 rgb(0 0 0 / 0.24);
-  --filo-hueco: inset 0 1px 2px rgb(0 0 0 / 0.45),
-    inset 0 -1px 0 rgb(255 255 255 / 0.05);
-
-  --sombra-apoyada: 0 1px 2px rgb(0 0 0 / 0.28), 0 10px 24px -14px rgb(0 0 0 / 0.7);
-  --sombra-levantada: 0 3px 8px rgb(0 0 0 / 0.3), 0 16px 32px -14px rgb(0 0 0 / 0.75);
-  --sombra-flotante: 0 6px 14px rgb(0 0 0 / 0.35), 0 24px 48px -16px rgb(0 0 0 / 0.8);
-
-  /* El brillo que baja desde el borde superior. En porcentaje para que un panel
-     alto y una pastilla de 40 px se lean con el mismo material. */
-  --lustre: linear-gradient(180deg, rgb(255 255 255 / 0.055), transparent 42%);
+  --sombra-apoyada: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 20px -12px rgb(0 0 0 / 0.7);
+  --sombra-levantada: 0 4px 10px rgb(0 0 0 / 0.32), 0 18px 32px -16px rgb(0 0 0 / 0.75);
+  --sombra-flotante: 0 8px 18px rgb(0 0 0 / 0.4), 0 24px 44px -16px rgb(0 0 0 / 0.8);
 }
 
-@utility glass {
-  background-color: var(--glass);
-  background-image: var(--lustre);
-  /* ponytail: 16 px basta. Los halos del fondo son degradados enormes, así que
-     desenfocar más no cambia lo que se ve y sí lo que cuesta pintar cada fila
-     de una lista larga. El cristal lo hacen el filo y la saturación. */
-  backdrop-filter: blur(16px) saturate(150%);
+@utility panel {
+  background-color: var(--panel);
   border: 1px solid var(--border);
-  box-shadow: var(--filo), var(--sombra-apoyada);
+  box-shadow: var(--sombra-apoyada);
 }
 
-/* La misma superficie, cuando además es un enlace o un botón. Antes cada sitio
-   se inventaba su `hover:border-primary`: un contorno lima entero para decir
-   «puedes tocar esto», que grita más que el estado seleccionado. Aquí el cristal
-   se acerca a la luz y vuelve al pulsar, que es lo que hace una superficie
-   física. */
-@utility glass-accion {
-  @apply glass;
+@utility panel-accion {
+  @apply panel;
   transition:
     background-color 180ms var(--ease-salida),
     border-color 180ms var(--ease-salida),
@@ -215,55 +227,32 @@
 
   @media (hover: hover) {
     &:hover {
-      background-color: var(--glass-alto);
-      border-color: rgb(255 255 255 / 0.16);
-      box-shadow: var(--filo-alto), var(--sombra-levantada);
+      background-color: var(--panel-alto);
+      border-color: rgb(255 255 255 / 0.14);
+      box-shadow: var(--sombra-levantada);
       translate: 0 -1px;
     }
   }
 
   &:active {
-    background-color: var(--glass-alto);
-    box-shadow: var(--filo), var(--sombra-apoyada);
+    background-color: var(--panel-alto);
+    box-shadow: var(--sombra-apoyada);
     translate: 0 0;
   }
 }
 
-@utility glass-nav {
-  background-color: var(--glass-strong);
-  background-image: var(--lustre);
-  backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  box-shadow: var(--filo-alto), var(--sombra-flotante);
+@utility panel-nav {
+  background-color: var(--panel-alto);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: var(--sombra-flotante);
 }
 
-/* Hundido: relleno más oscuro que el fondo y la sombra por dentro. Sin borde
-   propio —lo pone quien lo usa (el input trae el suyo) o no lleva ninguno (el
-   canal de una barra de 6 px, donde un borde se comería el dato). */
-@utility glass-hueco {
-  background-color: var(--glass-hueco);
-  backdrop-filter: blur(10px) saturate(130%);
-  box-shadow: var(--filo-hueco);
-}
-
-/* Quien pide menos transparencia no debería recibir ninguna: el sistema se
-   vuelve opaco y las cuatro profundidades siguen distinguiéndose por el relleno
-   y la sombra, que es lo que llevaba la información. */
-@media (prefers-reduced-transparency: reduce) {
-  :root,
-  .dark {
-    --glass: #26272c;
-    --glass-strong: #2e2f35;
-    --glass-alto: #34353c;
-    --glass-hueco: #0c0d0f;
-  }
-  .glass,
-  .glass-accion,
-  .glass-nav,
-  .glass-hueco {
-    backdrop-filter: none;
-    background-image: none;
-  }
+/* Hundido: relleno más oscuro que el fondo. Sin borde propio — lo pone quien
+   lo usa (el input trae el suyo) o no lleva ninguno (el canal de una barra
+   de 6 px, donde un borde se comería el dato). */
+@utility panel-hueco {
+  background-color: var(--shell);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -279,21 +268,24 @@
    Movimiento
 ------------------------------------------------------------------------------
    Esto es una app que se usa de pie y con prisa, así que el movimiento solo
-   entra donde explica algo: cuánto llevas gastado, de dónde sale un panel, qué
-   acaba de cambiar. Nada de entradas coreografiadas — hacen esperar a quien
-   viene a anotar un gasto en la cola del súper.
+   entra donde explica algo: cuánto llevas gastado, de dónde sale un panel,
+   qué acaba de confirmarse. Todo va por `transform` y `opacity`.
 
-   Todo va por `transform` y `opacity`, que el compositor resuelve sin repintar,
-   y con la curva de desaceleración del sistema.
+   `--ease-rebote` es nueva: una curva con un ligero rebote, para lo que
+   tiene que sentirse "confirmado" — una barra de presupuesto que crece, una
+   marca de verificación que aparece — en vez de la desaceleración lisa que
+   basta para lo que solo entra o sale de la pantalla.
 --------------------------------------------------------------------------- */
 
 @theme inline {
   --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* La barra crece desde cero: en una app de presupuesto el largo ES el dato, y
-   verlo llegar dice "vas por aquí" mejor que encontrarlo ya puesto. Anima
-   scaleX y no width, que forzaría un reflow por fotograma. */
+/* La barra crece desde cero con un leve rebote al llegar: en una app de
+   presupuesto el largo ES el dato, y el rebote es lo que la hace sentir
+   confirmada, no solo dibujada. Anima scaleX y no width, que forzaría un
+   reflow por fotograma. */
 @keyframes crecer-barra {
   from {
     transform: scaleX(0);
@@ -302,11 +294,25 @@
 
 @utility barra {
   transform-origin: left;
-  animation: crecer-barra 700ms var(--ease-salida) both;
+  animation: crecer-barra 550ms var(--ease-rebote) both;
 }
 
-/* Aparecer sin desplazamiento largo: 6 px bastan para que se lea como algo que
-   llega, y no se confunde con el scroll. */
+/* La marca de "confirmado" aparece con el mismo rebote: es el gesto que
+   cierra un pago en Yape o Plin, y es la reacción que un gasto o un
+   ingreso recién guardado se merece acá también. */
+@keyframes confirmar {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@utility confirma {
+  animation: confirmar 420ms var(--ease-rebote) both;
+}
+
+/* Aparecer sin desplazamiento largo: 6 px bastan para que se lea como algo
+   que llega, y no se confunde con el scroll. */
 @keyframes entrar {
   from {
     opacity: 0;
@@ -322,9 +328,6 @@
   /* El panel plegable crece desde su propio borde, que es lo que explica de
      dónde sale. `::details-content` es de Chrome reciente; donde no exista,
      abre igual sin animar. */
-  /* Sin esto, una transición hacia `auto` no interpola y el panel abriría de
-     golpe igual. Es lo que hace que la altura pueda animarse sin medirla con
-     JavaScript. */
   :root {
     interpolate-size: allow-keywords;
   }
@@ -341,8 +344,6 @@
     block-size: auto;
   }
 
-  /* Quien pide menos movimiento no debería recibir ninguno: no hay animación
-     aquí que lleve información que no esté también escrita. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -359,16 +360,10 @@
 /* ---------------------------------------------------------------------------
    Transición entre pantallas
 ------------------------------------------------------------------------------
-   Cambiar de pestaña era un corte seco: la pantalla vieja desaparecía y la
-   nueva aparecía ya completa, sin nada en medio. La View Transitions API deja
-   que el navegador mismo disuelva una en la otra — un cross-fade, no un
-   deslizamiento: dos pantallas de este tamaño (Home, Presupuesto, Ajustes)
-   no comparten un eje de "adelante/atrás" claro, y forzar uno se sentiría
-   arbitrario.
-
-   `::view-transition-*` vive en un árbol propio, fuera de la cascada normal
-   —por eso este bloque no entra en `@layer base` ni el `*` del bloque de
-   arriba lo alcanza— y necesita su propia guarda de movimiento reducido.
+   Cambiar de pestaña era un corte seco. La View Transitions API deja que el
+   navegador mismo disuelva una pantalla en la otra — un cross-fade: dos
+   pantallas de este tamaño no comparten un eje de "adelante/atrás" claro, y
+   forzar uno se sentiría arbitrario.
 --------------------------------------------------------------------------- */
 
 ::view-transition-old(root),
@@ -378,9 +373,7 @@
 }
 
 /* La navegación inferior es fija: no cambia entre pantallas. Sin nombre
-   propio, entra en la misma foto que el resto de la pantalla, y si dos
-   páginas miden distinto (una lista larga contra una corta) el grupo raíz
-   se estira entre esas dos alturas — la barra se estiraría con él, aunque
+   propio, entra en la misma foto que el resto y se estira con ella aunque
    ella no cambió nada. */
 ::view-transition-group(bottom-nav) {
   animation: none;

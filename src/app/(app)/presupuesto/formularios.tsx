@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { Mes } from "@/lib/finanzas";
-import { SelectorCategoria } from "@/components/selector-categoria";
+import { PildorasCategoria } from "@/components/pildoras-selector";
 import { Plegable } from "@/components/plegable";
 import {
   BotonGuardar,
@@ -33,7 +33,7 @@ export function NuevoPresupuesto({
       <form ref={ref} action={action} className="flex flex-col gap-7">
         <input type="hidden" name="mes" value={mes} />
 
-        <SelectorCategoria categorias={categorias} />
+        <PildorasCategoria categorias={categorias} />
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="monto-presupuesto">Monto (S/)</Label>

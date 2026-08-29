@@ -2,20 +2,15 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { NOMBRES, PERSONAS, type Persona } from "@/lib/persona";
+import type { Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
-import { Chips } from "@/components/chips";
-import { SelectorCategoria } from "@/components/selector-categoria";
-import { SelectorDestino } from "@/components/selector-destino";
-import {
-  BotonGuardar,
-  ErrorForm,
-} from "@/components/formulario";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { CamposIngreso } from "@/components/campos-ingreso";
+import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { guardarIngreso, type Resultado } from "../acciones";
 
+/** Mismos campos que la hoja rápida del Home (`CamposIngreso`): un ingreso
+    se anota igual, entre por donde entre. */
 export function FormularioIngreso({
   persona,
   fecha,
@@ -44,55 +39,15 @@ export function FormularioIngreso({
   }, [estado]);
 
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-9">
-      {/* Mismo gesto que el gasto: el monto manda y ocupa la pantalla. */}
-      <div className="glass rounded-2xl px-5 py-7 text-center">
-        <Label
-          htmlFor="monto"
-          className="justify-center text-xs font-medium text-muted-foreground"
-        >
-          ¿Cuánto entró?
-        </Label>
-        <div className="mt-3 flex items-baseline justify-center gap-1.5">
-          <span className="text-2xl font-bold text-muted-foreground">S/</span>
-          <Input
-            id="monto"
-            name="monto"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0.01"
-            placeholder="0.00"
-            required
-            autoFocus
-            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[44px] leading-none font-extrabold tracking-[-1px] text-primary shadow-none focus-visible:ring-0 md:text-[44px]"
-          />
-        </div>
-      </div>
-
-      <Chips
-        name="persona"
-        label="¿De quién?"
-        defaultValue={persona}
-        opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
+    <form ref={ref} action={action} className="flex flex-col gap-7">
+      <CamposIngreso
+        idPrefix="ingreso-"
+        cuentas={cuentas}
+        fondos={fondos}
+        conceptos={conceptos}
+        hoy={fecha}
+        personaSesion={persona}
       />
-
-      {/* Casi siempre es el mismo, así que tocarlo gana a teclearlo — pero
-          "Otra" sigue abriendo el campo libre: pasar a pastillas fijas había
-          quitado la posibilidad de escribir un concepto propio. */}
-      <SelectorCategoria
-        categorias={conceptos}
-        name="descripcion"
-        label="Concepto"
-        nuevaEtiqueta="Escribe el concepto"
-      />
-
-      <SelectorDestino cuentas={cuentas} fondos={fondos} />
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="fecha">¿Qué día entró?</Label>
-        <Input id="fecha" name="fecha" type="date" defaultValue={fecha} required />
-      </div>
 
       <ErrorForm estado={estado} />
 
@@ -100,4 +55,3 @@ export function FormularioIngreso({
     </form>
   );
 }
-

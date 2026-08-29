@@ -10,9 +10,12 @@ import {
   soles,
   type Mes,
 } from "@/lib/finanzas";
+import type { CuentaRow } from "@/lib/cuentas";
+import type { FondoRow } from "@/lib/datos";
 import { BotonCerrar, NavegadorMes } from "@/components/navegacion";
 import { BotonBorrar } from "@/components/boton-borrar";
 import { CabeceraDia } from "@/components/cabecera-dia";
+import { EditarIngreso } from "@/components/editar-ingreso";
 import { Plegable } from "@/components/plegable";
 import { borrarIngreso } from "../acciones";
 import { FormularioIngreso } from "./formulario-ingreso";
@@ -60,13 +63,13 @@ export default async function IngresosPage({
         <BotonCerrar href="/" />
       </div>
 
-      <div className="glass mb-6 rounded-xl p-5">
+      <div className="panel mb-6 rounded-xl p-5">
         <NavegadorMes mes={mes} href={(m) => `/ingresos?mes=${m}`} />
 
         <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
           Entró este mes
         </p>
-        <p className="mt-1.5 text-[30px] font-extrabold tracking-[-0.5px] text-primary">
+        <p className="mt-1.5 text-[30px] font-extrabold tracking-[-0.5px] text-ok">
           {soles(ingresosTotal)}
         </p>
         {ingresos.length > 0 && (
@@ -78,12 +81,18 @@ export default async function IngresosPage({
       </div>
 
       {ingresos.length === 0 ? (
-        <p className="glass mb-3 rounded-lg p-4 text-sm text-muted-foreground">
+        <p className="panel mb-3 rounded-lg p-4 text-sm text-muted-foreground">
           Este mes no ha entrado nada todavía.
         </p>
       ) : (
         <div className="mb-3">
-          <ListaPorDia ingresos={ingresos} hoy={hoy} />
+          <ListaPorDia
+            ingresos={ingresos}
+            hoy={hoy}
+            cuentas={cuentas}
+            fondos={fondos}
+            conceptos={conceptos}
+          />
         </div>
       )}
 
@@ -108,7 +117,19 @@ export default async function IngresosPage({
 }
 
 /** Los ingresos agrupados por día, con su total. Ya vienen ordenados. */
-function ListaPorDia({ ingresos, hoy }: { ingresos: IngresoRow[]; hoy: string }) {
+function ListaPorDia({
+  ingresos,
+  hoy,
+  cuentas,
+  fondos,
+  conceptos,
+}: {
+  ingresos: IngresoRow[];
+  hoy: string;
+  cuentas: CuentaRow[];
+  fondos: FondoRow[];
+  conceptos: string[];
+}) {
   const porDia = new Map<string, IngresoRow[]>();
   for (const ingreso of ingresos) {
     porDia.set(ingreso.fecha, [...(porDia.get(ingreso.fecha) ?? []), ingreso]);
@@ -126,7 +147,7 @@ function ListaPorDia({ ingresos, hoy }: { ingresos: IngresoRow[]; hoy: string })
         {delDia.map((ingreso) => (
           <li
             key={ingreso.id}
-            className="glass flex items-center gap-3 rounded-lg px-4 py-3"
+            className="panel flex items-center gap-3 rounded-lg px-4 py-3"
           >
             <span
               aria-hidden
@@ -147,6 +168,12 @@ function ListaPorDia({ ingresos, hoy }: { ingresos: IngresoRow[]; hoy: string })
             <span className="shrink-0 text-sm font-semibold">
               {soles(ingreso.monto)}
             </span>
+            <EditarIngreso
+              ingreso={ingreso}
+              cuentas={cuentas}
+              fondos={fondos}
+              conceptos={conceptos}
+            />
             <BotonBorrar
               accion={borrarIngreso.bind(null, ingreso.id)}
               que="el ingreso"

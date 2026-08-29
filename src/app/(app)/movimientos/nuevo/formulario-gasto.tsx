@@ -1,128 +1,53 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
+import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
+import type { Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
-import { Chips } from "@/components/chips";
-import { SelectorCategoria } from "@/components/selector-categoria";
-import { SelectorCuenta } from "@/components/selector-cuenta";
-import {
-  BotonGuardar,
-  ErrorForm,
-} from "@/components/formulario";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { CamposGasto } from "@/components/campos-gasto";
+import { BotonGuardar, ErrorForm } from "@/components/formulario";
 import { crearGasto, type Resultado } from "../../acciones";
 
+/** Mismos campos que la hoja rápida del Home (`CamposGasto`): un gasto se
+    anota igual, entre por donde entre. */
 export function FormularioGasto({
   persona,
   cuentas,
   categorias,
+  descripciones,
+  cuentaPorCategoria,
   hoy,
 }: {
   persona: Persona;
   cuentas: CuentaRow[];
   categorias: string[];
+  descripciones: string[];
+  cuentaPorCategoria: Record<string, string>;
   /** La fecha de hoy en Lima, calculada en el servidor. */
   hoy: string;
 }) {
   const [estado, action] = useActionState<Resultado, FormData>(crearGasto, {});
   const ref = useRef<HTMLFormElement>(null);
-  // Para que el check de "a reembolsar" diga la persona correcta sin
-  // recargar: sigue a "¿Quién pagó?" en vivo.
-  const [pagadoPor, setPagadoPor] = useState<Persona>(persona);
 
   useEffect(() => {
     if (!estado.ok) return;
     toast.success("Gasto registrado");
     ref.current?.reset();
-    setPagadoPor(persona);
     // Al terminar, arriba: así se encadena un gasto tras otro sin desplazarse.
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [estado, persona]);
+  }, [estado]);
 
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-9">
-      {/* El monto es lo único que se escribe de verdad: ocupa la pantalla. */}
-      <div className="glass rounded-2xl px-5 py-7 text-center">
-        <Label
-          htmlFor="monto"
-          className="justify-center text-xs font-medium text-muted-foreground"
-        >
-          ¿Cuánto fue?
-        </Label>
-        <div className="mt-3 flex items-baseline justify-center gap-1.5">
-          <span className="text-2xl font-bold text-muted-foreground">S/</span>
-          <Input
-            id="monto"
-            name="monto"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0.01"
-            placeholder="0.00"
-            required
-            autoFocus
-            className="h-auto w-full max-w-[220px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[44px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[44px]"
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2.5">
-        <Label htmlFor="descripcion">¿En qué?</Label>
-        <Input
-          id="descripcion"
-          name="descripcion"
-          placeholder="Plaza Vea, taxi, luz…"
-          maxLength={80}
-          required
-        />
-      </div>
-
-      <SelectorCategoria categorias={categorias} />
-
-      <SelectorCuenta cuentas={cuentas} />
-
-      <div className="flex flex-col gap-2.5">
-        <Label htmlFor="fecha">¿Cuándo?</Label>
-        <Input
-          id="fecha"
-          name="fecha"
-          type="date"
-          defaultValue={hoy}
-          required
-        />
-      </div>
-
-      <Chips
-        name="pagado_por"
-        label="¿Quién pagó?"
-        defaultValue={persona}
-        onChange={(v) => setPagadoPor(v as Persona)}
-        opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
+    <form ref={ref} action={action} className="flex flex-col gap-7">
+      <CamposGasto
+        idPrefix="nuevo-"
+        categorias={categorias}
+        cuentas={cuentas}
+        descripciones={descripciones}
+        cuentaPorCategoria={cuentaPorCategoria}
+        hoy={hoy}
+        personaSesion={persona}
       />
-
-      {/* Un caso puntual, no un reparto: solo se marca cuando alguien de
-          verdad tiene que devolver este gasto en concreto. */}
-      <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-4">
-        <input type="checkbox" name="a_reembolsar" className="peer sr-only" />
-        <span
-          aria-hidden
-          className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
-        >
-          <Check className="hidden size-3.5 text-primary-foreground" />
-        </span>
-        <span className="text-sm">
-          <span className="block font-semibold">
-            {NOMBRES[laOtra(pagadoPor)]} le debe esto a {NOMBRES[pagadoPor]}
-          </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            Queda pendiente en Ajustes hasta que se marque como devuelto
-          </span>
-        </span>
-      </label>
 
       <ErrorForm estado={estado} />
 
@@ -130,4 +55,3 @@ export function FormularioGasto({
     </form>
   );
 }
-

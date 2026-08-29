@@ -195,6 +195,30 @@ export async function conceptosUsados(): Promise<string[]> {
   return [...usados, ...CONCEPTOS_BASE.filter((c) => !vistos.has(c))];
 }
 
+/**
+ * Descripciones de gasto que ya se repitieron, para sugerirlas al escribir
+ * una nueva ("Plaza Vea", "taxi"). Una sola por texto exacto, la más usada
+ * primero — un `<datalist>` nativo, no autocompletar hecho a mano.
+ */
+export async function descripcionesUsadas(): Promise<string[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("gastos")
+    .select("descripcion")
+    .order("fecha", { ascending: false })
+    .limit(200)
+    .overrideTypes<{ descripcion: string }[]>();
+
+  const veces = new Map<string, number>();
+  for (const { descripcion } of data ?? []) {
+    veces.set(descripcion, (veces.get(descripcion) ?? 0) + 1);
+  }
+
+  return [...veces.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([descripcion]) => descripcion);
+}
+
 export async function listarCuentas() {
   const supabase = createClient();
   // La vista, no la tabla: trae el saldo de hoy ya calculado.
@@ -237,6 +261,67 @@ export async function gastosPorCobrar(): Promise<GastoPorCobrar[]> {
 
   const saldados = new Set((reembolsos.data ?? []).map((r) => r.gasto_id));
   return (gastos.data ?? []).filter((g) => !saldados.has(g.id));
+}
+
+export type ReembolsoSaldado = {
+  id: string;
+  fecha: string;
+  monto: number;
+  desde: { nombre: string } | null;
+  hacia: { nombre: string } | null;
+  gasto: { descripcion: string; categoria: string } | null;
+};
+
+/**
+ * Deudas ya saldadas: reembolsos con un gasto detrás, no un simple traspaso
+ * entre cuentas propias (`moverDinero` usa la misma tabla sin `gasto_id`).
+ * Sin esto, saldar una deuda en Ajustes la hacía desaparecer sin dejar
+ * rastro visible en ningún lado — solo quedaba enterrada en los traspasos
+ * de cada cuenta, uno por uno.
+ */
+export async function reembolsosSaldados(limite = 20): Promise<ReembolsoSaldado[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("reembolsos")
+    .select(
+      "id, fecha, monto, desde:cuentas!reembolsos_desde_cuenta_id_fkey(nombre), hacia:cuentas!reembolsos_hacia_cuenta_id_fkey(nombre), gasto:gastos(descripcion, categoria)",
+    )
+    .not("gasto_id", "is", null)
+    .order("fecha", { ascending: false })
+    .limit(limite)
+    .overrideTypes<ReembolsoSaldado[]>();
+  return data ?? [];
+}
+
+/**
+ * Para cada categoría, la cuenta con la que más veces se pagó — la
+ * sugerencia con la que se precarga el selector al elegir esa categoría.
+ * Sin esto, "Mercado" seguía por defecto en Efectivo aunque siempre se
+ * pague con la misma tarjeta.
+ */
+export async function cuentaPorCategoria(): Promise<Record<string, string>> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("gastos")
+    .select("categoria, cuenta_id")
+    .not("cuenta_id", "is", null)
+    .order("fecha", { ascending: false })
+    .limit(500)
+    .overrideTypes<{ categoria: string; cuenta_id: string }[]>();
+
+  const conteo = new Map<string, Map<string, number>>();
+  for (const { categoria, cuenta_id } of data ?? []) {
+    const porCuenta = conteo.get(categoria) ?? new Map<string, number>();
+    porCuenta.set(cuenta_id, (porCuenta.get(cuenta_id) ?? 0) + 1);
+    conteo.set(categoria, porCuenta);
+  }
+
+  const sugeridas: Record<string, string> = {};
+  for (const [categoria, porCuenta] of conteo) {
+    const [cuentaMasUsada] = [...porCuenta.entries()].sort((a, b) => b[1] - a[1])[0];
+    sugeridas[categoria] = cuentaMasUsada;
+  }
+  return sugeridas;
 }
 
 /** Gasto total por mes, de más antiguo a más reciente. */

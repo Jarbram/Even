@@ -5,8 +5,7 @@ import { Label } from "@/components/ui/label";
  *
  * ponytail: radios nativos con `peer-checked` de Tailwind — cero JavaScript y
  * cero estado. Sustituye a los `<select>`: en un móvil se acierta mejor sobre
- * una pastilla de 40 px que dentro de una rueda del sistema, y de paso mata el
- * dropdown blanco que Chrome pinta cuando el select tiene fondo translúcido.
+ * una pastilla de 40 px que dentro de una rueda del sistema.
  */
 
 export type Opcion = {
@@ -38,7 +37,7 @@ export function Chips({
 }) {
   if (opciones.length === 0 && vacio) {
     return (
-      <fieldset className="flex flex-col gap-3.5">
+      <fieldset className="flex flex-col gap-2">
         <Label asChild>
           <legend>{label}</legend>
         </Label>
@@ -52,7 +51,7 @@ export function Chips({
     : "flex flex-wrap gap-2.5";
 
   return (
-    <fieldset className="flex flex-col gap-3.5">
+    <fieldset className="flex flex-col gap-2">
       <Label asChild>
         <legend>{label}</legend>
       </Label>

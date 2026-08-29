@@ -15,6 +15,7 @@ import {
   porSemanaDelMes,
   redondear,
   soles,
+  type Estado,
   type LineaPresupuesto,
   type Mes,
   type ResumenPresupuesto,
@@ -78,7 +79,7 @@ export default async function PresupuestoPage({
 
       <nav
         aria-label="Vista"
-        className="glass-hueco mb-5 flex rounded-full p-1 text-[13px]"
+        className="panel-hueco mb-5 flex rounded-full p-1 text-[13px]"
       >
         {MODOS.map((m) => (
           <Link
@@ -217,7 +218,7 @@ function VistaResumen({
 
 function SinTopes() {
   return (
-    <div className="glass rounded-xl p-5">
+    <div className="panel rounded-xl p-5">
       <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
         Sin topes todavía
       </p>
@@ -238,7 +239,7 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
   const proporcion = tope > 0 ? Math.min(gastado / tope, 1) : 0;
 
   return (
-    <section className="glass rounded-xl p-5">
+    <section className="panel rounded-xl p-5">
       <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
         {restante >= 0 ? "Te queda" : "Te pasaste"}
       </p>
@@ -251,7 +252,7 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
       <p className="mt-1.5 text-xs text-muted-foreground">{resumen}</p>
 
       <div
-        className="glass-hueco mt-5 h-2.5 overflow-hidden rounded-full"
+        className="panel-hueco mt-5 h-2.5 overflow-hidden rounded-full"
         role="img"
         aria-label={`Llevas ${soles(gastado)} gastados de ${soles(tope)} presupuestados`}
       >
@@ -308,9 +309,17 @@ function VistaActividad({
 
   return (
     <>
+      {/* Un pill-nav idéntico al de "Resumen/Actividad" de arriba, uno debajo
+          del otro, se leía como un solo control de dos filas — o peor, como
+          que uno de los dos no hacía nada. Este va más chico, sin relleno
+          sólido al elegir, y con su propia etiqueta: queda claro que es un
+          filtro dentro de "Actividad", no otra pestaña al mismo nivel. */}
+      <p className="mb-2 text-[11px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+        Agrupar por
+      </p>
       <nav
         aria-label="Agrupación"
-        className="glass-hueco mb-4 flex rounded-full p-1 text-[13px]"
+        className="mb-4 flex gap-1.5 text-[12px]"
       >
         {VISTAS.map((v) => (
           <Link
@@ -318,7 +327,7 @@ function VistaActividad({
             href={`/presupuesto?modo=actividad&vista=${v}&mes=${mes}`}
             aria-current={v === vista ? "page" : undefined}
             data-activo={v === vista}
-            className="flex-1 rounded-full py-2.5 text-center font-medium text-muted-foreground capitalize transition-colors hover:text-foreground data-[activo=true]:bg-primary data-[activo=true]:font-semibold data-[activo=true]:text-primary-foreground data-[activo=true]:shadow-[0_2px_6px_rgb(0_0_0/0.4)]"
+            className="rounded-full border border-border px-3 py-1.5 text-center font-medium text-muted-foreground capitalize transition-colors hover:text-foreground data-[activo=true]:border-primary data-[activo=true]:bg-primary/10 data-[activo=true]:font-semibold data-[activo=true]:text-primary"
           >
             {v}
           </Link>
@@ -346,7 +355,7 @@ function VistaActividad({
           <Dato
             titulo={conTope ? "Del tope queda" : "Sin topes"}
             valor={conTope ? soles(restante) : "—"}
-            destacado={conTope}
+            estado={presupuesto.estado === "sin-topes" ? undefined : presupuesto.estado}
           />
         </dl>
       </section>
@@ -356,13 +365,13 @@ function VistaActividad({
       </p>
 
       {lineas.length === 0 ? (
-        <p className="glass rounded-lg p-4 text-sm text-muted-foreground">
+        <p className="panel rounded-lg p-4 text-sm text-muted-foreground">
           Sin datos este mes.
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-2.5">
           {lineas.map((linea) => (
-            <li key={linea.categoria} className="glass rounded-xl p-4">
+            <li key={linea.categoria} className="panel rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
                   {linea.categoria}
@@ -399,18 +408,23 @@ function VistaActividad({
 function Dato({
   titulo,
   valor,
-  destacado,
+  estado,
 }: {
   titulo: string;
   valor: string;
-  destacado?: boolean;
+  /** Sin esto, el color no dice nada: "queda S/ 40" y "te pasaste S/ 40"
+      no pueden llevar el mismo tinte. */
+  estado?: Estado;
 }) {
   return (
     <div>
       <dt className="text-[10px] font-bold tracking-[0.06em] text-white/80 uppercase">
         {titulo}
       </dt>
-      <dd className={`mt-0.5 text-sm font-bold ${destacado ? "text-primary" : ""}`}>
+      <dd
+        data-estado={estado}
+        className="mt-0.5 text-sm font-bold data-[estado=ok]:text-ok data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
+      >
         {valor}
       </dd>
     </div>

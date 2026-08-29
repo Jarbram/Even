@@ -63,18 +63,18 @@ export default async function CuentaPage({
         className={`mb-8 rounded-xl p-5 ${
           saldo.esCredito
             ? "bg-secondary-panel text-secondary-foreground"
-            : "glass text-foreground"
+            : "panel text-foreground"
         }`}
       >
         <p
-          data-sobre-indigo={saldo.esCredito}
-          className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase data-[sobre-indigo=true]:text-white/80"
+          data-sobre-secundario={saldo.esCredito}
+          className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase data-[sobre-secundario=true]:text-white/80"
         >
           {saldo.etiqueta}
         </p>
         <p
           data-negativo={!saldo.esCredito && saldo.principal < 0}
-          className="mt-1.5 text-[34px] leading-none font-extrabold tracking-[-1px] data-[negativo=true]:text-destructive"
+          className="mt-1.5 text-[34px] leading-none font-extrabold tracking-[-1px] data-[negativo=true]:text-over"
         >
           {soles(saldo.principal)}
         </p>
@@ -150,7 +150,7 @@ export default async function CuentaPage({
             {pagos.map((pago) => (
               <li
                 key={pago.id}
-                className="glass flex items-center gap-3 rounded-lg px-4 py-3"
+                className="panel flex items-center gap-3 rounded-lg px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
@@ -160,7 +160,7 @@ export default async function CuentaPage({
                     {pago.desde ? `desde ${pago.desde.nombre}` : "origen sin indicar"}
                   </p>
                 </div>
-                <span className="shrink-0 text-sm font-semibold text-primary">
+                <span className="shrink-0 text-sm font-semibold text-ok">
                   {soles(pago.monto)}
                 </span>
                 <BotonBorrar
@@ -185,7 +185,7 @@ export default async function CuentaPage({
               return (
                 <li
                   key={traspaso.id}
-                  className="glass flex items-center gap-3 rounded-lg px-4 py-3"
+                  className="panel flex items-center gap-3 rounded-lg px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
@@ -199,7 +199,7 @@ export default async function CuentaPage({
                   </div>
                   <span
                     data-negativo={esSalida}
-                    className="shrink-0 text-sm font-semibold text-primary data-[negativo=true]:text-destructive"
+                    className="shrink-0 text-sm font-semibold text-ok data-[negativo=true]:text-over"
                   >
                     {esSalida ? "−" : "+"}
                     {soles(traspaso.monto)}
@@ -229,7 +229,7 @@ export default async function CuentaPage({
         </div>
 
         {gastos.length === 0 ? (
-          <p className="glass rounded-lg p-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="panel rounded-lg p-4 text-sm leading-relaxed text-muted-foreground">
             {arrastre > 0
               ? `Todavía nada. Los ${soles(arrastre)} que ya venías debiendo son de antes de usar la app, así que no tienen categoría ni cuentan contra el presupuesto de este mes — pero sí ocupan tu línea.`
               : "Todavía no se ha pagado nada con esta cuenta."}
@@ -239,7 +239,7 @@ export default async function CuentaPage({
             {gastos.map((gasto) => (
               <li
                 key={gasto.id}
-                className="glass flex items-center gap-3 rounded-lg px-4 py-3"
+                className="panel flex items-center gap-3 rounded-lg px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
@@ -260,7 +260,7 @@ export default async function CuentaPage({
       </section>
 
       <div className="mt-10 border-t border-border pt-6">
-        <div className="glass flex items-center gap-3 rounded-lg p-4">
+        <div className="panel flex items-center gap-3 rounded-lg p-4">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">Borrar esta cuenta</p>
             <p className="mt-0.5 text-xs text-muted-foreground">

@@ -18,7 +18,7 @@ export function Plegable({
   abierto?: boolean;
 }) {
   return (
-    <details open={abierto} className="glass rounded-xl [&[open]_.marca]:rotate-45">
+    <details open={abierto} className="panel rounded-xl [&[open]_.marca]:rotate-45">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 p-5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
         <Plus
           aria-hidden

@@ -120,10 +120,16 @@ Decisión abierta, sin inventar:
 
 - Nombre: **Even** — de *"we're even"*, estar en paz, que es justo lo que la
   app contesta cuando las cuentas están al día. La interfaz sigue en español;
-  el nombre se lee igual en los dos idiomas.
-- Tokens del proyecto de Claude Design *Finanzas Pareja*: carbón `#111214`, lima
-  `#C7F94E`, indigo `#5B5BF5`, superficies glass translúcidas con `backdrop-blur`,
-  radios de 18–26 px, tipografía Space Grotesk.
+  el nombre se lee igual en los dos idiomas. El nombre se mantuvo en el
+  rediseño del 29/08/2026: es un concepto ligado a la función (saldar la
+  deuda cruzada), no a la identidad visual que sí se reemplazó.
+- **Mundo visual "Confirmación"** (reemplaza al anterior "Finanzas Pareja"
+  el 29/08/2026, decisión del usuario): tarjetas sólidas por dirección del
+  dinero (violeta gasto, esmeralda ingreso, azul pendiente), naranja
+  `#FF8A4C` como único color de marca, avatar propio por persona, tipografía
+  DM Sans, sin cristal ni `backdrop-blur`. El lenguaje de una billetera P2P
+  (Yape/Plin) — el gesto que la pareja ya usa a diario para pagarse entre
+  ellos — aplicado a toda la app. Detalle completo en `DESIGN.md`.
 - Tema único oscuro. No hay tema claro y no se ha pedido.
 - Todos los tokens viven en `src/app/globals.css`; los componentes nunca
   escriben un hex.

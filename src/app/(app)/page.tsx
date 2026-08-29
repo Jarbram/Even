@@ -5,10 +5,14 @@ import { requirePersona } from "@/lib/sesion";
 import {
   categoriasUsadas,
   conceptosUsados,
+  cuentaPorCategoria,
+  descripcionesUsadas,
   resumenDelMes,
   type GastoRow,
 } from "@/lib/datos";
 import { hoyISO, nombreMes, redondear, soles } from "@/lib/finanzas";
+import { leerSaldo } from "@/lib/cuentas";
+import { AvatarPersona } from "@/components/avatar-persona";
 import { TarjetaCategoria } from "@/components/tarjeta-categoria";
 import { FormularioGastoRapido } from "./formulario-gasto-rapido";
 import { FormularioIngresoRapido } from "./formulario-ingreso-rapido";
@@ -19,7 +23,15 @@ export default async function HomePage() {
     { mes, gastos, restante, ahorros, presupuesto, fondos, lineas, cuentas },
     categorias,
     conceptos,
-  ] = await Promise.all([resumenDelMes(), categoriasUsadas(), conceptosUsados()]);
+    descripciones,
+    cuentaSugerida,
+  ] = await Promise.all([
+    resumenDelMes(),
+    categoriasUsadas(),
+    conceptosUsados(),
+    descripcionesUsadas(),
+    cuentaPorCategoria(),
+  ]);
 
   const sinTopes = presupuesto.estado === "sin-topes";
   const excedidos = restante < 0;
@@ -35,6 +47,14 @@ export default async function HomePage() {
   const cuentasLiquidas = cuentas.filter((c) => c.tipo !== "credito");
   const disponible = redondear(
     cuentasLiquidas.reduce((suma, c) => suma + c.saldo, 0),
+  );
+
+  // El crédito disponible no entra en "Dinero disponible" —es deuda, no
+  // plata propia—, pero tampoco se queda sin mostrar en ningún lado: antes
+  // solo se veía entrando a Ajustes y tocando cada tarjeta una por una.
+  const cuentasCredito = cuentas.filter((c) => c.tipo === "credito");
+  const creditoDisponible = redondear(
+    cuentasCredito.reduce((suma, c) => suma + leerSaldo(c).principal, 0),
   );
 
   // Para el detalle de cada card de categoría: sus últimos gastos, sin
@@ -60,11 +80,14 @@ export default async function HomePage() {
         el ícono de Ajustes sube a 44 px —el mínimo táctil— para pesar lo
         mismo que el avatar y cerrar la fila con una simetría intencional en
         vez de un botón chico perdido a la derecha.
+
+        El avatar ya no es un gradiente genérico: cada persona tiene su
+        propio color, el mismo que usa en Ajustes para distinguir de quién
+        es cada cuenta — el mismo gesto de identidad que Yape o Plin, donde
+        siempre sabes con un vistazo con quién estás tratando.
       */}
       <header className="mb-8 flex items-center gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-[17px] font-bold text-foreground">
-          {NOMBRES[persona][0]}
-        </div>
+        <AvatarPersona persona={persona} />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[19px] font-extrabold tracking-[-0.3px]">
             Hola, {NOMBRES[persona]}
@@ -76,7 +99,7 @@ export default async function HomePage() {
         <Link
           href="/ajustes"
           aria-label="Ajustes"
-          className="glass-accion flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="panel-accion flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <SlidersHorizontal aria-hidden className="size-[18px]" />
         </Link>
@@ -97,6 +120,8 @@ export default async function HomePage() {
           persona={persona}
           categorias={categorias}
           cuentas={cuentas}
+          descripciones={descripciones}
+          cuentaPorCategoria={cuentaSugerida}
           hoy={hoyISO()}
         />
 
@@ -110,19 +135,19 @@ export default async function HomePage() {
       </div>
 
       {/*
-        Un solo panel para las tres cifras del dinero, no tres bloques de
-        colores distintos peleando por la atención. El número grande es lo
-        que de verdad se puede gastar hoy; presupuesto y ahorros bajan de
-        peso como cifras secundarias debajo de una línea — se consultan,
-        no son la primera lectura.
+        Tarjeta de saldo sólida, no un panel neutro con un número encima: es
+        la pantalla de "tu saldo" de una billetera, y ese número se confía
+        de un vistazo o no se confía. Presupuesto y ahorros bajan de peso
+        como cifras secundarias debajo de una línea — se consultan, no son
+        la primera lectura.
       */}
-      <section className="glass mb-8 rounded-2xl p-5">
+      <section className="mb-8 rounded-2xl bg-fill-saldo p-5 text-fill-saldo-foreground">
         <Link
           href="/ajustes"
           className="flex items-center justify-between gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <div className="min-w-0">
-            <p className="text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+            <p className="text-[11px] font-bold tracking-[0.06em] text-white/75 uppercase">
               Dinero disponible
             </p>
             {cuentasLiquidas.length === 0 ? (
@@ -132,26 +157,29 @@ export default async function HomePage() {
             ) : (
               <p
                 data-negativo={disponible < 0}
-                className="mt-1 text-[32px] leading-none font-extrabold tracking-[-0.5px] data-[negativo=true]:text-destructive"
+                className="mt-1 text-[32px] leading-none font-extrabold tracking-[-0.5px] data-[negativo=true]:text-over"
               >
                 {soles(disponible)}
               </p>
             )}
+            {/* Aparte y más chico a propósito: es crédito, no plata propia —
+                sumarlo al número de arriba haría parecer que hay más de lo
+                que en realidad se puede gastar. */}
+            {cuentasCredito.length > 0 && (
+              <p className="mt-1 text-[12px] font-semibold text-white/70">
+                + {soles(creditoDisponible)} disponible en tarjetas
+              </p>
+            )}
           </div>
-          <ArrowUpRight
-            aria-hidden
-            className="size-4 shrink-0 text-muted-foreground"
-          />
+          <ArrowUpRight aria-hidden className="size-4 shrink-0 text-white/75" />
         </Link>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/20 pt-4">
           <Link
             href="/presupuesto"
             className="rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <p className="text-[11px] font-semibold text-muted-foreground">
-              Presupuesto
-            </p>
+            <p className="text-[11px] font-semibold text-white/75">Presupuesto</p>
             {sinTopes ? (
               // Un "S/ 0.00" aquí sería mentira: no es que no quede nada, es
               // que todavía no hay topes contra los que medir.
@@ -159,7 +187,7 @@ export default async function HomePage() {
             ) : (
               <p
                 data-excedido={excedidos}
-                className="mt-1 text-lg font-extrabold tracking-[-0.3px] data-[excedido=true]:text-destructive"
+                className="mt-1 text-lg font-extrabold tracking-[-0.3px] data-[excedido=true]:text-over"
               >
                 {soles(restante)}
               </p>
@@ -170,13 +198,11 @@ export default async function HomePage() {
             href="/ajustes"
             className="rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <p className="text-[11px] font-semibold text-muted-foreground">
-              Ahorros
-            </p>
+            <p className="text-[11px] font-semibold text-white/75">Ahorros</p>
             {fondos.length === 0 ? (
               <p className="mt-1 text-sm font-bold">Crea un fondo</p>
             ) : (
-              <p className="mt-1 text-lg font-extrabold tracking-[-0.3px] text-primary">
+              <p className="mt-1 text-lg font-extrabold tracking-[-0.3px]">
                 {soles(ahorros)}
               </p>
             )}
@@ -243,7 +269,7 @@ function PrimerosPasos({ sinTopes }: { sinTopes: boolean }) {
         <li key={paso.href}>
           <Link
             href={paso.href}
-            className="glass-accion flex items-center gap-3 rounded-lg p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="panel-accion flex items-center gap-3 rounded-lg p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">{paso.titulo}</p>

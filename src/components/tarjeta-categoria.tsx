@@ -1,10 +1,16 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleCheck, CircleDashed, OctagonAlert, TriangleAlert } from "lucide-react";
 import { soles, type LineaPresupuesto } from "@/lib/finanzas";
 
-const COLOR_ESTADO: Record<LineaPresupuesto["estado"], string> = {
-  ok: "var(--ok)",
-  ajustado: "var(--warn)",
-  excedido: "var(--over)",
+const ICONO_ESTADO: Record<LineaPresupuesto["estado"], typeof CircleCheck> = {
+  ok: CircleCheck,
+  ajustado: TriangleAlert,
+  excedido: OctagonAlert,
+};
+
+const CLASE_ESTADO: Record<LineaPresupuesto["estado"], string> = {
+  ok: "text-ok",
+  ajustado: "text-warn",
+  excedido: "text-over",
 };
 
 export type GastoResumen = {
@@ -14,8 +20,13 @@ export type GastoResumen = {
 };
 
 /**
- * Una categoría con su aro y su barra —cuánto del tope, de un vistazo—,
- * desplegable: adentro, sus últimos gastos y lo que se le pase como hijo (en
+ * Una categoría con su barra —cuánto del tope, de un vistazo— y un ícono
+ * de forma distinta por estado, no solo color: antes el aro y la barra
+ * decían el mismo porcentaje dos veces en la misma tarjeta, y el estado se
+ * distinguía solo por el tinte. Ahora un ✓, un ▲ o un ⛔ dicen "vas bien",
+ * "cuidado" o "te pasaste" incluso sin ver el color.
+ *
+ * Desplegable: adentro, sus últimos gastos y lo que se le pase como hijo (en
  * Presupuesto, el formulario para subir o bajar el tope; en el Home, nada
  * más). El mismo lenguaje visual en las dos pantallas, para que aprenderlo
  * en una sirva en la otra — solo cambia el tamaño, no la forma.
@@ -34,48 +45,21 @@ export function TarjetaCategoria({
   children?: React.ReactNode;
 }) {
   const proporcion = Math.min(linea.proporcion, 1);
-  const color = COLOR_ESTADO[linea.estado];
   const sinTope = linea.presupuestado === 0;
   const grande = tamano === "grande";
-  const grosorAro = grande ? 5 : 4;
+  const Icono = sinTope ? CircleDashed : ICONO_ESTADO[linea.estado];
+  const claseIcono = sinTope ? "text-muted-foreground" : CLASE_ESTADO[linea.estado];
 
   return (
-    <details className="glass-accion rounded-2xl entra [&[open]_.marca]:rotate-180">
+    <details className="panel-accion rounded-2xl entra [&[open]_.marca]:rotate-180">
       <summary
         className={`flex cursor-pointer list-none flex-col gap-2.5 [&::-webkit-details-marker]:hidden ${grande ? "p-4" : "p-3.5"}`}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className={`relative flex shrink-0 items-center justify-center ${grande ? "size-14" : "size-11"}`}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: sinTope
-                  ? "rgb(255 255 255 / 0.12)"
-                  : `conic-gradient(${color} ${proporcion * 100}%, rgb(255 255 255 / 0.12) 0)`,
-                WebkitMask: `radial-gradient(farthest-side, transparent calc(100% - ${grosorAro}px), #000 calc(100% - ${grosorAro}px))`,
-                mask: `radial-gradient(farthest-side, transparent calc(100% - ${grosorAro}px), #000 calc(100% - ${grosorAro}px))`,
-              }}
-            />
-            {/* Sin tope no hay porcentaje que enseñar: un aro al 100 % decía
-                "100 % del tope" de una categoría que no tiene ninguno, y en
-                rojo — el peor error posible, porque marcaba como excedidas
-                justo las dos líneas de gasto más grandes del mes. */}
-            <span
-              role="img"
-              aria-label={
-                sinTope
-                  ? `${linea.categoria}, sin tope`
-                  : `${Math.round(proporcion * 100)}% del tope`
-              }
-              data-sin-tope={sinTope}
-              className={`relative font-extrabold data-[sin-tope=true]:text-muted-foreground ${grande ? "text-[13px]" : "text-[10px]"}`}
-            >
-              {sinTope ? "—" : `${Math.round(proporcion * 100)}%`}
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <Icono
+            aria-hidden
+            className={`shrink-0 ${claseIcono} ${grande ? "size-5" : "size-4"}`}
+          />
 
           <p
             className={`min-w-0 flex-1 truncate font-semibold ${grande ? "text-[15px]" : "text-[13px]"}`}
@@ -83,16 +67,21 @@ export function TarjetaCategoria({
             {linea.categoria}
           </p>
 
+          {!sinTope && (
+            <span
+              data-estado={linea.estado}
+              className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] font-bold text-ok data-[estado=ajustado]:bg-warn/15 data-[estado=ajustado]:text-warn data-[estado=excedido]:bg-over/15 data-[estado=excedido]:text-over"
+            >
+              {Math.round(proporcion * 100)}%
+            </span>
+          )}
+
           <ChevronDown
             aria-hidden
             className="marca size-4 shrink-0 text-muted-foreground transition-transform duration-200"
           />
         </div>
 
-        {/* Las cifras van a lo ancho de la tarjeta y no en la columna de al
-            lado del aro: ahí tenían 74 px y "S/ 1,262.70 de S/ 1,310.00"
-            salía recortado, que en una app de dinero es el único dato que no
-            puede quedar a medias. */}
         {sinTope ? (
           <>
             <p className="text-[11px] font-semibold">{soles(linea.gastado)}</p>
@@ -110,13 +99,14 @@ export function TarjetaCategoria({
             </p>
 
             <div
-              className={`glass-hueco overflow-hidden rounded-full ${grande ? "h-2" : "h-1.5"}`}
+              className={`panel-hueco overflow-hidden rounded-full ${grande ? "h-2" : "h-1.5"}`}
               role="img"
               aria-label={`${soles(linea.gastado)} de ${soles(linea.presupuestado)} en ${linea.categoria}`}
             >
               <div
-                className="barra h-full rounded-full"
-                style={{ width: `${proporcion * 100}%`, backgroundColor: color }}
+                data-estado={linea.estado}
+                className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
+                style={{ width: `${proporcion * 100}%` }}
               />
             </div>
 

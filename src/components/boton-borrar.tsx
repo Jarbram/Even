@@ -1,15 +1,26 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+/** Cuánto se espera antes de que el borrado sea real. Bastante para
+    arrepentirse en la cola del súper, no tanto para que se sienta que no
+    pasó nada. */
+const RETRASO_MS = 4000;
+
 /**
- * Borrar en dos toques: el primero pregunta, el segundo borra.
+ * Borrar con red de seguridad: un toque pregunta, el segundo no borra al
+ * toque — arranca una cuenta atrás de unos segundos en la que la fila
+ * sigue ahí, el propio botón se vuelve "Deshacer" y también aparece un
+ * toast con la misma opción, por si ya se pasó a otra pantalla. Solo
+ * cuando pasa el tiempo sin que nadie lo deshaga se llama de verdad a
+ * `accion`.
  *
- * ponytail: confirmación en el propio botón, no un diálogo. Un modal para
- * borrar una línea de gasto interrumpe más de lo que protege, y aquí lo que hay
- * que evitar es el toque accidental, no la decisión meditada.
+ * ponytail: confirmación en el propio botón, no un diálogo — un modal para
+ * borrar una línea interrumpe más de lo que protege. El deshacer es la
+ * protección real; el primer toque de confirmación es solo para no borrar
+ * con el pulgar sin querer.
  */
 export function BotonBorrar({
   accion,
@@ -24,7 +35,47 @@ export function BotonBorrar({
   etiqueta: string;
 }) {
   const [confirmando, setConfirmando] = useState(false);
-  const [pendiente, iniciar] = useTransition();
+  const [pendiente, setPendiente] = useState(false);
+  const [pendienteTransicion, iniciar] = useTransition();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function deshacer() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    setPendiente(false);
+    setConfirmando(false);
+  }
+
+  function borrar() {
+    setPendiente(true);
+    toast(`Se borró ${que}`, {
+      duration: RETRASO_MS,
+      action: { label: "Deshacer", onClick: deshacer },
+    });
+    timerRef.current = setTimeout(() => {
+      iniciar(async () => {
+        const { error } = await accion();
+        if (error) {
+          toast.error(error);
+          setPendiente(false);
+          setConfirmando(false);
+        }
+      });
+    }, RETRASO_MS);
+  }
+
+  if (pendiente) {
+    return (
+      <button
+        type="button"
+        disabled={pendienteTransicion}
+        onClick={deshacer}
+        className="entra shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-foreground disabled:opacity-60"
+      >
+        {pendienteTransicion ? "Borrando…" : "Deshacer"}
+      </button>
+    );
+  }
 
   if (!confirmando) {
     return (
@@ -43,21 +94,10 @@ export function BotonBorrar({
     <span className="entra flex shrink-0 items-center gap-1">
       <button
         type="button"
-        disabled={pendiente}
-        onClick={() =>
-          iniciar(async () => {
-            const { error } = await accion();
-            if (error) {
-              toast.error(error);
-              setConfirmando(false);
-              return;
-            }
-            toast.success(`Se borró ${que}`);
-          })
-        }
-        className="rounded-full bg-destructive/15 px-3 py-1.5 text-xs font-semibold text-destructive disabled:opacity-60"
+        onClick={borrar}
+        className="rounded-full bg-destructive/15 px-3 py-1.5 text-xs font-semibold text-destructive"
       >
-        {pendiente ? "Borrando…" : "Borrar"}
+        Borrar
       </button>
       <button
         type="button"

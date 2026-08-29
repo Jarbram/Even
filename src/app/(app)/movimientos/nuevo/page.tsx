@@ -1,14 +1,21 @@
 import { BotonCerrar } from "@/components/navegacion";
 import { requirePersona } from "@/lib/sesion";
-import { categoriasUsadas, listarCuentas } from "@/lib/datos";
+import {
+  categoriasUsadas,
+  cuentaPorCategoria,
+  descripcionesUsadas,
+  listarCuentas,
+} from "@/lib/datos";
 import { hoyISO } from "@/lib/finanzas";
 import { FormularioGasto } from "./formulario-gasto";
 
 export default async function NuevoGastoPage() {
   const persona = await requirePersona();
-  const [cuentas, categorias] = await Promise.all([
+  const [cuentas, categorias, descripciones, cuentaSugerida] = await Promise.all([
     listarCuentas(),
     categoriasUsadas(),
+    descripcionesUsadas(),
+    cuentaPorCategoria(),
   ]);
 
   return (
@@ -22,6 +29,8 @@ export default async function NuevoGastoPage() {
         persona={persona}
         cuentas={cuentas.filter((c) => c.activa)}
         categorias={categorias}
+        descripciones={descripciones}
+        cuentaPorCategoria={cuentaSugerida}
         hoy={hoyISO()}
       />
     </>

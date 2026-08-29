@@ -1,14 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
-import { toast } from "sonner";
-import { NOMBRES, PERSONAS, laOtra, type Persona } from "@/lib/persona";
+import { Plus, X } from "lucide-react";
+import type { Persona } from "@/lib/persona";
 import type { CuentaRow } from "@/lib/cuentas";
-import { Chips } from "@/components/chips";
+import { CamposGasto } from "@/components/campos-gasto";
+import { Confirmacion } from "@/components/confirmacion";
 import { BotonGuardar, ErrorForm } from "@/components/formulario";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetClose,
@@ -16,7 +14,6 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { PildorasCategoria, PildorasCuenta } from "./pildoras-selector";
 import { crearGasto, type Resultado } from "./acciones";
 
 /**
@@ -24,36 +21,41 @@ import { crearGasto, type Resultado } from "./acciones";
  * reembolsar—, pero en una hoja que sube desde abajo sin dejar el Home:
  * antes, anotar un gasto de S/8 significaba navegar a otra pantalla y volver.
  *
- * Comprimido en pastillas en vez de grillas y tarjetas: lo que se usa
- * siempre (monto, en qué, categoría, cuenta, quién) queda a la vista sin
- * desplazarse; lo que casi nunca cambia (la fecha, marcar a reembolsar)
- * vive detrás de "Más opciones", un toque más lejos pero fuera del camino.
+ * Los campos en sí viven en `CamposGasto`, compartidos con la hoja de
+ * editar: crear y corregir un gasto usan el mismo lenguaje visual.
  */
 export function FormularioGastoRapido({
   persona,
   categorias,
   cuentas,
+  descripciones,
+  cuentaPorCategoria,
   hoy,
 }: {
   persona: Persona;
   categorias: string[];
   cuentas: CuentaRow[];
+  descripciones: string[];
+  cuentaPorCategoria: Record<string, string>;
   hoy: string;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const [confirmado, setConfirmado] = useState(false);
   const [estado, action] = useActionState<Resultado, FormData>(crearGasto, {});
   const formRef = useRef<HTMLFormElement>(null);
-  // Para que el check de "a reembolsar" diga la persona correcta sin
-  // recargar: sigue a "¿Quién pagó?" en vivo.
-  const [pagadoPor, setPagadoPor] = useState<Persona>(persona);
 
   useEffect(() => {
     if (!estado.ok) return;
-    toast.success("Gasto registrado");
     formRef.current?.reset();
-    setPagadoPor(persona);
-    setAbierto(false);
-  }, [estado, persona]);
+    setConfirmado(true);
+    // El check se ve un instante y recién ahí se cierra: cerrar de una vez
+    // no dejaba tiempo a que el gesto de "confirmado" se sintiera.
+    const cerrar = setTimeout(() => {
+      setAbierto(false);
+      setConfirmado(false);
+    }, 700);
+    return () => clearTimeout(cerrar);
+  }, [estado]);
 
   return (
     <Sheet open={abierto} onOpenChange={setAbierto}>
@@ -61,31 +63,31 @@ export function FormularioGastoRapido({
         type="button"
         onClick={() => setAbierto(true)}
         aria-haspopup="dialog"
-        // El mismo material que "Registrar ingreso": son la misma clase de
-        // acción y estaban en dos superficies distintas —esta con borde
-        // punteado, que se lee como hueco por rellenar—, así que la acción
-        // más frecuente de la app parecía la menos importante de las dos.
-        className="glass-accion flex w-full flex-col items-center justify-center gap-1.5 rounded-xl py-5 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        // Violeta sólido: el color de "sale plata" en toda la app, no un
+        // borde punteado sobre un fondo neutro. Es la acción que más se usa
+        // y se ve como tal — la misma pastilla que "Registrar ingreso" pero
+        // en el color contrario, porque el dinero va en sentidos opuestos.
+        className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl bg-fill-gasto py-5 text-[13px] font-semibold text-fill-gasto-foreground transition-transform active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        <Plus aria-hidden className="size-5 text-primary" />
+        <Plus aria-hidden className="size-5" />
         Agregar gasto
       </button>
 
-      {/* SheetContent queda transparente a propósito: el material glass va en
+      {/* SheetContent queda transparente a propósito: el material panel va en
           el div de adentro, para no pelear con el bg-popover que trae por
           defecto — dos superficies compitiendo por el mismo rectángulo.
           Y sin su X por defecto (`showCloseButton={false}`): esa venía
           suelta encima del contenido, sin caja ni contraste propios — un
           ghost-button genérico de shadcn, no algo hecho para esta app. Va
-          la de siempre (glass-accion, la misma que BotonCerrar en el resto
+          la de siempre (panel-accion, la misma que BotonCerrar en el resto
           de la app), en una cabecera propia con el título al lado. */}
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="mx-auto flex max-h-[88vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
+        className="mx-auto flex max-h-[94vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
       >
-        <div className="glass-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
-          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+        <div className="panel-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
+          <div className="flex items-center justify-between px-5 pt-4 pb-3">
             <SheetTitle className="text-[15px] font-bold">
               Nuevo gasto
             </SheetTitle>
@@ -93,7 +95,7 @@ export function FormularioGastoRapido({
               <button
                 type="button"
                 aria-label="Cerrar"
-                className="glass-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="panel-accion flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <X aria-hidden className="size-[18px]" />
               </button>
@@ -103,115 +105,28 @@ export function FormularioGastoRapido({
             Registra un gasto con todo el detalle sin salir del inicio.
           </SheetDescription>
 
-          <form
-            ref={formRef}
-            action={action}
-            className="flex flex-col gap-5 px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))]"
-          >
-            {/* El monto es lo único que se escribe de verdad. */}
-            <div className="glass rounded-2xl px-5 py-5 text-center">
-              <Label
-                htmlFor="monto-rapido"
-                className="justify-center text-xs font-medium text-muted-foreground"
-              >
-                ¿Cuánto fue?
-              </Label>
-              <div className="mt-2 flex items-baseline justify-center gap-1.5">
-                <span className="text-xl font-bold text-muted-foreground">
-                  S/
-                </span>
-                <Input
-                  id="monto-rapido"
-                  name="monto"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00"
-                  required
-                  autoFocus
-                  className="h-auto w-full max-w-[200px] border-0 bg-transparent p-0 text-center dark:bg-transparent text-[36px] leading-none font-extrabold tracking-[-1px] shadow-none focus-visible:ring-0 md:text-[36px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="descripcion-rapido">¿En qué?</Label>
-              <Input
-                id="descripcion-rapido"
-                name="descripcion"
-                placeholder="Plaza Vea, taxi, luz…"
-                maxLength={80}
-                required
+          {confirmado ? (
+            <Confirmacion color="gasto" mensaje="Gasto registrado" />
+          ) : (
+            <form
+              ref={formRef}
+              action={action}
+              className="flex flex-col gap-3.5 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            >
+              <CamposGasto
+                idPrefix="rapido-"
+                categorias={categorias}
+                cuentas={cuentas}
+                descripciones={descripciones}
+                cuentaPorCategoria={cuentaPorCategoria}
+                hoy={hoy}
+                personaSesion={persona}
               />
-            </div>
 
-            <PildorasCategoria categorias={categorias} />
-
-            <PildorasCuenta cuentas={cuentas} />
-
-            <Chips
-              name="pagado_por"
-              label="¿Quién pagó?"
-              defaultValue={persona}
-              onChange={(v) => setPagadoPor(v as Persona)}
-              opciones={PERSONAS.map((p) => ({ value: p, label: NOMBRES[p] }))}
-            />
-
-            {/* La fecha (por defecto hoy) y "a reembolsar" son la excepción,
-                no la regla: fuera de la vista pero a un toque, no borradas. */}
-            <details className="[&[open]_.marca]:rotate-180">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-semibold text-primary [&::-webkit-details-marker]:hidden">
-                Más opciones
-                <ChevronDown
-                  aria-hidden
-                  className="marca size-3.5 transition-transform duration-200"
-                />
-              </summary>
-
-              <div className="mt-4 flex flex-col gap-5">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="fecha-rapida">¿Cuándo?</Label>
-                  <Input
-                    id="fecha-rapida"
-                    name="fecha"
-                    type="date"
-                    defaultValue={hoy}
-                    required
-                  />
-                </div>
-
-                {/* Un caso puntual, no un reparto: solo se marca cuando
-                    alguien de verdad tiene que devolver este gasto. */}
-                <label className="glass flex cursor-pointer items-start gap-3 rounded-xl p-3.5">
-                  <input
-                    type="checkbox"
-                    name="a_reembolsar"
-                    className="peer sr-only"
-                  />
-                  <span
-                    aria-hidden
-                    className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:[&>svg]:block"
-                  >
-                    <Check className="hidden size-3.5 text-primary-foreground" />
-                  </span>
-                  <span className="text-[13px]">
-                    <span className="block font-semibold">
-                      {NOMBRES[laOtra(pagadoPor)]} le debe esto a{" "}
-                      {NOMBRES[pagadoPor]}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                      Queda pendiente en Ajustes hasta que se marque como
-                      devuelto
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </details>
-
-            <ErrorForm estado={estado} />
-            <BotonGuardar>Registrar gasto</BotonGuardar>
-          </form>
+              <ErrorForm estado={estado} />
+              <BotonGuardar>Registrar gasto</BotonGuardar>
+            </form>
+          )}
         </div>
       </SheetContent>
     </Sheet>
