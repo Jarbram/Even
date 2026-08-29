@@ -47,8 +47,13 @@ export function TarjetaCategoria({
   const proporcion = Math.min(linea.proporcion, 1);
   const sinTope = linea.presupuestado === 0;
   const grande = tamano === "grande";
-  const Icono = sinTope ? CircleDashed : ICONO_ESTADO[linea.estado];
-  const claseIcono = sinTope ? "text-muted-foreground" : CLASE_ESTADO[linea.estado];
+  // Para el color: "ok" con alerta temprana se pinta como "ajustado" — el
+  // estado real sigue siendo "ok" (no se pasó, hoy), pero el color no puede
+  // decir "vas bien" cuando a este ritmo no vas a seguir así.
+  const colorEstado =
+    linea.alertaTemprana && linea.estado === "ok" ? "ajustado" : linea.estado;
+  const Icono = sinTope ? CircleDashed : ICONO_ESTADO[colorEstado];
+  const claseIcono = sinTope ? "text-muted-foreground" : CLASE_ESTADO[colorEstado];
 
   return (
     <details className="panel-accion rounded-2xl entra [&[open]_.marca]:rotate-180">
@@ -69,7 +74,7 @@ export function TarjetaCategoria({
 
           {!sinTope && (
             <span
-              data-estado={linea.estado}
+              data-estado={colorEstado}
               className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] font-bold text-ok data-[estado=ajustado]:bg-warn/15 data-[estado=ajustado]:text-warn data-[estado=excedido]:bg-over/15 data-[estado=excedido]:text-over"
             >
               {Math.round(proporcion * 100)}%
@@ -104,7 +109,7 @@ export function TarjetaCategoria({
               aria-label={`${soles(linea.gastado)} de ${soles(linea.presupuestado)} en ${linea.categoria}`}
             >
               <div
-                data-estado={linea.estado}
+                data-estado={colorEstado}
                 className="barra h-full rounded-full bg-ok data-[estado=ajustado]:bg-warn data-[estado=excedido]:bg-over"
                 style={{ width: `${proporcion * 100}%` }}
               />
@@ -118,6 +123,15 @@ export function TarjetaCategoria({
                 ? `${soles(linea.restante)} libre`
                 : `${soles(-linea.restante)} de más`}
             </span>
+
+            {/* Verde hoy, pero camino a pasarse: el aviso a tiempo, no
+                solo hacia atrás. Solo cuando aporta algo que "libre"/"de
+                más" no dice ya. */}
+            {linea.alertaTemprana && (
+              <span className="truncate text-[11px] font-semibold text-warn">
+                A este ritmo: {soles(linea.proyectado)}
+              </span>
+            )}
           </>
         )}
       </summary>

@@ -203,6 +203,11 @@ export type LineaPresupuesto = {
   /** 0–1 y por encima si se pasaron; útil para la barra de progreso. */
   proporcion: number;
   estado: Estado;
+  /** A este ritmo, cuánto se va a gastar para fin de mes. */
+  proyectado: number;
+  /** El ritmo actual pasa el tope aunque hoy `estado` todavía diga "ok" o
+      "ajustado" — el aviso a tiempo para que "ajustar" signifique algo. */
+  alertaTemprana: boolean;
 };
 
 /** Verde hasta el 75 %, ámbar hasta el 100 %, rojo al pasarse. */
@@ -214,6 +219,25 @@ export function semaforo(gastado: number, presupuestado: number): Estado {
 }
 
 /**
+ * A este ritmo, ¿cuánto se va a gastar para fin de mes? Una regla de tres
+ * sobre lo ya gastado y los días vividos, la misma cuenta que uno hace a
+ * ojo ("llevo esto en tantos días…") — no una predicción sofisticada.
+ *
+ * Es lo que le faltaba al semáforo: el día 5, haber gastado el 20 % de un
+ * tope se ve verde sin importar que a ese ritmo el mes termine en 150 %.
+ * El semáforo mira hacia atrás; esto mira hacia adelante, a tiempo para
+ * ajustar de verdad y no solo confirmar el golpe ya dado.
+ */
+export function proyeccion(
+  gastado: number,
+  diasTranscurridos: number,
+  diasDelMes: number,
+): number {
+  if (diasTranscurridos <= 0) return redondear(gastado);
+  return redondear((gastado / diasTranscurridos) * diasDelMes);
+}
+
+/**
  * Cruza lo presupuestado con lo gastado, categoría por categoría. Aparecen
  * también las categorías gastadas sin presupuesto: son justo las que hay que
  * ver, no las que conviene esconder.
@@ -221,6 +245,8 @@ export function semaforo(gastado: number, presupuestado: number): Estado {
 export function lineasPresupuesto(
   presupuestos: readonly { categoria: string; monto: number }[],
   gastos: readonly { categoria: string; monto: number }[],
+  diasTranscurridos: number,
+  diasDelMes: number,
 ): LineaPresupuesto[] {
   const gastadoPor = new Map<string, number>();
   for (const gasto of gastos) {
@@ -243,13 +269,17 @@ export function lineasPresupuesto(
     .map((categoria) => {
       const presupuestado = presupuestadoPor.get(categoria) ?? 0;
       const gastado = gastadoPor.get(categoria) ?? 0;
+      const estado = semaforo(gastado, presupuestado);
+      const proyectado = proyeccion(gastado, diasTranscurridos, diasDelMes);
       return {
         categoria,
         presupuestado: redondear(presupuestado),
         gastado: redondear(gastado),
         restante: redondear(presupuestado - gastado),
         proporcion: presupuestado > 0 ? gastado / presupuestado : gastado > 0 ? 1 : 0,
-        estado: semaforo(gastado, presupuestado),
+        estado,
+        proyectado,
+        alertaTemprana: estado !== "excedido" && presupuestado > 0 && proyectado > presupuestado,
       };
     })
     // Por urgencia, no por monto: arriba lo que hay que ajustar. Una categoría
@@ -310,6 +340,13 @@ export type ResumenPresupuesto = {
   excedidas: LineaPresupuesto[];
   /** Las que están cerca del tope pero aún no se han pasado. */
   enRiesgo: LineaPresupuesto[];
+  /** A este ritmo, cuánto se va a gastar en total para fin de mes. */
+  proyectado: number;
+  /** El ritmo actual pasa el tope aunque hoy todavía no. */
+  alertaTemprana: boolean;
+  /** Las categorías que hoy se ven bien pero a este ritmo se van a pasar,
+      peor primero. El aviso a tiempo antes de que sean "excedidas". */
+  vanRapido: LineaPresupuesto[];
 };
 
 /**
@@ -328,6 +365,7 @@ export function resumenPresupuesto(
   const tope = redondear(conTope.reduce((suma, l) => suma + l.presupuestado, 0));
   const gastado = redondear(conTope.reduce((suma, l) => suma + l.gastado, 0));
   const restante = redondear(tope - gastado);
+  const proyectado = redondear(conTope.reduce((suma, l) => suma + l.proyectado, 0));
 
   // Peor primero: lo que más se ha pasado es lo primero que hay que ajustar.
   const excedidas = lineas
@@ -338,6 +376,12 @@ export function resumenPresupuesto(
     .filter((l) => l.estado === "ajustado")
     .sort((a, b) => b.proporcion - a.proporcion);
 
+  // Las que hoy se ven bien pero a este ritmo se van a pasar: el aviso a
+  // tiempo, antes de que se conviertan en "excedidas" de verdad.
+  const vanRapido = lineas
+    .filter((l) => l.alertaTemprana)
+    .sort((a, b) => b.proyectado / b.presupuestado - a.proyectado / a.presupuestado);
+
   if (tope === 0) {
     return {
       tope,
@@ -347,10 +391,14 @@ export function resumenPresupuesto(
       resumen: "Pon un tope a cada categoría para empezar a controlar",
       excedidas,
       enRiesgo,
+      proyectado,
+      alertaTemprana: false,
+      vanRapido,
     };
   }
 
   const estado = semaforo(gastado, tope);
+  const alertaTemprana = estado !== "excedido" && proyectado > tope;
 
   const resumen =
     excedidas.length > 0
@@ -359,11 +407,24 @@ export function resumenPresupuesto(
         }`
       : estado === "excedido"
         ? `Te pasaste ${soles(Math.abs(restante))} del tope`
-        : enRiesgo.length > 0
-          ? `Ojo con ${enRiesgo[0].categoria}, va al ${Math.round(enRiesgo[0].proporcion * 100)}%`
-          : "Vas dentro de lo acordado";
+        : alertaTemprana
+          ? `A este ritmo, terminas el mes en ${soles(proyectado)}`
+          : enRiesgo.length > 0
+            ? `Ojo con ${enRiesgo[0].categoria}, va al ${Math.round(enRiesgo[0].proporcion * 100)}%`
+            : "Vas dentro de lo acordado";
 
-  return { tope, gastado, restante, estado, resumen, excedidas, enRiesgo };
+  return {
+    tope,
+    gastado,
+    restante,
+    estado,
+    resumen,
+    excedidas,
+    enRiesgo,
+    proyectado,
+    alertaTemprana,
+    vanRapido,
+  };
 }
 
 // ---------------------------------------------------------------------------

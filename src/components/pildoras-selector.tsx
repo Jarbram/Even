@@ -28,9 +28,13 @@ import { Label } from "@/components/ui/label";
 
 /** La fila que se desliza: sin envolver, sin barra de scroll visible —el
     mismo criterio que ya oculta la barra en toda la app—, y con snap: sin
-    esto un swipe sin querer deja una pastilla a medio cortar en el borde. */
+    esto un swipe sin querer deja una pastilla a medio cortar en el borde.
+    `overscroll-x-contain` + `touch-action:pan-x` son los que de verdad
+    arreglan el bug: sin ellos, al llegar al final de la fila Safari le
+    pasa el gesto a la hoja entera y la arrastra a un lado — el swipe se
+    queda aquí, no se escapa a nada más. */
 const FILA =
-  "flex snap-x snap-proximity gap-2 overflow-x-auto pr-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+  "flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pr-1 pb-0.5 [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const PILDORA_SNAP = "snap-start scroll-ml-1";
 
 export function PildorasCategoria({
@@ -81,38 +85,35 @@ export function PildorasCategoria({
 
       <input type="hidden" name={name} value={valor} />
 
-      {/* "+ Otra" fuera de la fila que se desliza, no dentro: si viviera al
-          final, escribir una categoría nueva costaría deslizar toda la fila
-          para alcanzarla; si viviera primero, empujaría a la más usada
-          fuera de vista al abrir. Fija a la derecha, la fila que se
-          desliza empieza directo en la primera categoría —la más usada— y
-          "+ Otra" queda siempre a un toque, sin deslizar nada. */}
-      <div className="flex items-center gap-2">
-        <div className={FILA}>
-          {categorias.map((categoria) => {
-            const activa = !modoNueva && categoria === elegida;
-            return (
-              <button
-                key={categoria}
-                ref={categoria === valorInicial ? activaRef : undefined}
-                type="button"
-                aria-pressed={activa}
-                onClick={() => elegir(categoria)}
-                data-activa={activa}
-                className={`shrink-0 rounded-full border border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap transition active:scale-[0.97] data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground ${PILDORA_SNAP}`}
-              >
-                {categoria}
-              </button>
-            );
-          })}
-        </div>
+      {/* "+ Otra" es una pastilla más, dentro de la misma fila que se
+          desliza — el mismo patrón que "Efectivo" en cuenta o "No lo
+          asigno" en destino: una sola fila, todo se desliza junto, sin una
+          excepción fija aparte que rompa la coherencia entre los tres
+          selectores. */}
+      <div className={FILA}>
+        {categorias.map((categoria) => {
+          const activa = !modoNueva && categoria === elegida;
+          return (
+            <button
+              key={categoria}
+              ref={categoria === valorInicial ? activaRef : undefined}
+              type="button"
+              aria-pressed={activa}
+              onClick={() => elegir(categoria)}
+              data-activa={activa}
+              className={`shrink-0 rounded-full border border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap transition active:scale-[0.97] data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground ${PILDORA_SNAP}`}
+            >
+              {categoria}
+            </button>
+          );
+        })}
 
         <button
           type="button"
           aria-pressed={modoNueva}
           onClick={() => setModoNueva(true)}
           data-activa={modoNueva}
-          className="shrink-0 rounded-full border border-dashed border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap text-primary transition data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground"
+          className={`shrink-0 rounded-full border border-dashed border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap text-primary transition data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground ${PILDORA_SNAP}`}
         >
           + Otra
         </button>

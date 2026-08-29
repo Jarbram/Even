@@ -15,6 +15,7 @@ import {
   porSemanaDelMes,
   presupuestosVigentes,
   progresoFondo,
+  proyeccion,
   redondear,
   semaforo,
 } from "./finanzas.ts";
@@ -46,6 +47,8 @@ test("las categorías gastadas sin presupuesto aparecen igual", () => {
       { categoria: "Mercado", monto: 200 },
       { categoria: "Ocio", monto: 90 },
     ],
+    30,
+    30,
   );
   const ocio = lineas.find((l) => l.categoria === "Ocio");
   assert.equal(ocio?.presupuestado, 0);
@@ -56,7 +59,7 @@ test("las categorías gastadas sin presupuesto aparecen igual", () => {
 });
 
 test("sin topes puestos, el presupuesto no dice que vayas bien", () => {
-  const sinNada = resumenPresupuesto(lineasPresupuesto([], []));
+  const sinNada = resumenPresupuesto(lineasPresupuesto([], [], 30, 30));
   assert.equal(sinNada.estado, "sin-topes");
   assert.doesNotMatch(sinNada.resumen, /dentro/);
 });
@@ -73,6 +76,8 @@ test("el resumen señala en qué se están pasando, no solo el total", () => {
       { categoria: "Ocio", monto: 250 }, // 250 %: pasadísimo
       { categoria: "Alquiler", monto: 1500 }, // 100 %: pasado justo
     ],
+    30,
+    30,
   );
   const r = resumenPresupuesto(lineas);
 
@@ -97,6 +102,8 @@ test("gastar en una categoría sin tope no cuenta contra el tope acordado", () =
       { categoria: "Mercado", monto: 400 }, // dentro del tope
       { categoria: "Gastos personales", monto: 5000 }, // sin tope puesto
     ],
+    30,
+    30,
   );
   const r = resumenPresupuesto(lineas);
 
@@ -113,6 +120,8 @@ test("cumplir el presupuesto se dice sin rodeos", () => {
     lineasPresupuesto(
       [{ categoria: "Mercado", monto: 800 }],
       [{ categoria: "Mercado", monto: 200 }],
+      30,
+      30,
     ),
   );
   assert.equal(r.estado, "ok");
@@ -169,9 +178,68 @@ test("las categorías se ordenan por urgencia, no por monto", () => {
       { categoria: "Alquiler", monto: 800 }, // mucho dinero, 40 %
       { categoria: "Ocio", monto: 100 }, // poco dinero, 200 %
     ],
+    30,
+    30,
   );
   // Ocio primero aunque sean 100 soles contra 800: es lo que hay que ajustar.
   assert.equal(lineas[0].categoria, "Ocio");
+});
+
+test("la proyección extiende el ritmo actual al mes completo", () => {
+  // 100 en 10 días, mes de 30: a ese ritmo, 300 para fin de mes.
+  assert.equal(proyeccion(100, 10, 30), 300);
+  // Mes ya terminado (días vividos = días del mes): la proyección es lo
+  // mismo que ya se gastó, no una extrapolación de un ritmo que ya no corre.
+  assert.equal(proyeccion(250, 30, 30), 250);
+  // Sin días vividos (recién empieza el mes), no se divide entre cero.
+  assert.equal(proyeccion(0, 0, 30), 0);
+});
+
+test("alerta temprana: verde hoy, pero camino a pasarse", () => {
+  // Día 5 de un mes de 30: 100 gastados de un tope de 500 se ve "ok" (20 %),
+  // pero a ese ritmo el mes termina en 600 — por encima del tope.
+  const lineas = lineasPresupuesto(
+    [{ categoria: "Mercado", monto: 500 }],
+    [{ categoria: "Mercado", monto: 100 }],
+    5,
+    30,
+  );
+  const mercado = lineas.find((l) => l.categoria === "Mercado");
+  assert.equal(mercado?.estado, "ok");
+  assert.equal(mercado?.proyectado, 600);
+  assert.equal(mercado?.alertaTemprana, true);
+
+  const r = resumenPresupuesto(lineas);
+  assert.equal(r.estado, "ok");
+  assert.equal(r.alertaTemprana, true);
+  assert.equal(r.vanRapido.length, 1);
+  assert.match(r.resumen, /a este ritmo/i);
+});
+
+test("sin alerta temprana cuando el ritmo no pasaría el tope", () => {
+  // Día 5 de 30, 50 de un tope de 500: a ese ritmo, 300 para fin de mes —
+  // sigue dentro. No hay que avisar de algo que no va a pasar.
+  const lineas = lineasPresupuesto(
+    [{ categoria: "Mercado", monto: 500 }],
+    [{ categoria: "Mercado", monto: 50 }],
+    5,
+    30,
+  );
+  assert.equal(lineas[0].alertaTemprana, false);
+  assert.equal(resumenPresupuesto(lineas).vanRapido.length, 0);
+});
+
+test("ya excedido no necesita alerta temprana: ya se sabe", () => {
+  const lineas = lineasPresupuesto(
+    [{ categoria: "Mercado", monto: 100 }],
+    [{ categoria: "Mercado", monto: 150 }],
+    5,
+    30,
+  );
+  assert.equal(lineas[0].estado, "excedido");
+  // alertaTemprana es para lo que hoy se ve bien; lo ya excedido no la
+  // necesita, ya está en `excedidas`.
+  assert.equal(lineas[0].alertaTemprana, false);
 });
 
 test("meses: se calculan sin caerse al cambiar de año", () => {

@@ -105,7 +105,7 @@ export default async function MovimientosPage({
           ojo. Son enlaces con `?categoria=`, no estado de React: se
           combinan con el día ya elegido y el botón de atrás funciona. */}
       {categorias.length > 0 && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-6 flex gap-2 overflow-x-auto overscroll-x-contain pb-0.5 [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link
             href={enlace({ categoria: null })}
             data-activa={!categoriaActiva}

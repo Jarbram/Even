@@ -181,14 +181,51 @@ function VistaResumen({
         </section>
       )}
 
-      {lineas.length > presupuesto.excedidas.length && (
+      {/* Entre "ya te pasaste" y "vas bien" hay una tercera categoría que el
+          semáforo por sí solo no puede decir: hoy vas bien, pero al ritmo
+          que llevas no vas a seguir así. Es la respuesta a "¿qué tengo que
+          ajustar?" antes de que sea tarde para ajustarlo. */}
+      {presupuesto.vanRapido.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-warn uppercase">
+            Van rápido
+          </h2>
+          <ul className="grid grid-cols-2 gap-2.5">
+            {presupuesto.vanRapido.map((linea) => (
+              <li key={linea.categoria} className="has-[details[open]]:col-span-2">
+                <TarjetaCategoria
+                  linea={linea}
+                  tamano="compacta"
+                  gastosRecientes={(
+                    gastosPorCategoria.get(linea.categoria) ?? []
+                  ).slice(0, 4)}
+                >
+                  <EditarPresupuesto
+                    mes={mes}
+                    categoria={linea.categoria}
+                    monto={linea.presupuestado}
+                  />
+                </TarjetaCategoria>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {lineas.length > presupuesto.excedidas.length + presupuesto.vanRapido.length && (
         <section className="mt-6">
           <h2 className="mb-2.5 text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-            {presupuesto.excedidas.length > 0 ? "El resto" : "Por categoría"}
+            {presupuesto.excedidas.length > 0 || presupuesto.vanRapido.length > 0
+              ? "El resto"
+              : "Por categoría"}
           </h2>
           <ul className="grid grid-cols-2 gap-2.5">
             {lineas
-              .filter((l) => !presupuesto.excedidas.includes(l))
+              .filter(
+                (l) =>
+                  !presupuesto.excedidas.includes(l) &&
+                  !presupuesto.vanRapido.includes(l),
+              )
               .map((linea) => (
                 <li
                   key={linea.categoria}
@@ -235,8 +272,13 @@ function SinTopes() {
 
 /** ¿Cumplimos? Lo primero y en grande. */
 function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
-  const { tope, gastado, restante, estado, resumen } = presupuesto;
+  const { tope, gastado, restante, estado, resumen, alertaTemprana } = presupuesto;
   const proporcion = tope > 0 ? Math.min(gastado / tope, 1) : 0;
+  // Para el color del titular: "ok" con alerta temprana se pinta como
+  // "ajustado" —no es una mentira sobre el estado real, que sigue siendo
+  // "ok" en todos lados; es solo que el número grande no puede decir
+  // "vas bien" en verde cuando el texto de abajo dice lo contrario.
+  const colorTitular = alertaTemprana && estado === "ok" ? "ajustado" : estado;
 
   return (
     <section className="panel rounded-xl p-5">
@@ -244,7 +286,7 @@ function Titular({ presupuesto }: { presupuesto: ResumenPresupuesto }) {
         {restante >= 0 ? "Te queda" : "Te pasaste"}
       </p>
       <p
-        data-estado={estado}
+        data-estado={colorTitular}
         className="mt-1.5 text-[30px] font-extrabold tracking-[-0.5px] data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
       >
         {soles(Math.abs(restante))}
@@ -355,7 +397,13 @@ function VistaActividad({
           <Dato
             titulo={conTope ? "Del tope queda" : "Sin topes"}
             valor={conTope ? soles(restante) : "—"}
-            estado={presupuesto.estado === "sin-topes" ? undefined : presupuesto.estado}
+            estado={
+              presupuesto.estado === "sin-topes"
+                ? undefined
+                : presupuesto.alertaTemprana && presupuesto.estado === "ok"
+                  ? "ajustado"
+                  : presupuesto.estado
+            }
           />
         </dl>
       </section>
@@ -370,35 +418,50 @@ function VistaActividad({
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-2.5">
-          {lineas.map((linea) => (
-            <li key={linea.categoria} className="panel rounded-xl p-4">
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1 truncate text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-                  {linea.categoria}
-                </span>
-                {linea.presupuestado > 0 && (
-                  <span
-                    data-estado={linea.estado}
-                    className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] font-bold text-ok data-[estado=ajustado]:bg-warn/15 data-[estado=ajustado]:text-warn data-[estado=excedido]:bg-over/15 data-[estado=excedido]:text-over"
-                  >
-                    {Math.round(linea.proporcion * 100)}%
+          {lineas.map((linea) => {
+            // Igual que en TarjetaCategoria: "ok" con alerta temprana se
+            // pinta como "ajustado" — antes esta tarjeta mostraba el
+            // promedio diario y el tope como dos datos sueltos, dejando la
+            // cuenta ("¿a ese ritmo, me paso?") para hacerla de memoria.
+            const colorEstado =
+              linea.alertaTemprana && linea.estado === "ok" ? "ajustado" : linea.estado;
+            return (
+              <li key={linea.categoria} className="panel rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1 truncate text-[11px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
+                    {linea.categoria}
                   </span>
+                  {linea.presupuestado > 0 && (
+                    <span
+                      data-estado={colorEstado}
+                      className="shrink-0 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] font-bold text-ok data-[estado=ajustado]:bg-warn/15 data-[estado=ajustado]:text-warn data-[estado=excedido]:bg-over/15 data-[estado=excedido]:text-over"
+                    >
+                      {Math.round(linea.proporcion * 100)}%
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1.5 text-xl font-extrabold tracking-[-0.5px]">
+                  {soles(linea.gastado)}
+                </p>
+
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  Promedio {soles(redondear(linea.gastado / dias))}/día
+                </p>
+                {linea.presupuestado > 0 ? (
+                  <p
+                    data-estado={colorEstado}
+                    className="mt-0.5 text-[11px] leading-relaxed font-semibold text-muted-foreground data-[estado=ajustado]:text-warn data-[estado=excedido]:text-over"
+                  >
+                    A este ritmo: {soles(linea.proyectado)} · tope{" "}
+                    {soles(linea.presupuestado)}
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">Sin tope</p>
                 )}
-              </div>
-
-              <p className="mt-1.5 text-xl font-extrabold tracking-[-0.5px]">
-                {soles(linea.gastado)}
-              </p>
-
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                Promedio {soles(redondear(linea.gastado / dias))}/día
-                <br />
-                {linea.presupuestado > 0
-                  ? `Tope ${soles(linea.presupuestado)}`
-                  : "Sin tope"}
-              </p>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </>

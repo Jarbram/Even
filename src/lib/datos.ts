@@ -3,6 +3,9 @@ import type { Persona } from "./persona";
 import type { CuentaRow } from "./cuentas";
 import {
   CATEGORIAS_SUGERIDAS,
+  diasDelMes,
+  diasTranscurridos,
+  hoyISO,
   lineasPresupuesto,
   mesActual,
   presupuestosVigentes,
@@ -103,7 +106,12 @@ export async function resumenDelMes(mes: Mes = mesActual()) {
   // haya tocado solo otra categoría.
   const topes = presupuestosVigentes(presupuestos.data ?? [], mes);
 
-  const lineas = lineasPresupuesto(topes, listaGastos);
+  const lineas = lineasPresupuesto(
+    topes,
+    listaGastos,
+    diasTranscurridos(mes, hoyISO()),
+    diasDelMes(mes),
+  );
   const presupuesto = resumenPresupuesto(lineas);
 
   return {

@@ -167,9 +167,15 @@
   html {
     @apply font-sans;
     color-scheme: dark;
+    /* La app entera no se desplaza de lado a lado. Solo las filas de
+       pastillas lo hacen (llevan su propio scroll contenido) — esto es
+       la red de seguridad para que, pase lo que pase, un swipe nunca
+       arrastre la página o la hoja abierta. */
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
     /* Un solo halo, tenue, del naranja de marca — vivo pero sin pretender
        ser cristal. Antes eran dos (índigo y lima) heredados del sistema
        anterior. */
