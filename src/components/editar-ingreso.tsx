@@ -65,7 +65,7 @@ export function EditarIngreso({
         showCloseButton={false}
         className="mx-auto flex max-h-[94vh] w-full max-w-[430px] flex-col gap-0 overflow-hidden rounded-t-3xl bg-transparent p-0 shadow-none data-[side=bottom]:border-t-0"
       >
-        <div className="panel-nav flex flex-1 flex-col overflow-y-auto rounded-t-3xl">
+        <div className="panel-nav flex flex-1 flex-col overflow-x-hidden overflow-y-auto rounded-t-3xl">
           <div className="flex items-center justify-between px-5 pt-4 pb-3">
             <SheetTitle className="text-[15px] font-bold">
               Editar ingreso
