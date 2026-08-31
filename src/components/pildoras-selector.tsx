@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PiggyBank } from "lucide-react";
 import { claseColor, leerSaldo, type CuentaRow } from "@/lib/cuentas";
 import type { FondoRow } from "@/lib/datos";
@@ -10,36 +10,25 @@ import { Label } from "@/components/ui/label";
 
 /**
  * Selección en pastillas: categoría, cuenta y destino comparten el mismo
- * gesto en toda la app — una sola fila que se desliza horizontal, no una
- * grilla que envuelve a dos o tres filas. Con seis campos apilados en una
- * hoja, cada fila que se envolvía en dos era la diferencia entre que el
- * formulario entero cupiera en la pantalla del celular o hubiera que
- * desplazarse para llegar al botón de guardar — justo lo que se quería
- * evitar al pagar de pie. Deslizar la fila en vez de "Ver más" también es
- * el gesto que ya usan Yape o Plin para elegir entre varias opciones.
+ * gesto en toda la app. Todas las opciones a la vista, envueltas en las
+ * filas que hagan falta — nada de scroll horizontal.
  *
- * Antes esto solo vivía en las hojas rápidas del Home; el formulario largo
- * (/movimientos/nuevo, /ingresos, presupuesto) tenía su propia versión en
- * tarjetas de columnas fijas. Dos formularios para la misma acción con dos
- * aspectos distintos significaba que lo aprendido en uno no servía en el
- * otro — ahora es un solo lenguaje visual para elegir estos campos,
- * cualquiera sea la puerta por la que se entre.
+ * La versión anterior era una sola fila que se deslizaba de lado. Sobre el
+ * papel ocupaba menos alto; en la práctica el deslizamiento horizontal
+ * dentro de la hoja no funcionaba en el celular (la hoja se lo comía) y,
+ * aunque funcionara, escondía media lista sin avisar —justo lo que no
+ * puede pasar al pagar de pie y con prisa: la opción que no se ve es la
+ * que no se elige—. Envolver ocupa un poco más y a veces hay que bajar
+ * para llegar a Guardar, pero ese scroll vertical sí responde y ninguna
+ * categoría queda oculta.
  */
 
-/** La fila que se desliza: sin envolver, sin barra de scroll visible —el
-    mismo criterio que ya oculta la barra en toda la app—, y con snap: sin
-    esto un swipe sin querer deja una pastilla a medio cortar en el borde.
-    `overscroll-x-contain` + `touch-action:pan-x` contienen el gesto: al
-    llegar al final de la fila no se lo pasan a la hoja entera.
+/** Fila de pastillas: envuelve, no se desliza. */
+const FILA = "flex min-w-0 flex-wrap gap-2";
 
-    Para que haya algo que deslizar, el <fieldset> que envuelve esta fila
-    lleva `min-w-0`: sin eso el `min-inline-size: min-content` que el
-    navegador le pone de fábrica a todo <fieldset> lo estira hasta caber
-    todas las pastillas, la fila nunca queda más angosta que su contenido
-    y no hay scroll — se veía como que "no se movía" en el celular. */
-const FILA =
-  "flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pr-1 pb-0.5 [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-const PILDORA_SNAP = "snap-start scroll-ml-1";
+/** Alto mínimo de 44 px: la escena de registro es una mano de pie (PRODUCT.md). */
+const PILDORA =
+  "inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-3.5 text-[13px] font-semibold whitespace-nowrap transition active:scale-[0.97]";
 
 export function PildorasCategoria({
   categorias,
@@ -62,16 +51,6 @@ export function PildorasCategoria({
   const [elegida, setElegida] = useState(valorInicial || categorias[0] || "");
   const [nueva, setNueva] = useState("");
   const [modoNueva, setModoNueva] = useState(false);
-  const activaRef = useRef<HTMLButtonElement>(null);
-  const filaRef = useRef<HTMLDivElement>(null);
-
-  // Al editar, la categoría ya elegida puede estar lejos en la fila —sin
-  // esto quedaba fuera de vista sin ninguna pista de que algo ya estaba
-  // marcado. Solo al montar: una vez que el usuario toca otra, ya la ve.
-  useEffect(() => {
-    if (valorInicial) activaRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function elegir(categoria: string) {
     setElegida(categoria);
@@ -90,23 +69,19 @@ export function PildorasCategoria({
 
       <input type="hidden" name={name} value={valor} />
 
-      {/* "+ Otra" es una pastilla más, dentro de la misma fila que se
-          desliza — el mismo patrón que "Efectivo" en cuenta o "No lo
-          asigno" en destino: una sola fila, todo se desliza junto, sin una
-          excepción fija aparte que rompa la coherencia entre los tres
-          selectores. */}
-      <div ref={filaRef} className={FILA}>
+      {/* "+ Otra" es una pastilla más de la misma cuadrícula —el mismo
+          patrón que "Efectivo" en cuenta o "No lo asigno" en destino. */}
+      <div className={FILA}>
         {categorias.map((categoria) => {
           const activa = !modoNueva && categoria === elegida;
           return (
             <button
               key={categoria}
-              ref={categoria === valorInicial ? activaRef : undefined}
               type="button"
               aria-pressed={activa}
               onClick={() => elegir(categoria)}
               data-activa={activa}
-              className={`shrink-0 rounded-full border border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap transition active:scale-[0.97] data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground ${PILDORA_SNAP}`}
+              className={`${PILDORA} data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground`}
             >
               {categoria}
             </button>
@@ -118,7 +93,7 @@ export function PildorasCategoria({
           aria-pressed={modoNueva}
           onClick={() => setModoNueva(true)}
           data-activa={modoNueva}
-          className={`shrink-0 rounded-full border border-dashed border-border px-3.5 py-2 text-[13px] font-semibold whitespace-nowrap text-primary transition data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground ${PILDORA_SNAP}`}
+          className={`${PILDORA} border-dashed text-primary data-[activa=true]:border-solid data-[activa=true]:border-primary data-[activa=true]:bg-primary data-[activa=true]:text-primary-foreground`}
         >
           + Otra
         </button>
@@ -139,11 +114,6 @@ export function PildorasCategoria({
             onClick={() => {
               setModoNueva(false);
               setNueva("");
-              // "+ Otra" vive al final de la fila: al volver, la fila queda
-              // desplazada hasta la derecha y no se ven las categorías.
-              // Directo, no `scrollTo({behavior:"smooth"})`: el scroll-snap
-              // de la fila se come la animación y no pasa nada.
-              if (filaRef.current) filaRef.current.scrollLeft = 0;
             }}
             className="-my-2.5 self-start py-2.5 text-xs text-muted-foreground"
           >
@@ -168,7 +138,6 @@ function Pildora({
   predeterminada,
   checked,
   onSeleccionar,
-  pildoraRef,
   children,
 }: {
   name: string;
@@ -176,11 +145,10 @@ function Pildora({
   predeterminada?: boolean;
   checked?: boolean;
   onSeleccionar?: () => void;
-  pildoraRef?: React.Ref<HTMLLabelElement>;
   children: React.ReactNode;
 }) {
   return (
-    <label ref={pildoraRef} className={`shrink-0 cursor-pointer ${PILDORA_SNAP}`}>
+    <label className="cursor-pointer">
       <input
         type="radio"
         name={name}
@@ -190,7 +158,9 @@ function Pildora({
           : { checked, onChange: onSeleccionar })}
         className="peer sr-only"
       />
-      <span className="flex h-10 items-center gap-2 rounded-full border border-border px-3.5 text-[13px] font-semibold whitespace-nowrap transition active:scale-[0.97] peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+      <span
+        className={`${PILDORA} peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring`}
+      >
         {children}
       </span>
     </label>
@@ -219,12 +189,6 @@ export function PildorasCuenta({
 }) {
   const [elegida, setElegida] = useState(valorInicial || sugerida || "");
   const [tocada, setTocada] = useState(false);
-  const activaRef = useRef<HTMLLabelElement>(null);
-
-  useEffect(() => {
-    if (valorInicial) activaRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Sigue la sugerencia mientras el usuario no haya tocado nada él mismo.
   useEffect(() => {
@@ -250,7 +214,6 @@ export function PildorasCuenta({
                 setElegida(cuenta.id);
                 setTocada(true);
               }}
-              pildoraRef={cuenta.id === valorInicial ? activaRef : undefined}
             >
               <span
                 aria-hidden
@@ -269,7 +232,6 @@ export function PildorasCuenta({
             setElegida("");
             setTocada(true);
           }}
-          pildoraRef={valorInicial === "" ? activaRef : undefined}
         >
           <span aria-hidden className="size-2 rounded-full bg-muted-foreground" />
           Efectivo
@@ -291,13 +253,6 @@ export function PildorasDestino({
   /** Al editar: el `destino` ya elegido ("cuenta:id" / "fondo:id" / ""). */
   valorInicial?: string;
 }) {
-  const activaRef = useRef<HTMLLabelElement>(null);
-
-  useEffect(() => {
-    if (valorInicial) activaRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const opciones = [
     ...cuentas.map((c) => ({
       valor: `cuenta:${c.id}`,
@@ -328,7 +283,6 @@ export function PildorasDestino({
             name="destino"
             value={o.valor}
             predeterminada={o.valor === valorInicial}
-            pildoraRef={o.valor === valorInicial ? activaRef : undefined}
           >
             {o.icono}
             {o.nombre}
@@ -339,7 +293,6 @@ export function PildorasDestino({
           name="destino"
           value=""
           predeterminada={valorInicial === ""}
-          pildoraRef={valorInicial === "" ? activaRef : undefined}
         >
           <span aria-hidden className="size-2 rounded-full bg-muted-foreground" />
           No lo asigno
