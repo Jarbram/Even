@@ -29,10 +29,14 @@ import { Label } from "@/components/ui/label";
 /** La fila que se desliza: sin envolver, sin barra de scroll visible —el
     mismo criterio que ya oculta la barra en toda la app—, y con snap: sin
     esto un swipe sin querer deja una pastilla a medio cortar en el borde.
-    `overscroll-x-contain` + `touch-action:pan-x` son los que de verdad
-    arreglan el bug: sin ellos, al llegar al final de la fila Safari le
-    pasa el gesto a la hoja entera y la arrastra a un lado — el swipe se
-    queda aquí, no se escapa a nada más. */
+    `overscroll-x-contain` + `touch-action:pan-x` contienen el gesto: al
+    llegar al final de la fila no se lo pasan a la hoja entera.
+
+    Para que haya algo que deslizar, el <fieldset> que envuelve esta fila
+    lleva `min-w-0`: sin eso el `min-inline-size: min-content` que el
+    navegador le pone de fábrica a todo <fieldset> lo estira hasta caber
+    todas las pastillas, la fila nunca queda más angosta que su contenido
+    y no hay scroll — se veía como que "no se movía" en el celular. */
 const FILA =
   "flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pr-1 pb-0.5 [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const PILDORA_SNAP = "snap-start scroll-ml-1";
@@ -59,6 +63,7 @@ export function PildorasCategoria({
   const [nueva, setNueva] = useState("");
   const [modoNueva, setModoNueva] = useState(false);
   const activaRef = useRef<HTMLButtonElement>(null);
+  const filaRef = useRef<HTMLDivElement>(null);
 
   // Al editar, la categoría ya elegida puede estar lejos en la fila —sin
   // esto quedaba fuera de vista sin ninguna pista de que algo ya estaba
@@ -78,7 +83,7 @@ export function PildorasCategoria({
   const valor = modoNueva ? nueva : elegida;
 
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex min-w-0 flex-col gap-2">
       <Label asChild>
         <legend>{label}</legend>
       </Label>
@@ -90,7 +95,7 @@ export function PildorasCategoria({
           asigno" en destino: una sola fila, todo se desliza junto, sin una
           excepción fija aparte que rompa la coherencia entre los tres
           selectores. */}
-      <div className={FILA}>
+      <div ref={filaRef} className={FILA}>
         {categorias.map((categoria) => {
           const activa = !modoNueva && categoria === elegida;
           return (
@@ -134,6 +139,11 @@ export function PildorasCategoria({
             onClick={() => {
               setModoNueva(false);
               setNueva("");
+              // "+ Otra" vive al final de la fila: al volver, la fila queda
+              // desplazada hasta la derecha y no se ven las categorías.
+              // Directo, no `scrollTo({behavior:"smooth"})`: el scroll-snap
+              // de la fila se come la animación y no pasa nada.
+              if (filaRef.current) filaRef.current.scrollLeft = 0;
             }}
             className="-my-2.5 self-start py-2.5 text-xs text-muted-foreground"
           >
@@ -222,7 +232,7 @@ export function PildorasCuenta({
   }, [sugerida, tocada, valorInicial]);
 
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex min-w-0 flex-col gap-2">
       <Label asChild>
         <legend>¿Con qué pagaste?</legend>
       </Label>
@@ -306,7 +316,7 @@ export function PildorasDestino({
   ];
 
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex min-w-0 flex-col gap-2">
       <Label asChild>
         <legend>¿A dónde entra?</legend>
       </Label>
